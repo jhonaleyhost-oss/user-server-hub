@@ -107,9 +107,9 @@ serve(async (req) => {
       if (createUserResponse.status === 422) {
         console.log('User might already exist, trying to find existing user...');
         
-        // Try to find existing user
+        // Try to find existing user by username (since username is what's duplicated)
         const findUserResponse = await fetch(
-          `${pteroServer.domain}/api/application/users?filter[email]=${encodeURIComponent(panelEmail)}`,
+          `${pteroServer.domain}/api/application/users?filter[username]=${encodeURIComponent(username)}`,
           {
             method: 'GET',
             headers: {
@@ -118,6 +118,8 @@ serve(async (req) => {
             },
           }
         );
+        
+        console.log('Find user response status:', findUserResponse.status);
 
         if (findUserResponse.ok) {
           const findUserData = await findUserResponse.json();
