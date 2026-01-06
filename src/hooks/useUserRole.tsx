@@ -14,7 +14,7 @@ interface UserRoleData {
 }
 
 export const useUserRole = (): UserRoleData => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<AppRole>('free');
   const [loading, setLoading] = useState(true);
 
@@ -47,12 +47,16 @@ export const useUserRole = (): UserRoleData => {
   };
 
   useEffect(() => {
+    // Wait for auth to finish loading before fetching role
+    if (authLoading) {
+      return;
+    }
     fetchRole();
-  }, [user]);
+  }, [user, authLoading]);
 
   return {
     role,
-    loading,
+    loading: authLoading || loading,
     isAdmin: role === 'admin',
     isPremium: role === 'premium' || role === 'reseller' || role === 'admin',
     isReseller: role === 'reseller' || role === 'admin',
