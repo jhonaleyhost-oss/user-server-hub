@@ -98,7 +98,7 @@ serve(async (req) => {
       const checkData = await checkUsernameResponse.json();
       if (checkData.data && checkData.data.length > 0) {
         console.log('Username already exists in Pterodactyl');
-        throw new Error(`Username "${username}" sudah digunakan di server panel. Silakan gunakan username lain.`);
+        throw new Error('Username sudah ada, gunakan username lain.');
       }
     }
 
@@ -118,7 +118,7 @@ serve(async (req) => {
       const checkEmailData = await checkEmailResponse.json();
       if (checkEmailData.data && checkEmailData.data.length > 0) {
         console.log('Email already exists in Pterodactyl');
-        throw new Error(`Email untuk username "${username}" sudah digunakan. Silakan gunakan username lain.`);
+        throw new Error('Username sudah ada, gunakan username lain.');
       }
     }
 
