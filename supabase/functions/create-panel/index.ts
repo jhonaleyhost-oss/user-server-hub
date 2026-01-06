@@ -79,6 +79,51 @@ serve(async (req) => {
     const panelEmail = `${username}@valtp.net`;
     const panelPassword = `${username}2323`;
 
+    // Step 0: Check if username or email already exists in Pterodactyl
+    console.log('Checking if username/email already exists...');
+    
+    // Check by username
+    const checkUsernameResponse = await fetch(
+      `${pteroServer.domain}/api/application/users?filter[username]=${encodeURIComponent(username)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${pteroServer.plta_key}`,
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (checkUsernameResponse.ok) {
+      const checkData = await checkUsernameResponse.json();
+      if (checkData.data && checkData.data.length > 0) {
+        console.log('Username already exists in Pterodactyl');
+        throw new Error(`Username "${username}" sudah digunakan di server panel. Silakan gunakan username lain.`);
+      }
+    }
+
+    // Check by email
+    const checkEmailResponse = await fetch(
+      `${pteroServer.domain}/api/application/users?filter[email]=${encodeURIComponent(panelEmail)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${pteroServer.plta_key}`,
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (checkEmailResponse.ok) {
+      const checkEmailData = await checkEmailResponse.json();
+      if (checkEmailData.data && checkEmailData.data.length > 0) {
+        console.log('Email already exists in Pterodactyl');
+        throw new Error(`Email untuk username "${username}" sudah digunakan. Silakan gunakan username lain.`);
+      }
+    }
+
+    console.log('Username and email are available, proceeding...');
+
     // Step 1: Create user in Pterodactyl
     console.log('Creating user in Pterodactyl...');
     const createUserResponse = await fetch(`${pteroServer.domain}/api/application/users`, {
@@ -101,45 +146,13 @@ serve(async (req) => {
 
     if (!createUserResponse.ok) {
       const errorText = await createUserResponse.text();
-      console.log('Create user response:', createUserResponse.status, errorText);
-      
-      // Check if user already exists (422 usually means duplicate)
-      if (createUserResponse.status === 422) {
-        console.log('User might already exist, trying to find existing user...');
-        
-        // Try to find existing user by username (since username is what's duplicated)
-        const findUserResponse = await fetch(
-          `${pteroServer.domain}/api/application/users?filter[username]=${encodeURIComponent(username)}`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${pteroServer.plta_key}`,
-              'Accept': 'application/json',
-            },
-          }
-        );
-        
-        console.log('Find user response status:', findUserResponse.status);
-
-        if (findUserResponse.ok) {
-          const findUserData = await findUserResponse.json();
-          if (findUserData.data && findUserData.data.length > 0) {
-            pteroUserId = findUserData.data[0].attributes.id;
-            console.log('Found existing user with ID:', pteroUserId);
-          } else {
-            throw new Error('User exists but could not be found');
-          }
-        } else {
-          throw new Error(`Failed to find existing user: ${await findUserResponse.text()}`);
-        }
-      } else {
-        throw new Error(`Failed to create Pterodactyl user: ${errorText}`);
-      }
-    } else {
-      const userResult = await createUserResponse.json();
-      pteroUserId = userResult.attributes.id;
-      console.log('Created Pterodactyl user with ID:', pteroUserId);
+      console.error('Create user error:', createUserResponse.status, errorText);
+      throw new Error(`Gagal membuat user di Pterodactyl: ${errorText}`);
     }
+
+    const userResult = await createUserResponse.json();
+    pteroUserId = userResult.attributes.id;
+    console.log('Created Pterodactyl user with ID:', pteroUserId);
 
     // Step 2: Create server in Pterodactyl
     console.log('Creating server in Pterodactyl...');
