@@ -384,12 +384,12 @@ const Dashboard = () => {
                     <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Unlimited RAM & CPU</li>
                       <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Create Panel Tanpa Batas</li>
-                      <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Akses 3 Private Server</li>
+                      <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Akses 2 Type Panel</li>
                       <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Akses Permanen</li>
                     </ul>
                     <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-emerald" /> Anti-Intip & Aman 100%</li>
-                      <li className="flex items-center gap-2"><Zap className="w-4 h-4 text-emerald" /> Server Private R16C8</li>
+                      <li className="flex items-center gap-2"><Zap className="w-4 h-4 text-emerald" /> Server Private Ram 32 Core 16</li>
                       <li className="flex items-center gap-2"><Code className="w-4 h-4 text-emerald" /> Support Python & Node.js</li>
                     </ul>
                   </div>
@@ -397,11 +397,11 @@ const Dashboard = () => {
                     <div className="text-center sm:text-left">
                       <p className="text-xs text-muted-foreground">Harga Spesial</p>
                       <p className="text-xl font-bold text-amber">
-                        Rp 10.000 <span className="text-xs font-normal text-muted-foreground">/lifetime</span>
+                        Rp 30.000 <span className="text-xs font-normal text-muted-foreground">/lifetime</span>
                       </p>
                     </div>
                     <Button className="w-full sm:w-auto bg-amber hover:bg-amber/90 text-background font-bold">
-                      Beli Akses Sekarang
+                      Buy? Langsung ke @upgradeuser_bot
                     </Button>
                   </div>
                 </div>
