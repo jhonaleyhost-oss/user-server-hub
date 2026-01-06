@@ -397,7 +397,7 @@ const Dashboard = () => {
                     <div className="text-center sm:text-left">
                       <p className="text-xs text-muted-foreground">Harga Spesial</p>
                       <p className="text-xl font-bold text-amber">
-                        Rp 30.000 <span className="text-xs font-normal text-muted-foreground">/lifetime</span>
+                        Rp 35.000 <span className="text-xs font-normal text-muted-foreground">/lifetime</span>
                       </p>
                     </div>
                     <Button className="w-full sm:w-auto bg-amber hover:bg-amber/90 text-background font-bold">
