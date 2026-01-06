@@ -400,8 +400,11 @@ const Dashboard = () => {
                         Rp 35.000 <span className="text-xs font-normal text-muted-foreground">/lifetime</span>
                       </p>
                     </div>
-                    <Button className="w-full sm:w-auto bg-amber hover:bg-amber/90 text-background font-bold">
-                      Buy? Langsung ke @upgradeuser_bot
+                    <Button 
+                      className="w-full sm:w-auto bg-amber hover:bg-amber/90 text-background font-bold"
+                      onClick={() => window.open('https://t.me/upgradeuser_bot', '_blank')}
+                    >
+                      Upgrade Ke Reseller
                     </Button>
                   </div>
                 </div>
