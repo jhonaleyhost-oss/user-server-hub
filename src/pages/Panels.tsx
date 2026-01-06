@@ -41,6 +41,8 @@ interface UserPanel {
   cpu: number;
   is_active: boolean;
   created_at: string;
+  ptero_server_id: number | null;
+  ptero_user_id: number | null;
   pterodactyl_servers: {
     name: string;
   };
@@ -53,6 +55,7 @@ const Panels = () => {
 
   const [panels, setPanels] = useState<UserPanel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
   const [waNumbers, setWaNumbers] = useState<Record<string, string>>({});
 
@@ -120,26 +123,34 @@ Login URL: ${panel.login_url}
   };
 
   const handleDelete = async (panelId: string) => {
+    setDeleting(panelId);
     try {
-      const { error } = await supabase
-        .from('user_panels')
-        .delete()
-        .eq('id', panelId);
+      // Call edge function to delete from Pterodactyl and database
+      const { data, error } = await supabase.functions.invoke('delete-panel', {
+        body: { panelId },
+      });
 
       if (error) throw error;
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Gagal menghapus panel');
+      }
 
       toast({
         title: 'Berhasil',
-        description: 'Panel berhasil dihapus.',
+        description: 'Panel berhasil dihapus dari server dan database.',
       });
 
       fetchPanels();
     } catch (err: any) {
+      console.error('Delete panel error:', err);
       toast({
         variant: 'destructive',
         title: 'Gagal',
         description: err.message || 'Gagal menghapus panel.',
       });
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -362,8 +373,9 @@ Login URL: ${panel.login_url}
                                   <AlertDialogAction
                                     onClick={() => handleDelete(panel.id)}
                                     className="bg-destructive hover:bg-destructive/90"
+                                    disabled={deleting === panel.id}
                                   >
-                                    Hapus
+                                    {deleting === panel.id ? 'Menghapus...' : 'Hapus'}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
