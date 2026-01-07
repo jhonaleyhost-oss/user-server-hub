@@ -105,7 +105,7 @@ interface UserPanel {
 }
 
 const Admin = () => {
-  const { user, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -138,15 +138,16 @@ const Admin = () => {
     egg_id: 15,
   });
 
+  // Jangan redirect saat auth masih loading (ini yang bikin "refresh"/bounce)
   useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-  }, [user]);
+    if (authLoading) return;
+    if (!user) navigate('/auth');
+  }, [authLoading, user, navigate]);
 
   useEffect(() => {
-    if (!roleLoading && !isAdmin) {
+    if (authLoading || roleLoading) return;
+
+    if (!isAdmin) {
       toast({
         variant: 'destructive',
         title: 'Akses Ditolak',
@@ -156,10 +157,8 @@ const Admin = () => {
       return;
     }
 
-    if (!roleLoading && isAdmin) {
-      fetchAllData();
-    }
-  }, [isAdmin, roleLoading]);
+    fetchAllData();
+  }, [authLoading, isAdmin, roleLoading, navigate, toast]);
 
   const fetchAllData = async () => {
     setLoading(true);
@@ -411,7 +410,7 @@ const Admin = () => {
     }
   };
 
-  if (loading || roleLoading) {
+  if (authLoading || roleLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <VideoBackground />
