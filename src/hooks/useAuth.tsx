@@ -62,12 +62,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    // Clear local state + local session even if the server session is already gone.
+    // Always clear local state regardless of server response
     setUser(null);
     setSession(null);
-
-    // "local" avoids the /logout 403 "Session not found" loop and still logs the user out in the app.
-    await supabase.auth.signOut({ scope: 'local' });
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      // Ignore errors - session might already be expired
+      console.log('Sign out completed');
+    }
   };
 
   return (
