@@ -16,6 +16,7 @@ import {
   Code,
   Terminal,
   Globe,
+  Send,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -236,7 +237,8 @@ const Dashboard = () => {
     }
   };
 
-  if (loading || roleLoading) {
+  // Show loading only while auth is loading, not during data fetch
+  if (roleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <VideoBackground />
@@ -401,9 +403,10 @@ const Dashboard = () => {
                       </p>
                     </div>
                     <Button 
-                      className="w-full sm:w-auto bg-amber hover:bg-amber/90 text-background font-bold"
+                      className="w-full sm:w-auto bg-amber hover:bg-amber/90 text-background font-bold gap-2"
                       onClick={() => window.open('https://t.me/upgradeuser_bot', '_blank')}
                     >
+                      <Send className="w-4 h-4" />
                       Upgrade Ke Reseller
                     </Button>
                   </div>
