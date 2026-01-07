@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -17,7 +17,9 @@ import {
   X,
   Eye,
   EyeOff,
+  Search,
 } from 'lucide-react';
+import AdminPagination from '@/components/AdminPagination';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -116,6 +118,13 @@ const Admin = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
 
+  // Pagination & Search
+  const ITEMS_PER_PAGE = 10;
+  const [usersPage, setUsersPage] = useState(1);
+  const [serversPage, setServersPage] = useState(1);
+  const [panelsPage, setPanelsPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Stats
   const [totalUsers, setTotalUsers] = useState(0);
   const [totalServers, setTotalServers] = useState(0);
@@ -137,6 +146,63 @@ const Admin = () => {
     location_id: 1,
     egg_id: 15,
   });
+
+  // Filtered & paginated data
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+    const q = searchQuery.toLowerCase();
+    return users.filter(
+      (u) =>
+        u.email.toLowerCase().includes(q) ||
+        (u.full_name?.toLowerCase().includes(q)) ||
+        u.role.toLowerCase().includes(q)
+    );
+  }, [users, searchQuery]);
+
+  const filteredServers = useMemo(() => {
+    if (!searchQuery.trim()) return servers;
+    const q = searchQuery.toLowerCase();
+    return servers.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.domain.toLowerCase().includes(q) ||
+        s.server_type.toLowerCase().includes(q)
+    );
+  }, [servers, searchQuery]);
+
+  const filteredPanels = useMemo(() => {
+    if (!searchQuery.trim()) return panels;
+    const q = searchQuery.toLowerCase();
+    return panels.filter(
+      (p) =>
+        p.username.toLowerCase().includes(q) ||
+        p.email.toLowerCase().includes(q) ||
+        p.login_url.toLowerCase().includes(q) ||
+        (p.profiles?.email.toLowerCase().includes(q))
+    );
+  }, [panels, searchQuery]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (usersPage - 1) * ITEMS_PER_PAGE;
+    return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredUsers, usersPage]);
+
+  const paginatedServers = useMemo(() => {
+    const start = (serversPage - 1) * ITEMS_PER_PAGE;
+    return filteredServers.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredServers, serversPage]);
+
+  const paginatedPanels = useMemo(() => {
+    const start = (panelsPage - 1) * ITEMS_PER_PAGE;
+    return filteredPanels.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredPanels, panelsPage]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setUsersPage(1);
+    setServersPage(1);
+    setPanelsPage(1);
+  }, [searchQuery]);
 
   // Jangan redirect saat auth masih loading (ini yang bikin "refresh"/bounce)
   useEffect(() => {
@@ -458,19 +524,30 @@ const Admin = () => {
 
         {/* Tabs */}
         <GlassCard className="p-6" delay={0.3}>
+          {/* Search Bar */}
+          <div className="relative mb-6">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Cari user, server, atau panel..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="input-glass pl-10"
+            />
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3 bg-secondary/50 mb-6">
               <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Users className="w-4 h-4 mr-2" />
-                Pengguna
+                Pengguna ({filteredUsers.length})
               </TabsTrigger>
               <TabsTrigger value="servers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Server className="w-4 h-4 mr-2" />
-                Server
+                Server ({filteredServers.length})
               </TabsTrigger>
               <TabsTrigger value="panels" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <HardDrive className="w-4 h-4 mr-2" />
-                Panel
+                Panel ({filteredPanels.length})
               </TabsTrigger>
             </TabsList>
 
@@ -488,84 +565,99 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((u) => (
-                      <TableRow key={u.id} className="border-border/30">
-                        <TableCell className="font-mono text-sm">{u.email}</TableCell>
-                        <TableCell>{u.full_name || '-'}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(u.role)}`}>
-                            {u.role}
-                          </span>
-                        </TableCell>
-                        <TableCell>{u.panel_creations_count}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => setEditingUser(u)}
-                                >
-                                  <UserCog className="w-4 h-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="glass-card">
-                                <DialogHeader>
-                                  <DialogTitle>Edit Role Pengguna</DialogTitle>
-                                  <DialogDescription>
-                                    Ubah role untuk {u.email}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="py-4">
-                                  <Label>Role</Label>
-                                  <Select
-                                    defaultValue={u.role}
-                                    onValueChange={(val) => updateUserRole(u.user_id, val as AppRole)}
-                                  >
-                                    <SelectTrigger className="input-glass mt-2">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="free">Free</SelectItem>
-                                      <SelectItem value="premium">Premium</SelectItem>
-                                      <SelectItem value="reseller">Reseller</SelectItem>
-                                      <SelectItem value="admin">Admin</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </DialogContent>
-                            </Dialog>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="glass-card">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Hapus Pengguna?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Yakin hapus {u.email}? Semua panel akan ikut terhapus.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Batal</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteUser(u.user_id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                  >
-                                    Hapus
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                    {paginatedUsers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data'}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedUsers.map((u) => (
+                        <TableRow key={u.id} className="border-border/30">
+                          <TableCell className="font-mono text-sm">{u.email}</TableCell>
+                          <TableCell>{u.full_name || '-'}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(u.role)}`}>
+                              {u.role}
+                            </span>
+                          </TableCell>
+                          <TableCell>{u.panel_creations_count}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setEditingUser(u)}
+                                  >
+                                    <UserCog className="w-4 h-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="glass-card">
+                                  <DialogHeader>
+                                    <DialogTitle>Edit Role Pengguna</DialogTitle>
+                                    <DialogDescription>
+                                      Ubah role untuk {u.email}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <div className="py-4">
+                                    <Label>Role</Label>
+                                    <Select
+                                      defaultValue={u.role}
+                                      onValueChange={(val) => updateUserRole(u.user_id, val as AppRole)}
+                                    >
+                                      <SelectTrigger className="input-glass mt-2">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="free">Free</SelectItem>
+                                        <SelectItem value="premium">Premium</SelectItem>
+                                        <SelectItem value="reseller">Reseller</SelectItem>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-destructive">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="glass-card">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Hapus Pengguna?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Yakin hapus {u.email}? Semua panel akan ikut terhapus.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteUser(u.user_id)}
+                                      className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                      Hapus
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
+                <AdminPagination
+                  currentPage={usersPage}
+                  totalPages={Math.ceil(filteredUsers.length / ITEMS_PER_PAGE)}
+                  onPageChange={setUsersPage}
+                  totalItems={filteredUsers.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                />
               </div>
             </TabsContent>
 
@@ -700,90 +792,105 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {servers.map((server) => (
-                      <TableRow key={server.id} className="border-border/30">
-                        <TableCell className="font-medium">{server.name}</TableCell>
-                        <TableCell className="font-mono text-sm text-primary">{server.domain}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            server.server_type === 'private' 
-                              ? 'bg-purple/20 text-purple' 
-                              : 'bg-emerald/20 text-emerald'
-                          }`}>
-                            {server.server_type}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-mono text-xs ${showKeys[`plta-${server.id}`] ? '' : 'blur-sm'}`}>
-                              {server.plta_key.slice(0, 15)}...
-                            </span>
-                            <button
-                              onClick={() => setShowKeys(prev => ({
-                                ...prev,
-                                [`plta-${server.id}`]: !prev[`plta-${server.id}`]
-                              }))}
-                              className="text-muted-foreground hover:text-foreground"
-                            >
-                              {showKeys[`plta-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                            </button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className={`font-mono text-xs ${showKeys[`pltc-${server.id}`] ? '' : 'blur-sm'}`}>
-                              {server.pltc_key.slice(0, 15)}...
-                            </span>
-                            <button
-                              onClick={() => setShowKeys(prev => ({
-                                ...prev,
-                                [`pltc-${server.id}`]: !prev[`pltc-${server.id}`]
-                              }))}
-                              className="text-muted-foreground hover:text-foreground"
-                            >
-                              {showKeys[`pltc-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                            </button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditServer(server)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="glass-card">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Hapus Server?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Yakin hapus "{server.name}"? Ini bisa mempengaruhi panel yang menggunakannya.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Batal</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => deleteServer(server.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                  >
-                                    Hapus
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                    {paginatedServers.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data'}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedServers.map((server) => (
+                        <TableRow key={server.id} className="border-border/30">
+                          <TableCell className="font-medium">{server.name}</TableCell>
+                          <TableCell className="font-mono text-sm text-primary">{server.domain}</TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              server.server_type === 'private' 
+                                ? 'bg-purple/20 text-purple' 
+                                : 'bg-emerald/20 text-emerald'
+                            }`}>
+                              {server.server_type}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-mono text-xs ${showKeys[`plta-${server.id}`] ? '' : 'blur-sm'}`}>
+                                {server.plta_key.slice(0, 15)}...
+                              </span>
+                              <button
+                                onClick={() => setShowKeys(prev => ({
+                                  ...prev,
+                                  [`plta-${server.id}`]: !prev[`plta-${server.id}`]
+                                }))}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                {showKeys[`plta-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-mono text-xs ${showKeys[`pltc-${server.id}`] ? '' : 'blur-sm'}`}>
+                                {server.pltc_key.slice(0, 15)}...
+                              </span>
+                              <button
+                                onClick={() => setShowKeys(prev => ({
+                                  ...prev,
+                                  [`pltc-${server.id}`]: !prev[`pltc-${server.id}`]
+                                }))}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                {showKeys[`pltc-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              </button>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditServer(server)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-destructive">
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="glass-card">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Hapus Server?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Yakin hapus "{server.name}"? Ini bisa mempengaruhi panel yang menggunakannya.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => deleteServer(server.id)}
+                                      className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                      Hapus
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
+                <AdminPagination
+                  currentPage={serversPage}
+                  totalPages={Math.ceil(filteredServers.length / ITEMS_PER_PAGE)}
+                  onPageChange={setServersPage}
+                  totalItems={filteredServers.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                />
               </div>
             </TabsContent>
 
@@ -802,43 +909,58 @@ const Admin = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {panels.map((panel) => (
-                      <TableRow key={panel.id} className="border-border/30">
-                        <TableCell className="font-mono">{panel.username}</TableCell>
-                        <TableCell>{panel.profiles?.email || '-'}</TableCell>
-                        <TableCell className="text-primary text-sm">{panel.login_url}</TableCell>
-                        <TableCell>{panel.ram === 0 ? '∞' : `${panel.ram}MB`}</TableCell>
-                        <TableCell>{panel.cpu === 0 ? '∞' : `${panel.cpu}%`}</TableCell>
-                        <TableCell>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-destructive">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="glass-card">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Hapus Panel?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Yakin hapus panel "{panel.username}"?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deletePanel(panel.id)}
-                                  className="bg-destructive hover:bg-destructive/90"
-                                >
-                                  Hapus
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                    {paginatedPanels.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data'}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      paginatedPanels.map((panel) => (
+                        <TableRow key={panel.id} className="border-border/30">
+                          <TableCell className="font-mono">{panel.username}</TableCell>
+                          <TableCell>{panel.profiles?.email || '-'}</TableCell>
+                          <TableCell className="text-primary text-sm">{panel.login_url}</TableCell>
+                          <TableCell>{panel.ram === 0 ? '∞' : `${panel.ram}MB`}</TableCell>
+                          <TableCell>{panel.cpu === 0 ? '∞' : `${panel.cpu}%`}</TableCell>
+                          <TableCell>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-destructive">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="glass-card">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Hapus Panel?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Yakin hapus panel "{panel.username}"?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deletePanel(panel.id)}
+                                    className="bg-destructive hover:bg-destructive/90"
+                                  >
+                                    Hapus
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
+                <AdminPagination
+                  currentPage={panelsPage}
+                  totalPages={Math.ceil(filteredPanels.length / ITEMS_PER_PAGE)}
+                  onPageChange={setPanelsPage}
+                  totalItems={filteredPanels.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                />
               </div>
             </TabsContent>
           </Tabs>
