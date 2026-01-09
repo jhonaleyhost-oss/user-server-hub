@@ -76,7 +76,7 @@ serve(async (req) => {
     const pteroServer: PterodactylServer = serverData;
     console.log('Pterodactyl server found:', pteroServer.domain);
 
-    const panelEmail = `${username}@valtp.net`;
+    const panelEmail = `${username}@gmail.com`;
     const panelPassword = `${username}2323`;
 
     // Step 0: Check if username or email already exists in Pterodactyl
