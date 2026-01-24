@@ -452,23 +452,40 @@ const Admin = () => {
         return;
       }
 
-      const userIds = nonAdminUsers.map((u) => u.user_id);
-      
-      // Delete profiles (which should cascade to user_roles)
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .in('user_id', userIds);
+      let deletedCount = 0;
+      let failedCount = 0;
 
-      if (error) throw error;
+      // Delete one by one to avoid .in() issues
+      for (const user of nonAdminUsers) {
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('user_id', user.user_id);
 
-      toast({
-        title: 'Berhasil',
-        description: `${nonAdminUsers.length} akun non-admin berhasil dihapus.`,
-      });
+        if (error) {
+          console.error(`Failed to delete user ${user.user_id}:`, error);
+          failedCount++;
+        } else {
+          deletedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        toast({
+          title: 'Berhasil',
+          description: `${deletedCount} akun non-admin berhasil dihapus.${failedCount > 0 ? ` ${failedCount} gagal.` : ''}`,
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal',
+          description: 'Tidak ada akun yang berhasil dihapus.',
+        });
+      }
 
       fetchAllData();
     } catch (err: any) {
+      console.error('Clear all error:', err);
       toast({
         variant: 'destructive',
         title: 'Gagal',
