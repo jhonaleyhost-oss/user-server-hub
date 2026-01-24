@@ -14,9 +14,10 @@ interface ServerStatus {
 interface Props {
   autoRefresh?: boolean;
   refreshInterval?: number; // in seconds
+  selectedServerId?: string; // ID of server currently used by user
 }
 
-const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30 }: Props) => {
+const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selectedServerId }: Props) => {
   const [statuses, setStatuses] = useState<ServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -96,38 +97,52 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30 }: Props
 
       {/* Server List */}
       <div className="space-y-2">
-        {statuses.map((server, idx) => (
-          <motion.div
-            key={server.serverId}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: idx * 0.1 }}
-            className={`flex items-center justify-between p-2 rounded-lg ${
-              server.isOnline ? 'bg-green-500/10' : 'bg-red-500/10'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {server.isOnline ? (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+        {statuses.map((server, idx) => {
+          const isSelected = selectedServerId === server.serverId;
+          return (
+            <motion.div
+              key={server.serverId}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.1 }}
+              className={`flex items-center justify-between p-2 rounded-lg border-2 transition-all ${
+                isSelected 
+                  ? 'bg-primary/20 border-primary shadow-[0_0_10px_rgba(var(--primary),0.3)]' 
+                  : server.isOnline 
+                    ? 'bg-green-500/10 border-transparent' 
+                    : 'bg-red-500/10 border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {server.isOnline ? (
+                  <span className="relative flex h-2 w-2">
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSelected ? 'bg-primary' : 'bg-green-400'}`}></span>
+                    <span className={`relative inline-flex rounded-full h-2 w-2 ${isSelected ? 'bg-primary' : 'bg-green-500'}`}></span>
+                  </span>
+                ) : (
+                  <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                )}
+                <span className={`text-sm font-medium ${isSelected ? 'text-primary' : ''}`}>
+                  {server.serverName}
                 </span>
-              ) : (
-                <span className="h-2 w-2 rounded-full bg-red-500"></span>
-              )}
-              <span className="text-sm font-medium">{server.serverName}</span>
-            </div>
-            
-            {server.isOnline ? (
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span>{server.totalServers} panel</span>
-                <span>{server.totalUsers} user</span>
+                {isSelected && (
+                  <span className="text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded-full font-medium">
+                    Anda
+                  </span>
+                )}
               </div>
-            ) : (
-              <span className="text-xs text-red-400">Offline</span>
-            )}
-          </motion.div>
-        ))}
+              
+              {server.isOnline ? (
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>{server.totalServers} panel</span>
+                  <span>{server.totalUsers} user</span>
+                </div>
+              ) : (
+                <span className="text-xs text-red-400">Offline</span>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* Last Updated */}
