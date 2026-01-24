@@ -77,47 +77,47 @@
   }
 
   .dark {
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 217 33% 12%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 217 33% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 98%;
 
     --primary: 347 77% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 10%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 65%;
 
     --accent: 271 81% 56%;
-    --accent-foreground: 210 40% 98%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
     --ring: 347 77% 50%;
 
     /* Dark gradients */
-    --gradient-card: linear-gradient(180deg, hsl(217 33% 17% / 0.4), hsl(222 47% 11% / 0.8));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 8% / 0.6), hsl(0 0% 0% / 0.9));
     --gradient-glow: radial-gradient(ellipse at center, hsl(347 77% 50% / 0.15), transparent 70%);
     --shadow-glow: 0 0 40px hsl(347 77% 50% / 0.25);
-    --shadow-card: 0 20px 40px hsl(0 0% 0% / 0.4);
+    --shadow-card: 0 20px 40px hsl(0 0% 0% / 0.6);
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 210 40% 98%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 347 77% 50%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 10%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 15%;
     --sidebar-ring: 347 77% 50%;
   }
 }
@@ -165,8 +165,9 @@
   }
 
   .dark .glass-card {
-    background: hsl(var(--slate-800) / 0.4);
-    box-shadow: 0 20px 40px hsl(0 0% 0% / 0.4);
+    background: hsl(0 0% 5% / 0.7);
+    box-shadow: 0 20px 40px hsl(0 0% 0% / 0.6);
+    border-color: hsl(0 0% 15% / 0.5);
   }
 
   .glass-card-hover {
