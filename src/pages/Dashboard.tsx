@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import VideoBackground from '@/components/VideoBackground';
+import ServerStatusDisplay from '@/components/ServerStatusDisplay';
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
 import Logo from '@/components/Logo';
@@ -312,6 +313,11 @@ const Dashboard = () => {
             value={`${panelCount}/${getMaxPanels()}`}
             delay={0.25}
           />
+        </div>
+
+        {/* Server Status */}
+        <div className="mb-6">
+          <ServerStatusDisplay />
         </div>
 
         {/* Admin Link */}
