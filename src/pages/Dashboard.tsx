@@ -26,6 +26,7 @@ import ServerStatusDisplay from '@/components/ServerStatusDisplay';
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
 import Logo from '@/components/Logo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -265,6 +266,7 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <Logo />
             <div className="flex items-center gap-2 w-full sm:w-auto">
+              <ThemeToggle />
               <Link
                 to="/panels"
                 className="btn-secondary flex-1 sm:flex-none flex items-center justify-center gap-2"

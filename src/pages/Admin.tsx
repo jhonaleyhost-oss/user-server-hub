@@ -32,6 +32,7 @@ import VideoBackground from '@/components/VideoBackground';
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
 import Logo from '@/components/Logo';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -773,7 +774,10 @@ const Admin = () => {
                 </div>
               </div>
             </div>
-            <Logo showText={false} />
+            <div className="flex items-center gap-3">
+              <ThemeToggle />
+              <Logo showText={false} />
+            </div>
           </div>
         </GlassCard>
 

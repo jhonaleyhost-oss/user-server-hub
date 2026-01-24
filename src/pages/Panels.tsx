@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import VideoBackground from '@/components/VideoBackground';
 import GlassCard from '@/components/GlassCard';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -191,13 +192,16 @@ Login URL: ${panel.login_url}
               Kelola semua server bot yang aktif
             </p>
           </div>
-          <Link
-            to="/"
-            className="btn-secondary flex items-center gap-2"
-          >
-            <Plus className="w-4 h-4 text-primary" />
-            <span className="hidden sm:inline">Buat Baru</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link
+              to="/"
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4 text-primary" />
+              <span className="hidden sm:inline">Buat Baru</span>
+            </Link>
+          </div>
         </motion.div>
 
         {/* Panels List */}
