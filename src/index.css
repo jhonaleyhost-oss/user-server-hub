@@ -400,4 +400,16 @@
   .glow-effect:hover::after {
     opacity: 0.5;
   }
+
+  /* Ripple animation for buttons */
+  @keyframes ripple-animation {
+    0% {
+      transform: scale(0);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
 }
