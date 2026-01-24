@@ -28,7 +28,7 @@ import AdminPagination from '@/components/AdminPagination';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
-import VideoBackground from '@/components/VideoBackground';
+
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
 import Logo from '@/components/Logo';
@@ -742,8 +742,7 @@ const Admin = () => {
 
   if (authLoading || roleLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <VideoBackground />
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="glass-card rounded-2xl p-8">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
           <p className="text-muted-foreground mt-4">Memuat data admin...</p>
@@ -753,8 +752,7 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen py-6 px-4">
-      <VideoBackground />
+    <div className="min-h-screen py-6 px-4 bg-background">
 
       <div className="w-full max-w-6xl mx-auto relative z-10">
         {/* Header */}

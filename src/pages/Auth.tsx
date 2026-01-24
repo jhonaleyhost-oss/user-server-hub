@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import VideoBackground from '@/components/VideoBackground';
+
 import GlassCard from '@/components/GlassCard';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -78,8 +78,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <VideoBackground />
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
 
       {/* Theme Toggle - Fixed Position */}
       <div className="fixed top-4 right-4 z-50">

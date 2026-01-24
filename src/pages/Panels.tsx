@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import VideoBackground from '@/components/VideoBackground';
+
 import GlassCard from '@/components/GlassCard';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -165,8 +165,7 @@ Login URL: ${panel.login_url}
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <VideoBackground />
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="glass-card rounded-2xl p-8">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
           <p className="text-muted-foreground mt-4">Memuat panel...</p>
@@ -176,8 +175,8 @@ Login URL: ${panel.login_url}
   }
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <VideoBackground />
+    <div className="min-h-screen py-8 px-4 bg-background">
+
 
       <div className="w-full max-w-3xl mx-auto relative z-10">
         {/* Header */}

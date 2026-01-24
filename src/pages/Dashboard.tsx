@@ -21,7 +21,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
-import VideoBackground from '@/components/VideoBackground';
+
 import ServerStatusDisplay from '@/components/ServerStatusDisplay';
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
@@ -246,8 +246,7 @@ const Dashboard = () => {
   // Show loading only while auth is loading, not during data fetch
   if (roleLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <VideoBackground />
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="glass-card rounded-2xl p-8">
           <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
           <p className="text-muted-foreground mt-4">Memuat...</p>
@@ -257,8 +256,8 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen py-6 px-4">
-      <VideoBackground />
+    <div className="min-h-screen py-6 px-4 bg-background">
+
 
       <div className="w-full max-w-2xl mx-auto relative z-10">
         {/* Header */}
