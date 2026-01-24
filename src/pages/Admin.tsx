@@ -144,7 +144,8 @@ const Admin = () => {
     current: number;
     deleted: number;
     failed: number;
-  }>({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0 });
+    type: 'users' | 'panels';
+  }>({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0, type: 'users' });
 
   // Server form state
   const [serverForm, setServerForm] = useState({
@@ -468,6 +469,7 @@ const Admin = () => {
         current: 0,
         deleted: 0,
         failed: 0,
+        type: 'users',
       });
 
       let deletedCount = 0;
@@ -508,11 +510,12 @@ const Admin = () => {
           current: processedCount,
           deleted: deletedCount,
           failed: failedCount,
+          type: 'users',
         });
       }
 
       // Reset progress
-      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0 });
+      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0, type: 'users' });
 
       if (deletedCount > 0) {
         toast({
@@ -530,7 +533,97 @@ const Admin = () => {
       fetchAllData();
     } catch (err: any) {
       console.error('Clear all error:', err);
-      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0 });
+      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0, type: 'users' });
+      toast({
+        variant: 'destructive',
+        title: 'Gagal',
+        description: err.message,
+      });
+    }
+  };
+
+  const clearAllPanels = async () => {
+    try {
+      if (panels.length === 0) {
+        toast({
+          title: 'Info',
+          description: 'Tidak ada panel untuk dihapus.',
+        });
+        return;
+      }
+
+      // Initialize progress
+      setClearingProgress({
+        isClearing: true,
+        total: panels.length,
+        current: 0,
+        deleted: 0,
+        failed: 0,
+        type: 'panels',
+      });
+
+      let deletedCount = 0;
+      let failedCount = 0;
+      let processedCount = 0;
+
+      // Delete in parallel batches of 10 for speed
+      const BATCH_SIZE = 10;
+      
+      for (let i = 0; i < panels.length; i += BATCH_SIZE) {
+        const batch = panels.slice(i, i + BATCH_SIZE);
+        
+        // Process batch in parallel
+        const results = await Promise.all(
+          batch.map(async (panel) => {
+            const { error } = await supabase
+              .from('user_panels')
+              .delete()
+              .eq('id', panel.id);
+            return { error };
+          })
+        );
+
+        // Count results
+        results.forEach((result) => {
+          processedCount++;
+          if (result.error) {
+            failedCount++;
+          } else {
+            deletedCount++;
+          }
+        });
+
+        // Update progress after each batch
+        setClearingProgress({
+          isClearing: true,
+          total: panels.length,
+          current: processedCount,
+          deleted: deletedCount,
+          failed: failedCount,
+          type: 'panels',
+        });
+      }
+
+      // Reset progress
+      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0, type: 'panels' });
+
+      if (deletedCount > 0) {
+        toast({
+          title: 'Berhasil',
+          description: `${deletedCount} panel berhasil dihapus.${failedCount > 0 ? ` ${failedCount} gagal.` : ''}`,
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal',
+          description: 'Tidak ada panel yang berhasil dihapus.',
+        });
+      }
+
+      fetchAllData();
+    } catch (err: any) {
+      console.error('Clear all panels error:', err);
+      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0, type: 'panels' });
       toast({
         variant: 'destructive',
         title: 'Gagal',
@@ -654,13 +747,13 @@ const Admin = () => {
 
             {/* Users Tab */}
             <TabsContent value="users">
-              {/* Progress Dialog */}
+              {/* Progress Dialog - shared for users and panels */}
               <Dialog open={clearingProgress.isClearing}>
                 <DialogContent className="glass-card sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Trash2 className="w-5 h-5 text-destructive animate-pulse" />
-                      Menghapus Akun...
+                      {clearingProgress.type === 'users' ? 'Menghapus Akun...' : 'Menghapus Panel...'}
                     </DialogTitle>
                     <DialogDescription>
                       Mohon tunggu, proses penghapusan sedang berlangsung.
@@ -1085,6 +1178,43 @@ const Admin = () => {
 
             {/* Panels Tab */}
             <TabsContent value="panels">
+              {/* Clear All Panels Button */}
+              <div className="flex justify-end mb-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="gap-2"
+                      disabled={panels.length === 0 || clearingProgress.isClearing}
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Clear All Panels ({panels.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="glass-card">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-5 h-5" />
+                        Hapus Semua Panel?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tindakan ini akan menghapus <strong>{panels.length}</strong> panel dari database. 
+                        Tindakan ini tidak dapat dibatalkan!
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={clearAllPanels}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Hapus Semua
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
