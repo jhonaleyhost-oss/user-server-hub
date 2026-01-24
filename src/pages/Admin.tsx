@@ -472,27 +472,40 @@ const Admin = () => {
 
       let deletedCount = 0;
       let failedCount = 0;
+      let processedCount = 0;
 
-      // Delete one by one to avoid .in() issues
-      for (let i = 0; i < nonAdminUsers.length; i++) {
-        const user = nonAdminUsers[i];
-        const { error } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('user_id', user.user_id);
+      // Delete in parallel batches of 10 for speed
+      const BATCH_SIZE = 10;
+      
+      for (let i = 0; i < nonAdminUsers.length; i += BATCH_SIZE) {
+        const batch = nonAdminUsers.slice(i, i + BATCH_SIZE);
+        
+        // Process batch in parallel
+        const results = await Promise.all(
+          batch.map(async (user) => {
+            const { error } = await supabase
+              .from('profiles')
+              .delete()
+              .eq('user_id', user.user_id);
+            return { error };
+          })
+        );
 
-        if (error) {
-          console.error(`Failed to delete user ${user.user_id}:`, error);
-          failedCount++;
-        } else {
-          deletedCount++;
-        }
+        // Count results
+        results.forEach((result) => {
+          processedCount++;
+          if (result.error) {
+            failedCount++;
+          } else {
+            deletedCount++;
+          }
+        });
 
-        // Update progress
+        // Update progress after each batch
         setClearingProgress({
           isClearing: true,
           total: nonAdminUsers.length,
-          current: i + 1,
+          current: processedCount,
           deleted: deletedCount,
           failed: failedCount,
         });
