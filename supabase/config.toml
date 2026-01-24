@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.check-server-status]
 verify_jwt = false
+
+[functions.public-server-status]
+verify_jwt = false

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import VideoBackground from '@/components/VideoBackground';
 import GlassCard from '@/components/GlassCard';
 import Logo from '@/components/Logo';
+import ServerStatusDisplay from '@/components/ServerStatusDisplay';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -209,12 +210,22 @@ const Auth = () => {
           </div>
         </GlassCard>
 
+        {/* Server Status */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="mt-6"
+        >
+          <ServerStatusDisplay autoRefresh={true} refreshInterval={30} />
+        </motion.div>
+
         {/* Features */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
-          className="mt-8 grid grid-cols-3 gap-4"
+          className="mt-6 grid grid-cols-3 gap-4"
         >
           {[
             { icon: Zap, label: 'Deploy Cepat' },
