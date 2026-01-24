@@ -29,9 +29,9 @@ const Logo = ({ size = 'md', showText = true }: LogoProps) => {
       {showText && (
         <div>
           <h1 className="font-bold text-lg leading-none tracking-tight text-foreground">
-            Panel Creator
+            Jhonaley Store Cpanel
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5 font-mono">v2.0 Stable</p>
+          <p className="text-xs text-muted-foreground mt-0.5 font-mono">v5.0 Stable</p>
         </div>
       )}
     </div>
