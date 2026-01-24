@@ -266,6 +266,17 @@ const Admin = () => {
     }
   }, [servers, loading]);
 
+  // Auto-refresh server statuses every 30 seconds
+  useEffect(() => {
+    if (servers.length === 0) return;
+
+    const interval = setInterval(() => {
+      checkServerStatuses(servers);
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [servers]);
+
   const fetchUsers = async () => {
     try {
       const { data: profiles, error: profilesError } = await supabase
