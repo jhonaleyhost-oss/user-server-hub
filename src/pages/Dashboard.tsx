@@ -21,6 +21,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
+import { PageTransition } from '@/components/PageTransition';
 
 import ServerStatusDisplay from '@/components/ServerStatusDisplay';
 import GlassCard from '@/components/GlassCard';
@@ -257,6 +258,7 @@ const Dashboard = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen py-6 px-4 bg-background">
 
 
@@ -549,6 +551,7 @@ const Dashboard = () => {
         </p>
       </div>
     </div>
+    </PageTransition>
   );
 };
 

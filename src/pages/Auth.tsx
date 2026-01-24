@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Zap } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { PageTransition } from '@/components/PageTransition';
 
 import GlassCard from '@/components/GlassCard';
 import Logo from '@/components/Logo';
@@ -79,6 +80,7 @@ const Auth = () => {
   };
 
   return (
+    <PageTransition>
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
 
       {/* Theme & Accent Toggle - Fixed Position */}
@@ -244,6 +246,7 @@ const Auth = () => {
         </p>
       </div>
     </div>
+    </PageTransition>
   );
 };
 
