@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.delete-panel]
 verify_jwt = false
+
+[functions.check-server-status]
+verify_jwt = false
