@@ -190,29 +190,31 @@ const Dashboard = () => {
       const diskMB = ram === 'unli' ? 0 : parseInt(ram) * 1024;
 
       // Call edge function to create panel in Pterodactyl
-      const { data: session } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabase.auth.getSession();
       
-      const { data, error } = await supabase.functions.invoke('create-panel', {
-        body: {
-          username: username,
-          serverId: selectedServer,
-          ram: ramMB,
-          cpu: cpuPercent,
-          disk: diskMB,
-        },
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-panel`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${sessionData?.session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({
+            username: username,
+            serverId: selectedServer,
+            ram: ramMB,
+            cpu: cpuPercent,
+            disk: diskMB,
+          }),
+        }
+      );
 
-      // Handle edge function invocation error
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Gagal menghubungi server');
-      }
+      const data = await response.json();
       
-      // Handle API response error
-      if (!data?.success) {
-        const apiError = data?.error || 'Gagal membuat panel';
-        console.error('API error:', apiError);
-        throw new Error(apiError);
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || 'Gagal membuat panel');
       }
 
       toast({
