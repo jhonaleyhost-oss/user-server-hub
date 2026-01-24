@@ -137,6 +137,15 @@ const Admin = () => {
   const [newServer, setNewServer] = useState(false);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
+  // Clear all progress
+  const [clearingProgress, setClearingProgress] = useState<{
+    isClearing: boolean;
+    total: number;
+    current: number;
+    deleted: number;
+    failed: number;
+  }>({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0 });
+
   // Server form state
   const [serverForm, setServerForm] = useState({
     name: '',
@@ -452,11 +461,21 @@ const Admin = () => {
         return;
       }
 
+      // Initialize progress
+      setClearingProgress({
+        isClearing: true,
+        total: nonAdminUsers.length,
+        current: 0,
+        deleted: 0,
+        failed: 0,
+      });
+
       let deletedCount = 0;
       let failedCount = 0;
 
       // Delete one by one to avoid .in() issues
-      for (const user of nonAdminUsers) {
+      for (let i = 0; i < nonAdminUsers.length; i++) {
+        const user = nonAdminUsers[i];
         const { error } = await supabase
           .from('profiles')
           .delete()
@@ -468,7 +487,19 @@ const Admin = () => {
         } else {
           deletedCount++;
         }
+
+        // Update progress
+        setClearingProgress({
+          isClearing: true,
+          total: nonAdminUsers.length,
+          current: i + 1,
+          deleted: deletedCount,
+          failed: failedCount,
+        });
       }
+
+      // Reset progress
+      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0 });
 
       if (deletedCount > 0) {
         toast({
@@ -486,6 +517,7 @@ const Admin = () => {
       fetchAllData();
     } catch (err: any) {
       console.error('Clear all error:', err);
+      setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0 });
       toast({
         variant: 'destructive',
         title: 'Gagal',
@@ -609,6 +641,57 @@ const Admin = () => {
 
             {/* Users Tab */}
             <TabsContent value="users">
+              {/* Progress Dialog */}
+              <Dialog open={clearingProgress.isClearing}>
+                <DialogContent className="glass-card sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Trash2 className="w-5 h-5 text-destructive animate-pulse" />
+                      Menghapus Akun...
+                    </DialogTitle>
+                    <DialogDescription>
+                      Mohon tunggu, proses penghapusan sedang berlangsung.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4 space-y-4">
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-medium">
+                          {clearingProgress.current} / {clearingProgress.total}
+                        </span>
+                      </div>
+                      <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-destructive to-destructive/70"
+                          initial={{ width: 0 }}
+                          animate={{ 
+                            width: `${(clearingProgress.current / clearingProgress.total) * 100}%` 
+                          }}
+                          transition={{ duration: 0.3 }}
+                        />
+                      </div>
+                      <div className="text-center text-sm font-medium">
+                        {Math.round((clearingProgress.current / clearingProgress.total) * 100)}%
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-green-500">{clearingProgress.deleted}</div>
+                        <div className="text-xs text-muted-foreground">Berhasil</div>
+                      </div>
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                        <div className="text-2xl font-bold text-red-500">{clearingProgress.failed}</div>
+                        <div className="text-xs text-muted-foreground">Gagal</div>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               {/* Clear All Button */}
               <div className="flex justify-end mb-4">
                 <AlertDialog>
@@ -616,7 +699,7 @@ const Admin = () => {
                     <Button
                       variant="destructive"
                       className="gap-2"
-                      disabled={users.filter((u) => u.role !== 'admin').length === 0}
+                      disabled={users.filter((u) => u.role !== 'admin').length === 0 || clearingProgress.isClearing}
                     >
                       <AlertTriangle className="w-4 h-4" />
                       Clear All ({users.filter((u) => u.role !== 'admin').length})
