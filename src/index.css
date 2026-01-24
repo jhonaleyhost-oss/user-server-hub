@@ -174,27 +174,63 @@
     position: relative;
   }
 
-  /* Subtle background gradient */
-  body::before {
+  /* Animated background gradient */
+  body::before,
+  body::after {
     content: '';
     position: fixed;
-    inset: 0;
+    inset: -50%;
     z-index: -1;
     pointer-events: none;
+    opacity: 0.6;
+  }
+
+  body::before {
+    animation: gradient-rotate 25s ease-in-out infinite;
+  }
+
+  body::after {
+    animation: gradient-rotate 30s ease-in-out infinite reverse;
+    opacity: 0.4;
   }
 
   :root body::before {
     background: 
-      radial-gradient(ellipse 100% 80% at 50% -30%, hsl(var(--primary) / 0.12), transparent 60%),
-      radial-gradient(ellipse 80% 60% at 100% 100%, hsl(var(--accent) / 0.1), transparent 50%),
-      radial-gradient(ellipse 60% 50% at 0% 70%, hsl(var(--primary) / 0.08), transparent 50%);
+      radial-gradient(ellipse 50% 40% at 30% 30%, hsl(var(--primary) / 0.2), transparent 70%),
+      radial-gradient(ellipse 40% 50% at 70% 70%, hsl(var(--accent) / 0.15), transparent 70%);
+  }
+
+  :root body::after {
+    background: 
+      radial-gradient(ellipse 45% 35% at 60% 20%, hsl(var(--accent) / 0.12), transparent 70%),
+      radial-gradient(ellipse 35% 45% at 20% 80%, hsl(var(--primary) / 0.1), transparent 70%);
   }
 
   .dark body::before {
     background: 
-      radial-gradient(ellipse 100% 80% at 50% -30%, hsl(var(--primary) / 0.2), transparent 60%),
-      radial-gradient(ellipse 80% 60% at 100% 100%, hsl(var(--accent) / 0.15), transparent 50%),
-      radial-gradient(ellipse 60% 50% at 0% 70%, hsl(var(--primary) / 0.12), transparent 50%);
+      radial-gradient(ellipse 50% 40% at 30% 30%, hsl(var(--primary) / 0.35), transparent 70%),
+      radial-gradient(ellipse 40% 50% at 70% 70%, hsl(var(--accent) / 0.25), transparent 70%);
+  }
+
+  .dark body::after {
+    background: 
+      radial-gradient(ellipse 45% 35% at 60% 20%, hsl(var(--accent) / 0.2), transparent 70%),
+      radial-gradient(ellipse 35% 45% at 20% 80%, hsl(var(--primary) / 0.15), transparent 70%);
+  }
+
+  @keyframes gradient-rotate {
+    0%, 100% {
+      transform: rotate(0deg) scale(1);
+    }
+    25% {
+      transform: rotate(5deg) scale(1.05);
+    }
+    50% {
+      transform: rotate(0deg) scale(1.1);
+    }
+    75% {
+      transform: rotate(-5deg) scale(1.05);
+    }
   }
 
   /* Custom scrollbar */
