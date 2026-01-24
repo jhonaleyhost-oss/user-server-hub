@@ -17,6 +17,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 import GlassCard from '@/components/GlassCard';
 import ThemeToggle from '@/components/ThemeToggle';
+import AccentColorPicker from '@/components/AccentColorPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -192,6 +193,7 @@ Login URL: ${panel.login_url}
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <AccentColorPicker />
             <ThemeToggle />
             <Link
               to="/"

@@ -33,6 +33,7 @@ import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
+import AccentColorPicker from '@/components/AccentColorPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -773,8 +774,8 @@ const Admin = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <AccentColorPicker />
               <ThemeToggle />
-              <Logo showText={false} />
             </div>
           </div>
         </GlassCard>

@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import GlassCard from '@/components/GlassCard';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
+import AccentColorPicker from '@/components/AccentColorPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,8 +81,9 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
 
-      {/* Theme Toggle - Fixed Position */}
-      <div className="fixed top-4 right-4 z-50">
+      {/* Theme & Accent Toggle - Fixed Position */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-2">
+        <AccentColorPicker />
         <ThemeToggle />
       </div>
 

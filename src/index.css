@@ -57,12 +57,12 @@
     --slate-300: 213 27% 84%;
 
     /* Light mode gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(347 77% 50%), hsl(271 81% 56%));
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100% / 0.9), hsl(210 40% 98% / 0.95));
-    --gradient-glow: radial-gradient(ellipse at center, hsl(347 77% 50% / 0.1), transparent 70%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(var(--primary) / 0.1), transparent 70%);
 
     /* Light shadows */
-    --shadow-glow: 0 0 40px hsl(347 77% 50% / 0.15);
+    --shadow-glow: 0 0 40px hsl(var(--primary) / 0.15);
     --shadow-card: 0 4px 20px hsl(222 47% 11% / 0.08);
 
     /* Sidebar */
@@ -74,6 +74,31 @@
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 347 77% 50%;
+  }
+
+  /* Accent Color Variants */
+  :root.accent-pink, .dark.accent-pink {
+    --primary: 347 77% 50%;
+    --accent: 330 81% 60%;
+    --ring: 347 77% 50%;
+  }
+
+  :root.accent-blue, .dark.accent-blue {
+    --primary: 217 91% 60%;
+    --accent: 199 89% 48%;
+    --ring: 217 91% 60%;
+  }
+
+  :root.accent-green, .dark.accent-green {
+    --primary: 142 71% 45%;
+    --accent: 160 84% 39%;
+    --ring: 142 71% 45%;
+  }
+
+  :root.accent-orange, .dark.accent-orange {
+    --primary: 25 95% 53%;
+    --accent: 38 92% 50%;
+    --ring: 25 95% 53%;
   }
 
   .dark {
@@ -146,6 +171,30 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Plus Jakarta Sans', sans-serif;
+    position: relative;
+  }
+
+  /* Subtle background gradient */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  :root body::before {
+    background: 
+      radial-gradient(ellipse 100% 80% at 50% -30%, hsl(var(--primary) / 0.12), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 100% 100%, hsl(var(--accent) / 0.1), transparent 50%),
+      radial-gradient(ellipse 60% 50% at 0% 70%, hsl(var(--primary) / 0.08), transparent 50%);
+  }
+
+  .dark body::before {
+    background: 
+      radial-gradient(ellipse 100% 80% at 50% -30%, hsl(var(--primary) / 0.2), transparent 60%),
+      radial-gradient(ellipse 80% 60% at 100% 100%, hsl(var(--accent) / 0.15), transparent 50%),
+      radial-gradient(ellipse 60% 50% at 0% 70%, hsl(var(--primary) / 0.12), transparent 50%);
   }
 
   /* Custom scrollbar */
