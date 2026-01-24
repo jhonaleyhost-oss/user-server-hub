@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/useAuth';
 import VideoBackground from '@/components/VideoBackground';
 import GlassCard from '@/components/GlassCard';
 import Logo from '@/components/Logo';
-import ServerStatusDisplay from '@/components/ServerStatusDisplay';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -209,16 +208,6 @@ const Auth = () => {
             </p>
           </div>
         </GlassCard>
-
-        {/* Server Status */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.25 }}
-          className="mt-6"
-        >
-          <ServerStatusDisplay autoRefresh={true} refreshInterval={30} />
-        </motion.div>
 
         {/* Features */}
         <motion.div
