@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { Home, Ghost } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
+import { PageTransition } from "@/components/PageTransition";
 
 const NotFound = () => {
   return (
+    <PageTransition>
     <div className="min-h-screen flex items-center justify-center p-4 bg-background">
       <GlassCard className="text-center p-12 max-w-md">
         <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
@@ -25,6 +27,7 @@ const NotFound = () => {
         </Link>
       </GlassCard>
     </div>
+    </PageTransition>
   );
 };
 

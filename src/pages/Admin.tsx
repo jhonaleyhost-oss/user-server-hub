@@ -28,6 +28,7 @@ import AdminPagination from '@/components/AdminPagination';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
+import { PageTransition } from '@/components/PageTransition';
 
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
@@ -753,6 +754,7 @@ const Admin = () => {
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen py-6 px-4 bg-background">
 
       <div className="w-full max-w-6xl mx-auto relative z-10">
@@ -1413,6 +1415,7 @@ const Admin = () => {
         </p>
       </div>
     </div>
+    </PageTransition>
   );
 };
 

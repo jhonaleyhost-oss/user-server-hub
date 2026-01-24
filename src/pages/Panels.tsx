@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { PageTransition } from '@/components/PageTransition';
 
 import GlassCard from '@/components/GlassCard';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -176,6 +177,7 @@ Login URL: ${panel.login_url}
   }
 
   return (
+    <PageTransition>
     <div className="min-h-screen py-8 px-4 bg-background">
 
 
@@ -409,6 +411,7 @@ Login URL: ${panel.login_url}
         </motion.div>
       </div>
     </div>
+    </PageTransition>
   );
 };
 
