@@ -19,6 +19,10 @@ import {
   EyeOff,
   Search,
   AlertTriangle,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Loader2,
 } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
 import { useAuth } from '@/hooks/useAuth';
@@ -92,6 +96,14 @@ interface PterodactylServer {
   created_at: string;
 }
 
+interface ServerStatus {
+  serverId: string;
+  isOnline: boolean;
+  totalServers: number;
+  totalUsers: number;
+  error?: string;
+}
+
 interface UserPanel {
   id: string;
   username: string;
@@ -136,6 +148,10 @@ const Admin = () => {
   const [editingServer, setEditingServer] = useState<PterodactylServer | null>(null);
   const [newServer, setNewServer] = useState(false);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+
+  // Server status
+  const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({});
+  const [checkingStatus, setCheckingStatus] = useState(false);
 
   // Clear all progress
   const [clearingProgress, setClearingProgress] = useState<{
@@ -239,9 +255,16 @@ const Admin = () => {
 
   const fetchAllData = async () => {
     setLoading(true);
-    await Promise.all([fetchUsers(), fetchServers(), fetchPanels()]);
+    const [, serversResult] = await Promise.all([fetchUsers(), fetchServers(), fetchPanels()]);
     setLoading(false);
   };
+
+  // Check server statuses when servers change
+  useEffect(() => {
+    if (servers.length > 0 && !loading) {
+      checkServerStatuses(servers);
+    }
+  }, [servers, loading]);
 
   const fetchUsers = async () => {
     try {
@@ -285,6 +308,41 @@ const Admin = () => {
       setTotalServers(data?.length || 0);
     } catch (err) {
       console.error('Error fetching servers:', err);
+    }
+  };
+
+  const checkServerStatuses = async (serverList?: PterodactylServer[]) => {
+    const serversToCheck = serverList || servers;
+    if (serversToCheck.length === 0) return;
+
+    setCheckingStatus(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.error('No session for status check');
+        return;
+      }
+
+      const response = await supabase.functions.invoke('check-server-status', {
+        body: { serverIds: serversToCheck.map(s => s.id) },
+      });
+
+      if (response.error) {
+        console.error('Error checking server status:', response.error);
+        return;
+      }
+
+      const { statuses } = response.data;
+      const statusMap: Record<string, ServerStatus> = {};
+      statuses.forEach((status: ServerStatus) => {
+        statusMap[status.serverId] = status;
+      });
+
+      setServerStatuses(statusMap);
+    } catch (err) {
+      console.error('Error checking server statuses:', err);
+    } finally {
+      setCheckingStatus(false);
     }
   };
 
@@ -945,7 +1003,22 @@ const Admin = () => {
 
             {/* Servers Tab */}
             <TabsContent value="servers">
-              <div className="flex justify-end mb-4">
+              <div className="flex justify-between items-center mb-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => checkServerStatuses()}
+                  disabled={checkingStatus}
+                  className="gap-2"
+                >
+                  {checkingStatus ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Refresh Status
+                </Button>
+
                 <Dialog open={newServer || !!editingServer} onOpenChange={(open) => {
                   if (!open) {
                     setNewServer(false);
@@ -1065,9 +1138,11 @@ const Admin = () => {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border/50">
+                      <TableHead>Status</TableHead>
                       <TableHead>Nama</TableHead>
                       <TableHead>Domain</TableHead>
                       <TableHead>Tipe</TableHead>
+                      <TableHead>Panels</TableHead>
                       <TableHead>PLTA Key</TableHead>
                       <TableHead>PLTC Key</TableHead>
                       <TableHead>Aksi</TableHead>
@@ -1076,24 +1151,56 @@ const Admin = () => {
                   <TableBody>
                     {paginatedServers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                           {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data'}
                         </TableCell>
                       </TableRow>
                     ) : (
-                      paginatedServers.map((server) => (
-                        <TableRow key={server.id} className="border-border/30">
-                          <TableCell className="font-medium">{server.name}</TableCell>
-                          <TableCell className="font-mono text-sm text-primary">{server.domain}</TableCell>
-                          <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              server.server_type === 'private' 
-                                ? 'bg-purple/20 text-purple' 
-                                : 'bg-emerald/20 text-emerald'
-                            }`}>
-                              {server.server_type}
-                            </span>
-                          </TableCell>
+                      paginatedServers.map((server) => {
+                        const status = serverStatuses[server.id];
+                        return (
+                          <TableRow key={server.id} className="border-border/30">
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {checkingStatus && !status ? (
+                                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                                ) : status?.isOnline ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="relative flex h-2.5 w-2.5">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                                    </span>
+                                    <span className="text-xs text-green-500 font-medium">Online</span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span>
+                                    <span className="text-xs text-red-500 font-medium">Offline</span>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium">{server.name}</TableCell>
+                            <TableCell className="font-mono text-sm text-primary">{server.domain}</TableCell>
+                            <TableCell>
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                server.server_type === 'private' 
+                                  ? 'bg-purple/20 text-purple' 
+                                  : 'bg-emerald/20 text-emerald'
+                              }`}>
+                                {server.server_type}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {status?.isOnline ? (
+                                <div className="flex flex-col">
+                                  <span className="text-sm font-medium">{status.totalServers} panel</span>
+                                  <span className="text-xs text-muted-foreground">{status.totalUsers} user</span>
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-sm">-</span>
+                              )}
+                            </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <span className={`font-mono text-xs ${showKeys[`plta-${server.id}`] ? '' : 'blur-sm'}`}>
@@ -1162,7 +1269,8 @@ const Admin = () => {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
