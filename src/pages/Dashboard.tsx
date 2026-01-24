@@ -64,6 +64,7 @@ const Dashboard = () => {
   const [servers, setServers] = useState<PterodactylServer[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [panelCount, setPanelCount] = useState(0);
+  const [userServerId, setUserServerId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
@@ -110,13 +111,16 @@ const Dashboard = () => {
         setProfile(profileData);
       }
 
-      // Fetch user's panels count
-      const { count } = await supabase
+      // Fetch user's panels count and get server_id of first panel
+      const { data: panelsData, count } = await supabase
         .from('user_panels')
-        .select('*', { count: 'exact', head: true })
+        .select('server_id', { count: 'exact' })
         .eq('user_id', user.id);
       
       setPanelCount(count || 0);
+      if (panelsData && panelsData.length > 0) {
+        setUserServerId(panelsData[0].server_id);
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -317,7 +321,7 @@ const Dashboard = () => {
 
         {/* Server Status */}
         <div className="mb-6">
-          <ServerStatusDisplay />
+          <ServerStatusDisplay selectedServerId={userServerId} />
         </div>
 
         {/* Admin Link */}
