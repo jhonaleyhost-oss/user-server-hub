@@ -450,7 +450,7 @@ const Dashboard = () => {
                 <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Contoh: my-bot-v1"
+                  placeholder="Contoh: Jhonaley"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
