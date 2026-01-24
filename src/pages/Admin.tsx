@@ -18,6 +18,7 @@ import {
   Eye,
   EyeOff,
   Search,
+  AlertTriangle,
 } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
 import { useAuth } from '@/hooks/useAuth';
@@ -438,6 +439,44 @@ const Admin = () => {
     }
   };
 
+  const clearAllNonAdminUsers = async () => {
+    try {
+      // Get all non-admin user IDs
+      const nonAdminUsers = users.filter((u) => u.role !== 'admin');
+      
+      if (nonAdminUsers.length === 0) {
+        toast({
+          title: 'Info',
+          description: 'Tidak ada akun non-admin untuk dihapus.',
+        });
+        return;
+      }
+
+      const userIds = nonAdminUsers.map((u) => u.user_id);
+      
+      // Delete profiles (which should cascade to user_roles)
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .in('user_id', userIds);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Berhasil',
+        description: `${nonAdminUsers.length} akun non-admin berhasil dihapus.`,
+      });
+
+      fetchAllData();
+    } catch (err: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal',
+        description: err.message,
+      });
+    }
+  };
+
   const resetServerForm = () => {
     setServerForm({
       name: '',
@@ -553,6 +592,43 @@ const Admin = () => {
 
             {/* Users Tab */}
             <TabsContent value="users">
+              {/* Clear All Button */}
+              <div className="flex justify-end mb-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="gap-2"
+                      disabled={users.filter((u) => u.role !== 'admin').length === 0}
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Clear All ({users.filter((u) => u.role !== 'admin').length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="glass-card">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-5 h-5" />
+                        Hapus Semua Akun Non-Admin?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tindakan ini akan menghapus <strong>{users.filter((u) => u.role !== 'admin').length}</strong> akun beserta semua panel mereka. 
+                        Akun admin akan tetap aman. Tindakan ini tidak dapat dibatalkan!
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={clearAllNonAdminUsers}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Hapus Semua
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
