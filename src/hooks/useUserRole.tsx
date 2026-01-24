@@ -47,16 +47,23 @@ export const useUserRole = (): UserRoleData => {
   };
 
   useEffect(() => {
-    // Wait for auth to finish loading before fetching role
+    // If auth is still loading, keep our loading state true
     if (authLoading) {
+      setLoading(true);
       return;
     }
+    
+    // Auth finished loading - fetch role
     fetchRole();
   }, [user, authLoading]);
 
+  // Only show loading while auth is loading OR while we're fetching the role
+  // But once auth is done and we have no user, we're not loading
+  const isLoading = authLoading || (user ? loading : false);
+
   return {
     role,
-    loading: authLoading || loading,
+    loading: isLoading,
     isAdmin: role === 'admin',
     isPremium: role === 'premium' || role === 'reseller' || role === 'admin',
     isReseller: role === 'reseller' || role === 'admin',
