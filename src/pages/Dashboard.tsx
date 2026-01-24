@@ -202,10 +202,17 @@ const Dashboard = () => {
         },
       });
 
-      if (error) throw error;
+      // Handle edge function invocation error
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Gagal menghubungi server');
+      }
       
-      if (!data.success) {
-        throw new Error(data.error || 'Gagal membuat panel');
+      // Handle API response error
+      if (!data?.success) {
+        const apiError = data?.error || 'Gagal membuat panel';
+        console.error('API error:', apiError);
+        throw new Error(apiError);
       }
 
       toast({
@@ -217,10 +224,22 @@ const Dashboard = () => {
       fetchData();
     } catch (err: any) {
       console.error('Create panel error:', err);
+      
+      // Extract error message from various error formats
+      let errorMessage = 'Terjadi kesalahan.';
+      
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (err?.error) {
+        errorMessage = err.error;
+      }
+      
       toast({
         variant: 'destructive',
         title: 'Gagal Membuat Panel',
-        description: err.message || 'Terjadi kesalahan.',
+        description: errorMessage,
       });
     } finally {
       setSubmitting(false);
