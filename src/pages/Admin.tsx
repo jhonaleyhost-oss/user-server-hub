@@ -1054,13 +1054,13 @@ const Admin = () => {
                       Tambah Server
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="glass-card max-w-lg">
+                  <DialogContent className="glass-card max-w-lg max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
                         {editingServer ? 'Edit Server' : 'Tambah Server Baru'}
                       </DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-5 py-4">
                       <div className="space-y-2">
                         <Label>Nama Server</Label>
                         <Input
@@ -1097,7 +1097,7 @@ const Admin = () => {
                           placeholder="ptlc_xxx"
                         />
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label>Tipe</Label>
                           <Select
