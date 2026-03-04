@@ -823,7 +823,7 @@ const Admin = () => {
             <TabsContent value="users">
               {/* Progress Dialog - shared for users and panels */}
               <Dialog open={clearingProgress.isClearing}>
-                <DialogContent className="glass-card sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+                <DialogContent className="bg-card border border-border rounded-xl sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                       <Trash2 className="w-5 h-5 text-destructive animate-pulse" />
@@ -885,7 +885,7 @@ const Admin = () => {
                       Clear All ({users.filter((u) => u.role !== 'admin').length})
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="glass-card">
+                  <AlertDialogContent className="bg-card border border-border rounded-xl">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="w-5 h-5" />
@@ -950,7 +950,7 @@ const Admin = () => {
                                     <UserCog className="w-4 h-4" />
                                   </Button>
                                 </DialogTrigger>
-                                <DialogContent className="glass-card">
+                                <DialogContent className="bg-card border border-border rounded-xl">
                                   <DialogHeader>
                                     <DialogTitle>Edit Role Pengguna</DialogTitle>
                                     <DialogDescription>
@@ -982,7 +982,7 @@ const Admin = () => {
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent className="glass-card">
+                                <AlertDialogContent className="bg-card border border-border rounded-xl">
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Hapus Pengguna?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1054,7 +1054,7 @@ const Admin = () => {
                       Tambah Server
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="glass-card max-w-lg max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="bg-card border border-border rounded-xl max-w-lg max-h-[85vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>
                         {editingServer ? 'Edit Server' : 'Tambah Server Baru'}
@@ -1264,7 +1264,7 @@ const Admin = () => {
                                     <Trash2 className="w-4 h-4" />
                                   </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent className="glass-card">
+                                <AlertDialogContent className="bg-card border border-border rounded-xl">
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Hapus Server?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1315,7 +1315,7 @@ const Admin = () => {
                       Clear All Panels ({panels.length})
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="glass-card">
+                  <AlertDialogContent className="bg-card border border-border rounded-xl">
                     <AlertDialogHeader>
                       <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="w-5 h-5" />
@@ -1373,7 +1373,7 @@ const Admin = () => {
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </AlertDialogTrigger>
-                              <AlertDialogContent className="glass-card">
+                              <AlertDialogContent className="bg-card border border-border rounded-xl">
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Hapus Panel?</AlertDialogTitle>
                                   <AlertDialogDescription>
