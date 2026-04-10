@@ -72,6 +72,42 @@ serve(async (req) => {
     if (RESERVED_NAMES.includes(username.toLowerCase())) {
       throw new Error('Username ini tidak bisa digunakan, silakan pilih yang lain.');
     }
+    // Server-side role enforcement
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    const userRole = roleData?.role || 'free';
+
+    if (userRole === 'free') {
+      // Check panel count limit
+      const { count: existingPanels } = await supabase
+        .from('user_panels')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if ((existingPanels || 0) >= 1) {
+        throw new Error('Batas panel tercapai. Upgrade ke Premium untuk lebih banyak panel.');
+      }
+
+      // Enforce resource limits
+      if (ram > 1024 || cpu > 40) {
+        throw new Error('Free user: maksimal 1GB RAM dan 40% CPU.');
+      }
+
+      // Check server type
+      const { data: serverCheck } = await supabase
+        .from('pterodactyl_servers')
+        .select('server_type')
+        .eq('id', serverId)
+        .single();
+
+      if (serverCheck?.server_type === 'private') {
+        throw new Error('Free user tidak bisa menggunakan server private.');
+      }
+    }
 
     // Get Pterodactyl server details
     const { data: serverData, error: serverError } = await supabase
