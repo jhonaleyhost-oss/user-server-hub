@@ -50,7 +50,7 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated');
 
     // Parse request body
     const { username, serverId, ram, cpu, disk }: CreatePanelRequest = await req.json();
