@@ -149,6 +149,13 @@ export type Database = {
             foreignKeyName: "user_panels_server_id_fkey"
             columns: ["server_id"]
             isOneToOne: false
+            referencedRelation: "active_servers_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_panels_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
             referencedRelation: "pterodactyl_servers"
             referencedColumns: ["id"]
           },
@@ -180,7 +187,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_servers_public: {
+        Row: {
+          domain: string | null
+          egg_id: number | null
+          id: string | null
+          is_active: boolean | null
+          location_id: number | null
+          name: string | null
+          server_type: string | null
+        }
+        Insert: {
+          domain?: string | null
+          egg_id?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          location_id?: number | null
+          name?: string | null
+          server_type?: string | null
+        }
+        Update: {
+          domain?: string | null
+          egg_id?: number | null
+          id?: string | null
+          is_active?: boolean | null
+          location_id?: number | null
+          name?: string | null
+          server_type?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_role: {
