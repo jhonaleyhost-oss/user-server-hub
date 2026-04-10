@@ -50,15 +50,63 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    console.log('User authenticated:', user.id);
+    console.log('User authenticated');
 
     // Parse request body
     const { username, serverId, ram, cpu, disk }: CreatePanelRequest = await req.json();
     
-    console.log('Request body:', { username, serverId, ram, cpu, disk });
+    console.log('Panel creation request received');
 
     if (!username || !serverId) {
       throw new Error('Missing required fields: username and serverId');
+    }
+
+    // Validate username format
+    const USERNAME_PATTERN = /^[a-zA-Z0-9_-]{3,20}$/;
+    if (!USERNAME_PATTERN.test(username)) {
+      throw new Error('Username harus 3-20 karakter: huruf, angka, underscore, atau strip saja.');
+    }
+
+    // Check reserved names
+    const RESERVED_NAMES = ['admin', 'root', 'system', 'api', 'test', 'pterodactyl', 'panel'];
+    if (RESERVED_NAMES.includes(username.toLowerCase())) {
+      throw new Error('Username ini tidak bisa digunakan, silakan pilih yang lain.');
+    }
+    // Server-side role enforcement
+    const { data: roleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    const userRole = roleData?.role || 'free';
+
+    if (userRole === 'free') {
+      // Check panel count limit
+      const { count: existingPanels } = await supabase
+        .from('user_panels')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      if ((existingPanels || 0) >= 1) {
+        throw new Error('Batas panel tercapai. Upgrade ke Premium untuk lebih banyak panel.');
+      }
+
+      // Enforce resource limits
+      if (ram > 1024 || cpu > 40) {
+        throw new Error('Free user: maksimal 1GB RAM dan 40% CPU.');
+      }
+
+      // Check server type
+      const { data: serverCheck } = await supabase
+        .from('pterodactyl_servers')
+        .select('server_type')
+        .eq('id', serverId)
+        .single();
+
+      if (serverCheck?.server_type === 'private') {
+        throw new Error('Free user tidak bisa menggunakan server private.');
+      }
     }
 
     // Get Pterodactyl server details
@@ -74,10 +122,13 @@ serve(async (req) => {
     }
 
     const pteroServer: PterodactylServer = serverData;
-    console.log('Pterodactyl server found:', pteroServer.domain);
 
     const panelEmail = `${username}@gmail.com`;
-    const panelPassword = `${username}2323`;
+    
+    // Generate secure random password
+    const randomBytes = new Uint8Array(12);
+    crypto.getRandomValues(randomBytes);
+    const panelPassword = Array.from(randomBytes, b => b.toString(36).padStart(2, '0')).join('').slice(0, 16);
 
     // Step 0: Check if username or email already exists in Pterodactyl
     console.log('Checking if username/email already exists...');
