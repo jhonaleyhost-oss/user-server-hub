@@ -90,16 +90,13 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      // Fetch servers
-      const { data: serversData } = await supabase
-        .from('pterodactyl_servers')
-        .select('*')
-        .eq('is_active', true);
+      // Fetch servers via edge function (no API keys exposed)
+      const { data: serverResponse, error: serverFnError } = await supabase.functions.invoke('list-servers');
       
-      if (serversData) {
-        setServers(serversData);
-        if (serversData.length > 0) {
-          setSelectedServer(serversData[0].id);
+      if (!serverFnError && serverResponse?.success && serverResponse.servers) {
+        setServers(serverResponse.servers);
+        if (serverResponse.servers.length > 0) {
+          setSelectedServer(serverResponse.servers[0].id);
         }
       }
 
