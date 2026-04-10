@@ -50,7 +50,7 @@ serve(async (req) => {
     console.log(`Checking status for ${servers?.length || 0} public servers`);
 
     // Check status for each server in parallel
-    const statusPromises = (servers || []).map(async (server): Promise<ServerStatus> => {
+    const statusPromises = serversWithKeys.map(async (server): Promise<ServerStatus> => {
       try {
         // Try to get servers list from Pterodactyl API with timeout
         const controller = new AbortController();
