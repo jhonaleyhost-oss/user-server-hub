@@ -441,22 +441,29 @@ const Admin = () => {
 
   const saveServer = async () => {
     try {
-      if (editingServer) {
-        const { error } = await supabase
-          .from('pterodactyl_servers')
-          .update(serverForm)
-          .eq('id', editingServer.id);
+      const { plta_key, pltc_key, ...serverData } = serverForm;
+      
+      const { data, error: fnError } = await supabase.functions.invoke('manage-server', {
+        body: {
+          action: editingServer ? 'update' : 'create',
+          serverId: editingServer?.id,
+          serverData: {
+            ...serverData,
+            is_active: true,
+          },
+          plta_key,
+          pltc_key,
+        },
+      });
 
-        if (error) throw error;
-        toast({ title: 'Berhasil', description: 'Server berhasil diperbarui.' });
-      } else {
-        const { error } = await supabase
-          .from('pterodactyl_servers')
-          .insert(serverForm);
-
-        if (error) throw error;
-        toast({ title: 'Berhasil', description: 'Server baru berhasil ditambahkan.' });
+      if (fnError || !data?.success) {
+        throw new Error(data?.error || fnError?.message || 'Failed to save server');
       }
+
+      toast({ 
+        title: 'Berhasil', 
+        description: editingServer ? 'Server berhasil diperbarui.' : 'Server baru berhasil ditambahkan.' 
+      });
 
       setEditingServer(null);
       setNewServer(false);
