@@ -26,10 +26,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get all active public Pterodactyl servers
+    // Get all active public Pterodactyl servers (without keys)
     const { data: servers, error: serverError } = await supabase
       .from('pterodactyl_servers')
-      .select('id, name, domain, plta_key, server_type')
+      .select('id, name, domain, server_type')
       .eq('is_active', true)
       .eq('server_type', 'public');
 
@@ -37,6 +37,15 @@ serve(async (req) => {
       console.error('Server fetch error:', serverError);
       throw new Error('Failed to fetch servers');
     }
+
+    // Get keys from vault for each server
+    const serversWithKeys = await Promise.all((servers || []).map(async (server) => {
+      const { data: keysData } = await supabase.rpc('get_server_keys', { _server_id: server.id });
+      return {
+        ...server,
+        plta_key: keysData?.[0]?.plta_key || '',
+      };
+    }));
 
     console.log(`Checking status for ${servers?.length || 0} public servers`);
 
