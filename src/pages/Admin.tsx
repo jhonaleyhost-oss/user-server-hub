@@ -146,7 +146,7 @@ const Admin = () => {
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editingServer, setEditingServer] = useState<PterodactylServer | null>(null);
   const [newServer, setNewServer] = useState(false);
-  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  
 
   // Server status
   const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({});
