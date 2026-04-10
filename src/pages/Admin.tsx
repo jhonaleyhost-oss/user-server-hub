@@ -1085,21 +1085,23 @@ const Admin = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTA Key</Label>
+                        <Label>PLTA Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan jika tidak ingin mengubah)</span>}</Label>
                         <Input
                           value={serverForm.plta_key}
                           onChange={(e) => setServerForm({ ...serverForm, plta_key: e.target.value })}
                           className="input-glass"
-                          placeholder="ptla_xxx"
+                          placeholder={editingServer ? "••••••• (tersimpan di Vault)" : "ptla_xxx"}
+                          type="password"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTC Key</Label>
+                        <Label>PLTC Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan jika tidak ingin mengubah)</span>}</Label>
                         <Input
                           value={serverForm.pltc_key}
                           onChange={(e) => setServerForm({ ...serverForm, pltc_key: e.target.value })}
                           className="input-glass"
-                          placeholder="ptlc_xxx"
+                          placeholder={editingServer ? "••••••• (tersimpan di Vault)" : "ptlc_xxx"}
+                          type="password"
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
