@@ -719,8 +719,8 @@ const Admin = () => {
     setServerForm({
       name: server.name,
       domain: server.domain,
-      plta_key: server.plta_key,
-      pltc_key: server.pltc_key,
+      plta_key: '',
+      pltc_key: '',
       server_type: server.server_type,
       location_id: server.location_id,
       egg_id: server.egg_id,
@@ -1216,36 +1216,10 @@ const Admin = () => {
                               )}
                             </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-mono text-xs ${showKeys[`plta-${server.id}`] ? '' : 'blur-sm'}`}>
-                                {server.plta_key.slice(0, 15)}...
-                              </span>
-                              <button
-                                onClick={() => setShowKeys(prev => ({
-                                  ...prev,
-                                  [`plta-${server.id}`]: !prev[`plta-${server.id}`]
-                                }))}
-                                className="text-muted-foreground hover:text-foreground"
-                              >
-                                {showKeys[`plta-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              </button>
-                            </div>
+                            <span className="text-xs text-muted-foreground font-mono">🔒 Vault</span>
                           </TableCell>
                           <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-mono text-xs ${showKeys[`pltc-${server.id}`] ? '' : 'blur-sm'}`}>
-                                {server.pltc_key.slice(0, 15)}...
-                              </span>
-                              <button
-                                onClick={() => setShowKeys(prev => ({
-                                  ...prev,
-                                  [`pltc-${server.id}`]: !prev[`pltc-${server.id}`]
-                                }))}
-                                className="text-muted-foreground hover:text-foreground"
-                              >
-                                {showKeys[`pltc-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              </button>
-                            </div>
+                            <span className="text-xs text-muted-foreground font-mono">🔒 Vault</span>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
