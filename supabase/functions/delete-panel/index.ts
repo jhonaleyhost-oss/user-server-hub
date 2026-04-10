@@ -85,7 +85,7 @@ serve(async (req) => {
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${pteroServer.plta_key}`,
+            'Authorization': `Bearer ${plta_key}`,
             'Accept': 'application/json',
           },
         }
@@ -119,7 +119,7 @@ serve(async (req) => {
           {
             method: 'DELETE',
             headers: {
-              'Authorization': `Bearer ${pteroServer.plta_key}`,
+              'Authorization': `Bearer ${plta_key}`,
               'Accept': 'application/json',
             },
           }
