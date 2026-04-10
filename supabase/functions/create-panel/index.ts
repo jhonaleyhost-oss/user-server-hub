@@ -55,10 +55,22 @@ serve(async (req) => {
     // Parse request body
     const { username, serverId, ram, cpu, disk }: CreatePanelRequest = await req.json();
     
-    console.log('Request body:', { username, serverId, ram, cpu, disk });
+    console.log('Panel creation request received');
 
     if (!username || !serverId) {
       throw new Error('Missing required fields: username and serverId');
+    }
+
+    // Validate username format
+    const USERNAME_PATTERN = /^[a-zA-Z0-9_-]{3,20}$/;
+    if (!USERNAME_PATTERN.test(username)) {
+      throw new Error('Username harus 3-20 karakter: huruf, angka, underscore, atau strip saja.');
+    }
+
+    // Check reserved names
+    const RESERVED_NAMES = ['admin', 'root', 'system', 'api', 'test', 'pterodactyl', 'panel'];
+    if (RESERVED_NAMES.includes(username.toLowerCase())) {
+      throw new Error('Username ini tidak bisa digunakan, silakan pilih yang lain.');
     }
 
     // Get Pterodactyl server details
@@ -74,10 +86,13 @@ serve(async (req) => {
     }
 
     const pteroServer: PterodactylServer = serverData;
-    console.log('Pterodactyl server found:', pteroServer.domain);
 
     const panelEmail = `${username}@gmail.com`;
-    const panelPassword = `${username}2323`;
+    
+    // Generate secure random password
+    const randomBytes = new Uint8Array(12);
+    crypto.getRandomValues(randomBytes);
+    const panelPassword = Array.from(randomBytes, b => b.toString(36).padStart(2, '0')).join('').slice(0, 16);
 
     // Step 0: Check if username or email already exists in Pterodactyl
     console.log('Checking if username/email already exists...');
