@@ -68,8 +68,8 @@ serve(async (req) => {
 
       if (updateError) throw new Error(`Update failed: ${updateError.message}`);
 
-      // Update vault keys if provided
-      if (plta_key && pltc_key) {
+      // Update vault keys only if new keys provided
+      if (plta_key && pltc_key && plta_key.trim() !== '' && pltc_key.trim() !== '') {
         const { error: vaultError } = await supabase.rpc('store_server_keys', {
           _server_id: serverId,
           _plta_key: plta_key,
