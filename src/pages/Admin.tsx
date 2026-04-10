@@ -15,8 +15,6 @@ import {
   Plus,
   Save,
   X,
-  Eye,
-  EyeOff,
   Search,
   AlertTriangle,
   Wifi,
