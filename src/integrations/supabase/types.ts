@@ -60,7 +60,9 @@ export type Database = {
           location_id: number
           name: string
           plta_key: string
+          plta_vault_id: string | null
           pltc_key: string
+          pltc_vault_id: string | null
           server_type: string
           updated_at: string
         }
@@ -73,7 +75,9 @@ export type Database = {
           location_id?: number
           name: string
           plta_key: string
+          plta_vault_id?: string | null
           pltc_key: string
+          pltc_vault_id?: string | null
           server_type?: string
           updated_at?: string
         }
@@ -86,7 +90,9 @@ export type Database = {
           location_id?: number
           name?: string
           plta_key?: string
+          plta_vault_id?: string | null
           pltc_key?: string
+          pltc_vault_id?: string | null
           server_type?: string
           updated_at?: string
         }
@@ -219,6 +225,13 @@ export type Database = {
       }
     }
     Functions: {
+      get_server_keys: {
+        Args: { _server_id: string }
+        Returns: {
+          plta_key: string
+          pltc_key: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -231,6 +244,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      store_server_keys: {
+        Args: { _plta_key: string; _pltc_key: string; _server_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "free" | "premium" | "reseller" | "admin"
