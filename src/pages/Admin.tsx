@@ -15,6 +15,8 @@ import {
   Plus,
   Save,
   X,
+  Eye,
+  EyeOff,
   Search,
   AlertTriangle,
   Wifi,
@@ -88,6 +90,8 @@ interface PterodactylServer {
   id: string;
   name: string;
   domain: string;
+  plta_key: string;
+  pltc_key: string;
   server_type: string;
   is_active: boolean;
   location_id: number;
@@ -146,7 +150,7 @@ const Admin = () => {
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editingServer, setEditingServer] = useState<PterodactylServer | null>(null);
   const [newServer, setNewServer] = useState(false);
-  
+  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
   // Server status
   const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({});
@@ -439,29 +443,22 @@ const Admin = () => {
 
   const saveServer = async () => {
     try {
-      const { plta_key, pltc_key, ...serverData } = serverForm;
-      
-      const { data, error: fnError } = await supabase.functions.invoke('manage-server', {
-        body: {
-          action: editingServer ? 'update' : 'create',
-          serverId: editingServer?.id,
-          serverData: {
-            ...serverData,
-            is_active: true,
-          },
-          plta_key,
-          pltc_key,
-        },
-      });
+      if (editingServer) {
+        const { error } = await supabase
+          .from('pterodactyl_servers')
+          .update(serverForm)
+          .eq('id', editingServer.id);
 
-      if (fnError || !data?.success) {
-        throw new Error(data?.error || fnError?.message || 'Failed to save server');
+        if (error) throw error;
+        toast({ title: 'Berhasil', description: 'Server berhasil diperbarui.' });
+      } else {
+        const { error } = await supabase
+          .from('pterodactyl_servers')
+          .insert(serverForm);
+
+        if (error) throw error;
+        toast({ title: 'Berhasil', description: 'Server baru berhasil ditambahkan.' });
       }
-
-      toast({ 
-        title: 'Berhasil', 
-        description: editingServer ? 'Server berhasil diperbarui.' : 'Server baru berhasil ditambahkan.' 
-      });
 
       setEditingServer(null);
       setNewServer(false);
@@ -724,8 +721,8 @@ const Admin = () => {
     setServerForm({
       name: server.name,
       domain: server.domain,
-      plta_key: '',
-      pltc_key: '',
+      plta_key: server.plta_key,
+      pltc_key: server.pltc_key,
       server_type: server.server_type,
       location_id: server.location_id,
       egg_id: server.egg_id,
@@ -1083,23 +1080,21 @@ const Admin = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTA Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan jika tidak ingin mengubah)</span>}</Label>
+                        <Label>PLTA Key</Label>
                         <Input
                           value={serverForm.plta_key}
                           onChange={(e) => setServerForm({ ...serverForm, plta_key: e.target.value })}
                           className="input-glass"
-                          placeholder={editingServer ? "••••••• (tersimpan di Vault)" : "ptla_xxx"}
-                          type="password"
+                          placeholder="ptla_xxx"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTC Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan jika tidak ingin mengubah)</span>}</Label>
+                        <Label>PLTC Key</Label>
                         <Input
                           value={serverForm.pltc_key}
                           onChange={(e) => setServerForm({ ...serverForm, pltc_key: e.target.value })}
                           className="input-glass"
-                          placeholder={editingServer ? "••••••• (tersimpan di Vault)" : "ptlc_xxx"}
-                          type="password"
+                          placeholder="ptlc_xxx"
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1223,10 +1218,36 @@ const Admin = () => {
                               )}
                             </TableCell>
                           <TableCell>
-                            <span className="text-xs text-muted-foreground font-mono">🔒 Vault</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-mono text-xs ${showKeys[`plta-${server.id}`] ? '' : 'blur-sm'}`}>
+                                {server.plta_key.slice(0, 15)}...
+                              </span>
+                              <button
+                                onClick={() => setShowKeys(prev => ({
+                                  ...prev,
+                                  [`plta-${server.id}`]: !prev[`plta-${server.id}`]
+                                }))}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                {showKeys[`plta-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              </button>
+                            </div>
                           </TableCell>
                           <TableCell>
-                            <span className="text-xs text-muted-foreground font-mono">🔒 Vault</span>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-mono text-xs ${showKeys[`pltc-${server.id}`] ? '' : 'blur-sm'}`}>
+                                {server.pltc_key.slice(0, 15)}...
+                              </span>
+                              <button
+                                onClick={() => setShowKeys(prev => ({
+                                  ...prev,
+                                  [`pltc-${server.id}`]: !prev[`pltc-${server.id}`]
+                                }))}
+                                className="text-muted-foreground hover:text-foreground"
+                              >
+                                {showKeys[`pltc-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                              </button>
+                            </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">

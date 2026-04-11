@@ -48,14 +48,15 @@ serve(async (req) => {
       throw new Error('Missing required field: panelId');
     }
 
-    // Get panel details
+    // Get panel details (with server info for API keys)
     const { data: panelData, error: panelError } = await supabase
       .from('user_panels')
       .select(`
         *,
         pterodactyl_servers (
           id,
-          domain
+          domain,
+          plta_key
         )
       `)
       .eq('id', panelId)
@@ -67,15 +68,9 @@ serve(async (req) => {
       throw new Error('Panel tidak ditemukan atau Anda tidak memiliki akses');
     }
 
-    console.log('Panel found, preparing deletion');
+    console.log('Panel found:', panelData.username, 'Ptero Server ID:', panelData.ptero_server_id, 'Ptero User ID:', panelData.ptero_user_id);
 
     const pteroServer = panelData.pterodactyl_servers;
-
-    // Get API key from vault
-    const { data: keysData } = await supabase.rpc('get_server_keys', {
-      _server_id: pteroServer.id,
-    });
-    const plta_key = keysData?.[0]?.plta_key || '';
 
     // Step 1: Delete server in Pterodactyl (if exists)
     if (panelData.ptero_server_id) {
@@ -85,7 +80,7 @@ serve(async (req) => {
         {
           method: 'DELETE',
           headers: {
-            'Authorization': `Bearer ${plta_key}`,
+            'Authorization': `Bearer ${pteroServer.plta_key}`,
             'Accept': 'application/json',
           },
         }
@@ -119,7 +114,7 @@ serve(async (req) => {
           {
             method: 'DELETE',
             headers: {
-              'Authorization': `Bearer ${plta_key}`,
+              'Authorization': `Bearer ${pteroServer.plta_key}`,
               'Accept': 'application/json',
             },
           }

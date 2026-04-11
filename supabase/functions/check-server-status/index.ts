@@ -50,10 +50,10 @@ serve(async (req) => {
 
     console.log('Checking status for servers:', serverIds);
 
-    // Get all Pterodactyl servers (without keys)
+    // Get all Pterodactyl servers
     const { data: servers, error: serverError } = await supabase
       .from('pterodactyl_servers')
-      .select('id, domain')
+      .select('id, domain, plta_key')
       .in('id', serverIds);
 
     if (serverError) {
@@ -61,17 +61,8 @@ serve(async (req) => {
       throw new Error('Failed to fetch servers');
     }
 
-    // Get keys from vault for each server
-    const serversWithKeys = await Promise.all(servers.map(async (server) => {
-      const { data: keysData } = await supabase.rpc('get_server_keys', { _server_id: server.id });
-      return {
-        ...server,
-        plta_key: keysData?.[0]?.plta_key || '',
-      };
-    }));
-
     // Check status for each server in parallel
-    const statusPromises = serversWithKeys.map(async (server): Promise<ServerStatus> => {
+    const statusPromises = servers.map(async (server): Promise<ServerStatus> => {
       try {
         // Try to get servers list from Pterodactyl API with timeout
         const controller = new AbortController();

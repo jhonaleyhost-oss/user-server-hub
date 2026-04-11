@@ -109,10 +109,10 @@ serve(async (req) => {
       }
     }
 
-    // Get Pterodactyl server details (without keys)
+    // Get Pterodactyl server details
     const { data: serverData, error: serverError } = await supabase
       .from('pterodactyl_servers')
-      .select('id, domain, egg_id, location_id')
+      .select('id, domain, plta_key, pltc_key, egg_id, location_id')
       .eq('id', serverId)
       .single();
 
@@ -121,21 +121,7 @@ serve(async (req) => {
       throw new Error('Pterodactyl server not found');
     }
 
-    // Get keys from vault
-    const { data: keysData, error: keysError } = await supabase.rpc('get_server_keys', {
-      _server_id: serverId,
-    });
-
-    if (keysError || !keysData || keysData.length === 0 || !keysData[0].plta_key) {
-      console.error('Vault keys error:', keysError);
-      throw new Error('Server API keys not found in vault');
-    }
-
-    const pteroServer: PterodactylServer = {
-      ...serverData,
-      plta_key: keysData[0].plta_key,
-      pltc_key: keysData[0].pltc_key,
-    };
+    const pteroServer: PterodactylServer = serverData;
 
     const panelEmail = `${username}@gmail.com`;
     
