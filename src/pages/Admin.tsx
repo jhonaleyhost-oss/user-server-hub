@@ -1362,7 +1362,7 @@ const Admin = () => {
                       paginatedPanels.map((panel) => (
                         <TableRow key={panel.id} className="border-border/30">
                           <TableCell className="font-mono">{panel.username}</TableCell>
-                          <TableCell>{panel.profiles?.email || '-'}</TableCell>
+                          <TableCell>{panel.profiles?.email || panel.email || '-'}</TableCell>
                           <TableCell className="text-primary text-sm">{panel.login_url}</TableCell>
                           <TableCell>{panel.ram === 0 ? '∞' : `${panel.ram}MB`}</TableCell>
                           <TableCell>{panel.cpu === 0 ? '∞' : `${panel.cpu}%`}</TableCell>
