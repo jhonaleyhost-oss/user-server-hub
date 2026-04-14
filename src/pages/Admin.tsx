@@ -23,6 +23,8 @@ import {
   WifiOff,
   RefreshCw,
   Loader2,
+  Fingerprint,
+  Globe,
 } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
 import { useAuth } from '@/hooks/useAuth';
