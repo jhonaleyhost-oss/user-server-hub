@@ -124,6 +124,16 @@ interface UserPanel {
   } | null;
 }
 
+interface DeviceRecord {
+  id: string;
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  ip_address: string | null;
+  device_fingerprint: string | null;
+  created_at: string;
+}
+
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
