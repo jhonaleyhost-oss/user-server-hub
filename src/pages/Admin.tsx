@@ -423,7 +423,45 @@ const Admin = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: AppRole) => {
+  const fetchDevices = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, user_id, email, full_name, ip_address, device_fingerprint, created_at')
+        .or('ip_address.neq.,device_fingerprint.neq.')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDevices((data || []).filter(d => d.ip_address || d.device_fingerprint) as DeviceRecord[]);
+    } catch (err) {
+      console.error('Error fetching devices:', err);
+    }
+  };
+
+  const resetDeviceInfo = async (profileId: string, field: 'ip_address' | 'device_fingerprint' | 'both') => {
+    try {
+      const updateData: Record<string, null> = {};
+      if (field === 'ip_address' || field === 'both') updateData.ip_address = null;
+      if (field === 'device_fingerprint' || field === 'both') updateData.device_fingerprint = null;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(updateData)
+        .eq('id', profileId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Berhasil',
+        description: field === 'both' ? 'IP & Fingerprint berhasil direset.' : `${field === 'ip_address' ? 'IP Address' : 'Fingerprint'} berhasil direset.`,
+      });
+
+      fetchDevices();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Gagal', description: err.message });
+    }
+  };
+
     try {
       const { error } = await supabase
         .from('user_roles')
