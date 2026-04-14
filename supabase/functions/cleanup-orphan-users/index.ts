@@ -14,13 +14,17 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Allow service role key as bearer token for internal calls
+    // Verify via auth header or allow internal service calls
     const authHeader = req.headers.get("Authorization") || "";
     const token = authHeader.replace("Bearer ", "");
+    const apiKey = req.headers.get("apikey") || "";
     
     let isAuthorized = false;
     
-    if (token === serviceRoleKey) {
+    // Service role via apikey header (internal tool calls)
+    if (apiKey === serviceRoleKey) {
+      isAuthorized = true;
+    } else if (token === serviceRoleKey) {
       isAuthorized = true;
     } else if (token) {
       const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
