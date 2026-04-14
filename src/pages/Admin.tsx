@@ -290,7 +290,7 @@ const Admin = () => {
 
   const fetchAllData = async () => {
     setLoading(true);
-    const [, serversResult] = await Promise.all([fetchUsers(), fetchServers(), fetchPanels()]);
+    await Promise.all([fetchUsers(), fetchServers(), fetchPanels(), fetchDevices()]);
     setLoading(false);
   };
 
