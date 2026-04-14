@@ -111,6 +111,16 @@ const Auth = () => {
                 ? 'Masuk untuk mengelola panel bot Anda'
                 : 'Daftar untuk mulai membuat panel bot WhatsApp'}
             </p>
+            {isLogin && (
+              <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-xs text-primary font-medium">
+                  🎉 Dapatkan Panel gratis Anda hanya dengan mendaftar akun sekarang!
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <span className="font-semibold">Note:</span> Gunakan email palsu / asal untuk mendaftar demi keamanan.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Form */}
