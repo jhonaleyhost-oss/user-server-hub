@@ -874,18 +874,22 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3 bg-secondary/50 mb-6">
+            <TabsList className="grid w-full grid-cols-4 bg-secondary/50 mb-6">
               <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Users className="w-4 h-4 mr-2" />
-                Pengguna ({filteredUsers.length})
+                <span className="hidden sm:inline">Pengguna</span> ({filteredUsers.length})
               </TabsTrigger>
               <TabsTrigger value="servers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Server className="w-4 h-4 mr-2" />
-                Server ({filteredServers.length})
+                <span className="hidden sm:inline">Server</span> ({filteredServers.length})
               </TabsTrigger>
               <TabsTrigger value="panels" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <HardDrive className="w-4 h-4 mr-2" />
-                Panel ({filteredPanels.length})
+                <span className="hidden sm:inline">Panel</span> ({filteredPanels.length})
+              </TabsTrigger>
+              <TabsTrigger value="devices" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Fingerprint className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Device</span> ({filteredDevices.length})
               </TabsTrigger>
             </TabsList>
 
@@ -1472,6 +1476,149 @@ const Admin = () => {
                   totalPages={Math.ceil(filteredPanels.length / ITEMS_PER_PAGE)}
                   onPageChange={setPanelsPage}
                   totalItems={filteredPanels.length}
+                  itemsPerPage={ITEMS_PER_PAGE}
+                />
+              </div>
+            </TabsContent>
+
+            {/* Devices Tab */}
+            <TabsContent value="devices">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/50">
+                      <TableHead>Email</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>IP Address</TableHead>
+                      <TableHead>Fingerprint</TableHead>
+                      <TableHead>Terdaftar</TableHead>
+                      <TableHead>Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedDevices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data device'}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedDevices.map((device) => (
+                        <TableRow key={device.id} className="border-border/30">
+                          <TableCell className="font-mono text-sm">{device.email}</TableCell>
+                          <TableCell>{device.full_name || '-'}</TableCell>
+                          <TableCell>
+                            {device.ip_address ? (
+                              <div className="flex items-center gap-1.5">
+                                <Globe className="w-3 h-3 text-primary" />
+                                <span className="font-mono text-sm">{device.ip_address}</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {device.device_fingerprint ? (
+                              <div className="flex items-center gap-1.5">
+                                <Fingerprint className="w-3 h-3 text-primary" />
+                                <span className="font-mono text-xs">{device.device_fingerprint.slice(0, 12)}...</span>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(device.created_at).toLocaleDateString('id-ID')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {device.ip_address && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-xs gap-1">
+                                      <Globe className="w-3 h-3" />
+                                      Reset IP
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent className="bg-card border border-border rounded-xl">
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Reset IP Address?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        IP <strong>{device.ip_address}</strong> milik {device.email} akan direset. User dengan IP ini bisa mendaftar lagi.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => resetDeviceInfo(device.id, 'ip_address')}>
+                                        Reset
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                              {device.device_fingerprint && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-xs gap-1">
+                                      <Fingerprint className="w-3 h-3" />
+                                      Reset FP
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent className="bg-card border border-border rounded-xl">
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Reset Fingerprint?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Fingerprint milik {device.email} akan direset. Perangkat ini bisa mendaftar lagi.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => resetDeviceInfo(device.id, 'device_fingerprint')}>
+                                        Reset
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                              {(device.ip_address || device.device_fingerprint) && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-xs gap-1 text-destructive">
+                                      <Trash2 className="w-3 h-3" />
+                                      Reset All
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent className="bg-card border border-border rounded-xl">
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Reset Semua Data Device?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        IP & Fingerprint milik {device.email} akan direset. Perangkat ini bisa mendaftar ulang.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => resetDeviceInfo(device.id, 'both')}
+                                        className="bg-destructive hover:bg-destructive/90"
+                                      >
+                                        Reset Semua
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+                <AdminPagination
+                  currentPage={devicesPage}
+                  totalPages={Math.ceil(filteredDevices.length / ITEMS_PER_PAGE)}
+                  onPageChange={setDevicesPage}
+                  totalItems={filteredDevices.length}
                   itemsPerPage={ITEMS_PER_PAGE}
                 />
               </div>
