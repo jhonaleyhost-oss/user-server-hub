@@ -226,6 +226,18 @@ const Admin = () => {
     );
   }, [panels, searchQuery]);
 
+  const filteredDevices = useMemo(() => {
+    if (!searchQuery.trim()) return devices;
+    const q = searchQuery.toLowerCase();
+    return devices.filter(
+      (d) =>
+        d.email.toLowerCase().includes(q) ||
+        (d.full_name?.toLowerCase().includes(q)) ||
+        (d.ip_address?.toLowerCase().includes(q)) ||
+        (d.device_fingerprint?.toLowerCase().includes(q))
+    );
+  }, [devices, searchQuery]);
+
   const paginatedUsers = useMemo(() => {
     const start = (usersPage - 1) * ITEMS_PER_PAGE;
     return filteredUsers.slice(start, start + ITEMS_PER_PAGE);
@@ -241,11 +253,17 @@ const Admin = () => {
     return filteredPanels.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredPanels, panelsPage]);
 
+  const paginatedDevices = useMemo(() => {
+    const start = (devicesPage - 1) * ITEMS_PER_PAGE;
+    return filteredDevices.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredDevices, devicesPage]);
+
   // Reset page when search changes
   useEffect(() => {
     setUsersPage(1);
     setServersPage(1);
     setPanelsPage(1);
+    setDevicesPage(1);
   }, [searchQuery]);
 
   // Jangan redirect saat auth masih loading (ini yang bikin "refresh"/bounce)
