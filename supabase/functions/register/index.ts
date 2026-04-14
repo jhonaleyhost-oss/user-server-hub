@@ -133,20 +133,33 @@ serve(async (req) => {
       throw new Error(authError.message);
     }
 
-    // Store IP and fingerprint in profile
+    // Store IP and fingerprint in profile (with retry for trigger race condition)
     if (authData.user) {
       const updateData: Record<string, string> = {};
       if (clientIp !== 'unknown') updateData.ip_address = clientIp;
       if (fingerprint) updateData.device_fingerprint = fingerprint;
 
       if (Object.keys(updateData).length > 0) {
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update(updateData)
-          .eq('user_id', authData.user.id);
+        let updated = false;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const { data: updatedRows, error: updateError } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('user_id', authData.user.id)
+            .select('id');
 
-        if (updateError) {
-          console.error('Failed to store device info:', updateError);
+          if (updateError) {
+            console.error(`Attempt ${attempt + 1} failed:`, updateError);
+          } else if (updatedRows && updatedRows.length > 0) {
+            updated = true;
+            console.log('Device info stored successfully on attempt', attempt + 1);
+            break;
+          }
+          // Profile not yet created by trigger, wait and retry
+          await new Promise(r => setTimeout(r, 500));
+        }
+        if (!updated) {
+          console.error('Failed to store device info after all retries');
         }
       }
     }
