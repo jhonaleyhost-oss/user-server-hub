@@ -143,6 +143,7 @@ const Admin = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [servers, setServers] = useState<PterodactylServer[]>([]);
   const [panels, setPanels] = useState<UserPanel[]>([]);
+  const [devices, setDevices] = useState<DeviceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('users');
 
