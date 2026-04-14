@@ -92,7 +92,10 @@ serve(async (req) => {
         throw new Error('Batas panel tercapai. Upgrade ke Premium untuk lebih banyak panel.');
       }
 
-      // Enforce resource limits
+      // Enforce resource limits (0 = unlimited in Pterodactyl, block it)
+      if (ram <= 0 || cpu <= 0 || disk <= 0) {
+        throw new Error('Free user tidak bisa menggunakan resource unlimited.');
+      }
       if (ram > 1024 || cpu > 40) {
         throw new Error('Free user: maksimal 1GB RAM dan 40% CPU.');
       }
