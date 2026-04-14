@@ -47,18 +47,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-    return { error };
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('register', {
+        body: { email, password, fullName },
+      });
+
+      if (fnError) {
+        return { error: new Error(fnError.message || 'Gagal mendaftar') };
+      }
+
+      if (data && !data.success) {
+        return { error: new Error(data.error || 'Gagal mendaftar') };
+      }
+
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err : new Error('Gagal mendaftar') };
+    }
   };
 
   const signOut = async () => {
