@@ -462,6 +462,7 @@ const Admin = () => {
     }
   };
 
+  const updateUserRole = async (userId: string, newRole: AppRole) => {
     try {
       const { error } = await supabase
         .from('user_roles')
