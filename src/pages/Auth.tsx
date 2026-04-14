@@ -204,6 +204,16 @@ const Auth = () => {
             </Button>
           </form>
 
+          {/* Promo Text */}
+          <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <p className="text-xs text-primary font-medium">
+              🎉 Dapatkan Panel gratis Anda hanya dengan mendaftar akun sekarang!
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              <span className="font-semibold">Note:</span> Gunakan email palsu / asal untuk mendaftar demi keamanan.
+            </p>
+          </div>
+
           {/* Toggle */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
