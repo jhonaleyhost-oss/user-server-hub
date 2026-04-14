@@ -287,11 +287,7 @@ serve(async (req) => {
       throw new Error(`Failed to save panel: ${insertError.message}`);
     }
 
-    // Step 4: Update user's panel count
-    const { error: updateError } = await supabase.rpc('increment_panel_count', { _user_id: user.id });
-    if (updateError) {
-      console.log('Note: Failed to increment panel count:', updateError.message);
-    }
+    // Panel count is now auto-incremented by database trigger
 
     console.log('Panel created successfully!');
 
