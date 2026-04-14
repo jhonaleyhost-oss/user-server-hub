@@ -59,15 +59,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.warn('Fingerprint generation failed:', fpErr);
       }
 
-      const { data, error: fnError } = await supabase.functions.invoke('register', {
-        body: { email, password, fullName, fingerprint },
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ email, password, fullName, fingerprint }),
       });
 
-      if (fnError) {
-        return { error: new Error(fnError.message || 'Gagal mendaftar') };
-      }
+      const data = await response.json();
 
-      if (data && !data.success) {
+      if (!response.ok || !data.success) {
         return { error: new Error(data.error || 'Gagal mendaftar') };
       }
 
