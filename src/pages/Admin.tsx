@@ -152,6 +152,7 @@ const Admin = () => {
   const [usersPage, setUsersPage] = useState(1);
   const [serversPage, setServersPage] = useState(1);
   const [panelsPage, setPanelsPage] = useState(1);
+  const [devicesPage, setDevicesPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Stats
