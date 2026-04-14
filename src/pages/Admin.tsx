@@ -489,17 +489,28 @@ const Admin = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      // Delete from profiles (will cascade to user_roles due to FK)
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('user_id', userId);
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      if (!token) throw new Error('Not authenticated');
 
-      if (error) throw error;
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ user_id: userId }),
+        }
+      );
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Gagal menghapus user');
 
       toast({
         title: 'Berhasil',
-        description: 'Pengguna berhasil dihapus.',
+        description: 'Pengguna berhasil dihapus secara permanen.',
       });
 
       fetchUsers();
