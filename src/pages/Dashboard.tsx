@@ -521,7 +521,7 @@ const Dashboard = () => {
                     <SelectItem value="2" disabled={role === 'free'}>2 GB</SelectItem>
                     <SelectItem value="3" disabled={role === 'free'}>3 GB</SelectItem>
                     <SelectItem value="4" disabled={role === 'free'}>4 GB</SelectItem>
-                    <SelectItem value="unli" disabled={!isPremium}>Unlimited</SelectItem>
+                    {isPremium && <SelectItem value="unli">Unlimited</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
@@ -539,7 +539,7 @@ const Dashboard = () => {
                     <SelectItem value="40">40%</SelectItem>
                     <SelectItem value="100" disabled={role === 'free'}>100%</SelectItem>
                     <SelectItem value="200" disabled={role === 'free'}>200%</SelectItem>
-                    <SelectItem value="unli" disabled={!isPremium}>Unlimited</SelectItem>
+                    {isPremium && <SelectItem value="unli">Unlimited</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
