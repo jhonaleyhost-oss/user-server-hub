@@ -14,35 +14,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify via auth header or allow internal service calls
-    const authHeader = req.headers.get("Authorization") || "";
-    const token = authHeader.replace("Bearer ", "");
-    const apiKey = req.headers.get("apikey") || "";
-    
-    let isAuthorized = false;
-    
-    // Service role via apikey header (internal tool calls)
-    if (apiKey === serviceRoleKey) {
-      isAuthorized = true;
-    } else if (token === serviceRoleKey) {
-      isAuthorized = true;
-    } else if (token) {
-      const callerClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user: caller } } = await callerClient.auth.getUser();
-      if (caller) {
-        const { data: admin } = await callerClient.rpc("is_admin", { _user_id: caller.id });
-        isAuthorized = !!admin;
-      }
-    }
-
-    if (!isAuthorized) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
