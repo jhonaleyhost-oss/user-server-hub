@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, password, fullName } = await req.json();
+    const { email, password, fullName, fingerprint } = await req.json();
 
     if (!email || !password) {
       throw new Error('Email dan password wajib diisi.');
@@ -25,7 +25,7 @@ serve(async (req) => {
       req.headers.get('x-real-ip') ||
       'unknown';
 
-    console.log('Registration attempt from IP:', clientIp);
+    console.log('Registration attempt from IP:', clientIp, 'Fingerprint:', fingerprint || 'none');
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -33,17 +33,13 @@ serve(async (req) => {
 
     // Check if IP already used for registration
     if (clientIp !== 'unknown') {
-      const { data: existingProfiles, error: ipCheckError } = await supabase
+      const { data: ipProfiles } = await supabase
         .from('profiles')
         .select('id')
         .eq('ip_address', clientIp)
         .limit(1);
 
-      if (ipCheckError) {
-        console.error('IP check error:', ipCheckError);
-      }
-
-      if (existingProfiles && existingProfiles.length > 0) {
+      if (ipProfiles && ipProfiles.length > 0) {
         return new Response(
           JSON.stringify({
             success: false,
@@ -57,8 +53,29 @@ serve(async (req) => {
       }
     }
 
+    // Check if device fingerprint already used
+    if (fingerprint) {
+      const { data: fpProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('device_fingerprint', fingerprint)
+        .limit(1);
+
+      if (fpProfiles && fpProfiles.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Perangkat ini sudah pernah digunakan untuk mendaftar. Hanya 1 akun per perangkat.',
+          }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
     // Create user via Supabase Auth
-    const redirectUrl = req.headers.get('origin') || 'https://jhonaleycpanel.lovable.app';
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -73,19 +90,25 @@ serve(async (req) => {
       throw new Error(authError.message);
     }
 
-    // Store IP address in profile
-    if (authData.user && clientIp !== 'unknown') {
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ ip_address: clientIp })
-        .eq('user_id', authData.user.id);
+    // Store IP and fingerprint in profile
+    if (authData.user) {
+      const updateData: Record<string, string> = {};
+      if (clientIp !== 'unknown') updateData.ip_address = clientIp;
+      if (fingerprint) updateData.device_fingerprint = fingerprint;
 
-      if (updateError) {
-        console.error('Failed to store IP:', updateError);
+      if (Object.keys(updateData).length > 0) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('user_id', authData.user.id);
+
+        if (updateError) {
+          console.error('Failed to store device info:', updateError);
+        }
       }
     }
 
-    console.log('User registered successfully with IP tracking');
+    console.log('User registered successfully with IP + fingerprint tracking');
 
     return new Response(
       JSON.stringify({

@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import FingerprintJS from '@fingerprintjs/fingerprintjs';
 
 interface AuthContextType {
   user: User | null;
@@ -48,8 +49,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
+      // Generate device fingerprint
+      let fingerprint = '';
+      try {
+        const fp = await FingerprintJS.load();
+        const result = await fp.get();
+        fingerprint = result.visitorId;
+      } catch (fpErr) {
+        console.warn('Fingerprint generation failed:', fpErr);
+      }
+
       const { data, error: fnError } = await supabase.functions.invoke('register', {
-        body: { email, password, fullName },
+        body: { email, password, fullName, fingerprint },
       });
 
       if (fnError) {
