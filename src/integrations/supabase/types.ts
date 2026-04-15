@@ -228,6 +228,7 @@ export type Database = {
       }
     }
     Functions: {
+      decrement_panel_count: { Args: { _user_id: string }; Returns: undefined }
       get_server_keys: {
         Args: { _server_id: string }
         Returns: {

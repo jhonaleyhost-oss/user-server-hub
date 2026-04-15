@@ -13,6 +13,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/PageTransition';
 
@@ -53,6 +54,7 @@ interface UserPanel {
 
 const Panels = () => {
   const { user } = useAuth();
+  const { role } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -358,35 +360,36 @@ Login URL: ${panel.login_url}
                               <Send className="w-4 h-4 mr-2" />
                               Kirim
                             </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  className="bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="glass-card">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Hapus Panel?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Yakin ingin menghapus panel "{panel.username}" secara permanen?
-                                    Aksi ini tidak dapat dibatalkan.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Batal</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDelete(panel.id)}
-                                    className="bg-destructive hover:bg-destructive/90"
-                                    disabled={deleting === panel.id}
+                            {role !== 'free' && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    className="bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
                                   >
-                                    {deleting === panel.id ? 'Menghapus...' : 'Hapus'}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="glass-card">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Hapus Panel?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Yakin ingin menghapus panel "{panel.username}" secara permanen?
+                                      Aksi ini tidak dapat dibatalkan.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDelete(panel.id)}
+                                      className="bg-destructive hover:bg-destructive/90"
+                                    >
+                                      {deleting === panel.id ? 'Menghapus...' : 'Hapus'}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
                           </div>
                         </div>
                       </motion.div>
