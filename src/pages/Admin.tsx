@@ -111,6 +111,7 @@ interface ServerStatus {
 
 interface UserPanel {
   id: string;
+  user_id: string;
   username: string;
   email: string;
   login_url: string;
