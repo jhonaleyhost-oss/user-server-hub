@@ -581,6 +581,9 @@ const Admin = () => {
 
   const deletePanel = async (panelId: string) => {
     try {
+      // Get panel's user_id before deletion to reset their quota
+      const panel = panels.find(p => p.id === panelId);
+      
       const { error } = await supabase
         .from('user_panels')
         .delete()
@@ -588,9 +591,14 @@ const Admin = () => {
 
       if (error) throw error;
 
+      // Decrement panel_creations_count so user can create again
+      if (panel?.user_id) {
+        await supabase.rpc('decrement_panel_count', { _user_id: panel.user_id });
+      }
+
       toast({
         title: 'Berhasil',
-        description: 'Panel berhasil dihapus.',
+        description: 'Panel berhasil dihapus dan limit user dikembalikan.',
       });
 
       fetchPanels();
