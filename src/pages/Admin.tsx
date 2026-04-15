@@ -594,7 +594,7 @@ const Admin = () => {
 
       // Decrement panel_creations_count so user can create again
       if (panel?.user_id) {
-        await supabase.rpc('decrement_panel_count', { _user_id: panel.user_id });
+        await (supabase.rpc as any)('decrement_panel_count', { _user_id: panel.user_id });
       }
 
       toast({
