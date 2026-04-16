@@ -151,59 +151,10 @@ const PromoPopup = () => {
               </div>
             )}
 
-            {/* Content with expand/collapse */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <div className="relative">
-                <div
-                  ref={contentRef}
-                  className="px-4 sm:px-5 py-3 text-[13px] space-y-0.5 transition-all duration-300 ease-in-out"
-                  style={{
-                    maxHeight: expanded ? 'none' : `${COLLAPSED_HEIGHT}px`,
-                    overflow: expanded ? 'auto' : 'hidden',
-                  }}
-                >
-                  {renderContent(popup.content)}
-                </div>
-
-                {/* Fade gradient + "Read more" button */}
-                {needsExpand && !expanded && (
-                  <div className="absolute bottom-0 left-0 right-0">
-                    <div
-                      className="h-16 pointer-events-none"
-                      style={{
-                        background: 'linear-gradient(to bottom, transparent, hsl(var(--background)))',
-                      }}
-                    />
-                    <div className="bg-background px-4 pb-2 -mt-1">
-                      <button
-                        onClick={() => setExpanded(true)}
-                        className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors mx-auto"
-                      >
-                        Lihat selengkapnya
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {needsExpand && expanded && (
-                  <div className="px-4 pb-2">
-                    <button
-                      onClick={() => setExpanded(false)}
-                      className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors mx-auto"
-                    >
-                      Sembunyikan
-                      <ChevronDown className="w-3.5 h-3.5 rotate-180" />
-                    </button>
-                  </div>
-                )}
-              </div>
+            {/* Content - scrollable */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 text-[13px] space-y-0.5">
+              {renderContent(popup.content)}
             </div>
-
-            {/* Scrollable expanded content area */}
-            {expanded && (
-              <div className="max-h-[40vh] overflow-y-auto" />
-            )}
 
             {/* Buttons */}
             {popup.buttons.length > 0 && (
