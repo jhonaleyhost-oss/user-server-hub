@@ -57,7 +57,7 @@ const AdminPopupManager = () => {
       content: popup.content,
       image_url: popup.image_url || null,
       is_active: popup.is_active,
-      buttons: popup.buttons as unknown as Record<string, unknown>[],
+      buttons: JSON.parse(JSON.stringify(popup.buttons)),
     };
 
     let error;
@@ -117,7 +117,7 @@ const AdminPopupManager = () => {
       {/* Toggle Active */}
       <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border/30">
         <div className="flex items-center gap-2">
-          {popup.is_active ? <Eye className="w-4 h-4 text-green-400" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
+          {popup.is_active ? <Eye className="w-4 h-4 text-primary" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
           <span className="text-sm font-medium text-foreground">
             Popup {popup.is_active ? 'Aktif' : 'Nonaktif'}
           </span>
