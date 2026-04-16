@@ -1,0 +1,1 @@
+UPDATE public.profiles SET panel_creations_count = 1 WHERE user_id = '250d18b0-fc22-4e1a-b550-2106b2ec8194';
