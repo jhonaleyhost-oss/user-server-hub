@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AccentColorProvider } from "@/hooks/useAccentColor";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
+import PromoPopup from "@/components/PromoPopup";
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <PromoPopup />
             <BrowserRouter>
               <AnimatedRoutes />
             </BrowserRouter>
