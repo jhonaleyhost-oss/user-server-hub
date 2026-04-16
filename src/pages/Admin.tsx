@@ -25,8 +25,10 @@ import {
   Loader2,
   Fingerprint,
   Globe,
+  Megaphone,
 } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
+import AdminPopupManager from '@/components/AdminPopupManager';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
