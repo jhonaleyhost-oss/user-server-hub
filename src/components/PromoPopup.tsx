@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Sparkles, ChevronDown } from 'lucide-react';
+import { X, ExternalLink, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 
@@ -17,13 +17,9 @@ interface PopupData {
   buttons: PopupButton[];
 }
 
-const COLLAPSED_HEIGHT = 220; // px for collapsed preview
-
 const PromoPopup = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const [needsExpand, setNeedsExpand] = useState(false);
 
   useEffect(() => {
     const fetchPopup = async () => {
