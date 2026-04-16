@@ -45,14 +45,6 @@ const PromoPopup = () => {
 
   const handleClose = () => {
     setOpen(false);
-    setExpanded(false);
-  };
-
-  // Check if content overflows
-  const contentRef = (node: HTMLDivElement | null) => {
-    if (node) {
-      setNeedsExpand(node.scrollHeight > COLLAPSED_HEIGHT);
-    }
   };
 
   const renderContent = (text: string) => {
