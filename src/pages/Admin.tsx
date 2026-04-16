@@ -1650,6 +1650,11 @@ const Admin = () => {
                 />
               </div>
             </TabsContent>
+
+            {/* Popup Tab */}
+            <TabsContent value="popup">
+              <AdminPopupManager />
+            </TabsContent>
           </Tabs>
         </GlassCard>
 
