@@ -140,13 +140,13 @@ const PromoPopup = () => {
             )}
 
             {/* Content - scrollable */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 text-[13px] space-y-0.5">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 text-[13px] space-y-0.5 text-center">
               {renderContent(popup.content)}
             </div>
 
             {/* Buttons */}
             {popup.buttons.length > 0 && (
-              <div className="px-4 sm:px-5 pb-2 pt-1 flex flex-wrap gap-2 shrink-0">
+              <div className="px-4 sm:px-5 pb-2 pt-1 flex flex-wrap gap-2 shrink-0 justify-center">
                 {popup.buttons.map((btn, i) => (
                   <Button
                     key={i}
