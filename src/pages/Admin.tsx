@@ -897,7 +897,7 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 bg-secondary/50 mb-6">
+            <TabsList className="grid w-full grid-cols-5 bg-secondary/50 mb-6">
               <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Users className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Pengguna</span> ({filteredUsers.length})
@@ -912,7 +912,11 @@ const Admin = () => {
               </TabsTrigger>
               <TabsTrigger value="devices" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Fingerprint className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Device</span> ({filteredDevices.length})
+                <span className="hidden sm:inline">Device</span>
+              </TabsTrigger>
+              <TabsTrigger value="popup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Megaphone className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Popup</span>
               </TabsTrigger>
             </TabsList>
 
