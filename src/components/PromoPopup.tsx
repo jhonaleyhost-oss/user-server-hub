@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Sparkles } from 'lucide-react';
+import { X, ExternalLink, Sparkles, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PopupButton {
   label: string;
@@ -18,9 +17,13 @@ interface PopupData {
   buttons: PopupButton[];
 }
 
+const COLLAPSED_HEIGHT = 220; // px for collapsed preview
+
 const PromoPopup = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [needsExpand, setNeedsExpand] = useState(false);
 
   useEffect(() => {
     const fetchPopup = async () => {
@@ -40,13 +43,20 @@ const PromoPopup = () => {
       }
     };
 
-    // Small delay so the page loads first
     const timer = setTimeout(fetchPopup, 600);
     return () => clearTimeout(timer);
   }, []);
 
   const handleClose = () => {
     setOpen(false);
+    setExpanded(false);
+  };
+
+  // Check if content overflows
+  const contentRef = (node: HTMLDivElement | null) => {
+    if (node) {
+      setNeedsExpand(node.scrollHeight > COLLAPSED_HEIGHT);
+    }
   };
 
   const renderContent = (text: string) => {
@@ -55,19 +65,13 @@ const PromoPopup = () => {
       if (trimmed === '') return <div key={i} className="h-2" />;
 
       const parts = line.split(/\*\*(.*?)\*\*/g);
-
-      // Detect section headers (lines starting with emoji + all caps or bold)
-      const isHeader = /^[├└│🚀💎✨🎁📊💡🛒🌟🛠️⭐]/.test(trimmed) && parts.some((_, j) => j % 2 === 1);
-      // Detect tree items
       const isTreeItem = /^[├└│]/.test(trimmed);
-      // Detect numbered items
       const isNumbered = /^[1-5]️⃣/.test(trimmed);
 
       return (
         <p
           key={i}
           className={`leading-relaxed ${
-            isHeader ? 'text-foreground font-semibold mt-1' :
             isTreeItem ? 'text-foreground/90 pl-1 font-mono text-[13px]' :
             isNumbered ? 'text-foreground/90 pl-1' :
             'text-foreground/80'
@@ -93,23 +97,27 @@ const PromoPopup = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-black/80 backdrop-blur-md"
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-3 bg-black/80 backdrop-blur-md"
           onClick={handleClose}
         >
           <motion.div
-            initial={{ scale: 0.85, opacity: 0, y: 30 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 280 }}
-            className="w-full max-w-md rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_60px_-10px_hsl(var(--primary)/0.3)]"
+            initial={{ y: '100%', opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: '100%', opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_60px_-10px_hsl(var(--primary)/0.3)] max-h-[90vh] flex flex-col"
             style={{
               background: 'linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Drag handle (mobile) */}
+            <div className="flex justify-center pt-2 pb-0 sm:hidden">
+              <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+            </div>
+
             {/* Header with glow */}
-            <div className="relative p-5 pb-3">
-              {/* Glow accent */}
+            <div className="relative p-4 pb-2 sm:p-5 sm:pb-3 shrink-0">
               <div
                 className="absolute inset-0 opacity-20 pointer-events-none"
                 style={{
@@ -134,7 +142,7 @@ const PromoPopup = () => {
 
             {/* Image */}
             {popup.image_url && (
-              <div className="px-4">
+              <div className="px-4 shrink-0">
                 <img
                   src={popup.image_url}
                   alt="Promo"
@@ -143,16 +151,63 @@ const PromoPopup = () => {
               </div>
             )}
 
-            {/* Content */}
-            <ScrollArea className="max-h-[55vh]">
-              <div className="px-5 py-3 text-[13px] space-y-0.5">
-                {renderContent(popup.content)}
+            {/* Content with expand/collapse */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="relative">
+                <div
+                  ref={contentRef}
+                  className="px-4 sm:px-5 py-3 text-[13px] space-y-0.5 transition-all duration-300 ease-in-out"
+                  style={{
+                    maxHeight: expanded ? 'none' : `${COLLAPSED_HEIGHT}px`,
+                    overflow: expanded ? 'auto' : 'hidden',
+                  }}
+                >
+                  {renderContent(popup.content)}
+                </div>
+
+                {/* Fade gradient + "Read more" button */}
+                {needsExpand && !expanded && (
+                  <div className="absolute bottom-0 left-0 right-0">
+                    <div
+                      className="h-16 pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(to bottom, transparent, hsl(var(--background)))',
+                      }}
+                    />
+                    <div className="bg-background px-4 pb-2 -mt-1">
+                      <button
+                        onClick={() => setExpanded(true)}
+                        className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors mx-auto"
+                      >
+                        Lihat selengkapnya
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {needsExpand && expanded && (
+                  <div className="px-4 pb-2">
+                    <button
+                      onClick={() => setExpanded(false)}
+                      className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors mx-auto"
+                    >
+                      Sembunyikan
+                      <ChevronDown className="w-3.5 h-3.5 rotate-180" />
+                    </button>
+                  </div>
+                )}
               </div>
-            </ScrollArea>
+            </div>
+
+            {/* Scrollable expanded content area */}
+            {expanded && (
+              <div className="max-h-[40vh] overflow-y-auto" />
+            )}
 
             {/* Buttons */}
             {popup.buttons.length > 0 && (
-              <div className="px-5 pb-2 flex flex-wrap gap-2">
+              <div className="px-4 sm:px-5 pb-2 pt-1 flex flex-wrap gap-2 shrink-0">
                 {popup.buttons.map((btn, i) => (
                   <Button
                     key={i}
@@ -169,7 +224,7 @@ const PromoPopup = () => {
             )}
 
             {/* Footer */}
-            <div className="p-4 pt-3">
+            <div className="p-4 pt-2 shrink-0">
               <Button
                 onClick={handleClose}
                 className="w-full btn-primary font-semibold shadow-lg shadow-primary/20"
