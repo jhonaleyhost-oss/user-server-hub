@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/PageTransition';
+import AppShell from '@/components/AppShell';
 
 import ServerStatusDisplay from '@/components/ServerStatusDisplay';
 import GlassCard from '@/components/GlassCard';
@@ -277,6 +278,7 @@ const Dashboard = () => {
 
   return (
     <PageTransition>
+    <AppShell>
     <div className="min-h-screen py-6 px-4 bg-background">
 
 
@@ -288,27 +290,6 @@ const Dashboard = () => {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <AccentColorPicker />
               <ThemeToggle />
-              <Link
-                to="/panels"
-                className="btn-secondary flex-1 sm:flex-none flex items-center justify-center gap-2"
-              >
-                <List className="w-4 h-4" />
-                <span>List Panel</span>
-              </Link>
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  className="btn-secondary flex items-center gap-2 bg-amber/10 border-amber/20 text-amber hover:bg-amber/20"
-                >
-                  <Crown className="w-4 h-4" />
-                </Link>
-              )}
-              <button
-                onClick={handleLogout}
-                className="p-2 bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/20 rounded-lg transition-all"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
             </div>
           </div>
         </GlassCard>
@@ -569,6 +550,7 @@ const Dashboard = () => {
         </p>
       </div>
     </div>
+    </AppShell>
     </PageTransition>
   );
 };
