@@ -14,6 +14,7 @@ interface UserRow {
   full_name: string | null;
   avatar_url: string | null;
   role: Role;
+  panel_count: number;
 }
 
 const roleStyle = (role: Role) => {
@@ -46,6 +47,7 @@ export default function Users() {
         full_name: p.full_name,
         avatar_url: p.avatar_url,
         role: (p.role ?? "free") as Role,
+        panel_count: Number(p.panel_count ?? 0),
       }));
       setUsers(merged);
       setLoading(false);
@@ -136,7 +138,9 @@ export default function Users() {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-foreground truncate">{username}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{roleLabel(u.role)}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {u.panel_count} panel
+                        </p>
                       </div>
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border shrink-0 ${roleStyle(u.role)}`}
