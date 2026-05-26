@@ -91,12 +91,12 @@ const HeaderProfile = () => {
           {initial}
         </div>
       )}
-      <div className="hidden sm:flex flex-col items-start leading-tight min-w-0">
-        <span className="text-xs font-semibold text-foreground truncate max-w-[140px]">
+      <div className="flex flex-col items-start leading-tight min-w-0">
+        <span className="text-xs font-semibold text-foreground truncate max-w-[110px]">
           {username}
         </span>
         <span
-          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 rounded border ${roleStyle}`}
+          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 rounded border ${roleStyle} mt-0.5`}
         >
           {roleLabel}
         </span>
