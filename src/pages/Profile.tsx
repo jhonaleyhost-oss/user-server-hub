@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Lock, Image as ImageIcon, Save, Loader2 } from "lucide-react";
+import { User, Mail, Lock, Upload, Save, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ export default function Profile() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -45,21 +47,70 @@ export default function Profile() {
       toast.error("Username tidak boleh kosong");
       return;
     }
-    if (avatarUrl && !/^https?:\/\//i.test(avatarUrl)) {
-      toast.error("URL foto harus dimulai dengan http:// atau https://");
-      return;
-    }
     setSavingProfile(true);
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: fullName.trim(),
-        avatar_url: avatarUrl.trim() || null,
+        avatar_url: avatarUrl || null,
       })
       .eq("user_id", user.id);
     setSavingProfile(false);
     if (error) toast.error("Gagal menyimpan: " + error.message);
     else toast.success("Profil berhasil diperbarui");
+  };
+
+  const handleUploadAvatar = async (file: File) => {
+    if (!user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("File harus berupa gambar");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Maksimal 5 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, contentType: file.type });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      const publicUrl = pub.publicUrl;
+
+      const { error: dbErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("user_id", user.id);
+      if (dbErr) throw dbErr;
+
+      setAvatarUrl(publicUrl);
+      toast.success("Foto profil berhasil diunggah");
+    } catch (err: any) {
+      toast.error("Gagal upload: " + (err.message || "unknown"));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user) return;
+    setUploading(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ avatar_url: null })
+      .eq("user_id", user.id);
+    setUploading(false);
+    if (error) toast.error("Gagal: " + error.message);
+    else {
+      setAvatarUrl("");
+      toast.success("Foto profil dihapus");
+    }
   };
 
   const handleSaveEmail = async () => {
