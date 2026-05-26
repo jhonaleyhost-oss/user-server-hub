@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Search, Loader2, ShieldAlert } from "lucide-react";
+import { Users as UsersIcon, Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useUserRole } from "@/hooks/useUserRole";
 import { Input } from "@/components/ui/input";
 import AppShell from "@/components/AppShell";
 import GlassCard from "@/components/GlassCard";
@@ -13,7 +12,6 @@ type Role = "admin" | "reseller" | "premium" | "free";
 interface UserRow {
   user_id: string;
   full_name: string | null;
-  email: string;
   avatar_url: string | null;
   role: Role;
 }
@@ -35,43 +33,31 @@ const roleLabel = (role: Role) =>
   role === "admin" ? "Admin" : role === "reseller" ? "Reseller" : role === "premium" ? "Premium" : "Free";
 
 export default function Users() {
-  const { isAdmin, loading: roleLoading } = useUserRole();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (roleLoading || !isAdmin) {
-      setLoading(false);
-      return;
-    }
     const load = async () => {
       setLoading(true);
-      const [{ data: profiles }, { data: roles }] = await Promise.all([
-        supabase.from("profiles").select("user_id, full_name, email, avatar_url").order("created_at", { ascending: false }),
-        supabase.from("user_roles").select("user_id, role"),
-      ]);
-      const roleMap = new Map<string, Role>();
-      (roles ?? []).forEach((r: any) => roleMap.set(r.user_id, r.role));
-      const merged: UserRow[] = (profiles ?? []).map((p: any) => ({
+      const { data } = await supabase.rpc("get_public_users");
+      const merged: UserRow[] = (data ?? []).map((p: any) => ({
         user_id: p.user_id,
         full_name: p.full_name,
-        email: p.email,
         avatar_url: p.avatar_url,
-        role: (roleMap.get(p.user_id) ?? "free") as Role,
+        role: (p.role ?? "free") as Role,
       }));
       setUsers(merged);
       setLoading(false);
     };
     load();
-  }, [isAdmin, roleLoading]);
+  }, []);
 
   const filtered = users.filter((u) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
     return (
       (u.full_name ?? "").toLowerCase().includes(q) ||
-      u.email.toLowerCase().includes(q) ||
       u.role.toLowerCase().includes(q)
     );
   });
@@ -81,22 +67,6 @@ export default function Users() {
   const resellerCount = users.filter((u) => u.role === "reseller").length;
   const premiumCount = users.filter((u) => u.role === "premium").length;
   const freeCount = users.filter((u) => u.role === "free").length;
-
-  if (!roleLoading && !isAdmin) {
-    return (
-      <AppShell>
-        <PageTransition>
-          <div className="p-4 max-w-2xl mx-auto">
-            <GlassCard className="p-8 text-center">
-              <ShieldAlert className="w-12 h-12 mx-auto mb-3 text-destructive" />
-              <h1 className="text-xl font-bold mb-1">Akses Ditolak</h1>
-              <p className="text-sm text-muted-foreground">Halaman ini khusus admin.</p>
-            </GlassCard>
-          </div>
-        </PageTransition>
-      </AppShell>
-    );
-  }
 
   return (
     <AppShell>
@@ -145,7 +115,7 @@ export default function Users() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Cari nama, email, atau role..."
+              placeholder="Cari nama atau role..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 h-10"
@@ -164,7 +134,7 @@ export default function Users() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {filtered.map((u, i) => {
-                const username = u.full_name?.trim() || u.email.split("@")[0];
+                const username = u.full_name?.trim() || "Pengguna";
                 const initial = username.charAt(0).toUpperCase();
                 return (
                   <motion.div
@@ -188,7 +158,7 @@ export default function Users() {
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-foreground truncate">{username}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{u.email}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{roleLabel(u.role)}</p>
                       </div>
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border shrink-0 ${roleStyle(u.role)}`}

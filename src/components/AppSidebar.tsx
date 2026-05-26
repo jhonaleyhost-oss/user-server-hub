@@ -55,11 +55,9 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "List Panel", url: "/panels", icon: List },
     { title: "Profil Saya", url: "/profile", icon: UserCog },
+    { title: "Pengguna", url: "/users", icon: UsersIcon },
     ...(isAdmin
-      ? [
-          { title: "Pengguna", url: "/users", icon: UsersIcon },
-          { title: "Admin Panel", url: "/admin", icon: Crown },
-        ]
+      ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
   ];
 
