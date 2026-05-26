@@ -100,7 +100,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarContent className="min-h-0 gap-0">
+      <SidebarContent className="min-h-0 gap-0 overflow-hidden">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* User Card */}
         <div className="p-3 pt-4">
           <button
@@ -132,9 +133,9 @@ export function AppSidebar() {
 
         <SidebarSeparator />
 
-        <SidebarGroup className="flex-1 min-h-0">
+        <SidebarGroup>
           <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
-          <SidebarGroupContent className="min-h-0">
+          <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -151,7 +152,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {role === "free" && (
-          <>
+          <div className="mt-auto">
             <SidebarSeparator />
             <div className="p-3">
               <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
@@ -174,8 +175,9 @@ export function AppSidebar() {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
+        </div>
       </SidebarContent>
       <SidebarFooter className="mt-auto p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
         {/* Row: Logout + Theme + Accent (sejajar) */}
