@@ -78,7 +78,7 @@ const HeaderProfile = () => {
   return (
     <button
       onClick={() => navigate("/profile")}
-      className={`mr-3 flex items-center gap-2 pl-1 pr-3 h-11 rounded-full bg-secondary/50 hover:bg-secondary border border-sidebar-border transition-all duration-300 ease-in-out ${
+      className={`mr-3 flex items-center gap-2 pl-3 pr-1 h-11 rounded-full bg-secondary/50 hover:bg-secondary border border-sidebar-border transition-all duration-300 ease-in-out ${
         sidebarOpen
           ? "translate-x-[120%] opacity-0 pointer-events-none"
           : "translate-x-0 opacity-100"
@@ -87,6 +87,16 @@ const HeaderProfile = () => {
       aria-hidden={sidebarOpen}
       tabIndex={sidebarOpen ? -1 : 0}
     >
+      <div className="flex flex-col items-end gap-0.5 leading-none min-w-0">
+        <span className="text-xs font-semibold text-foreground truncate max-w-[120px]">
+          {username}
+        </span>
+        <span
+          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle}`}
+        >
+          {roleLabel}
+        </span>
+      </div>
       {avatarUrl ? (
         <img
           src={avatarUrl}
@@ -99,16 +109,6 @@ const HeaderProfile = () => {
           {initial}
         </div>
       )}
-      <div className="flex flex-col items-start gap-0.5 leading-none min-w-0">
-        <span className="text-xs font-semibold text-foreground truncate max-w-[120px]">
-          {username}
-        </span>
-        <span
-          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle}`}
-        >
-          {roleLabel}
-        </span>
-      </div>
     </button>
   );
 };
