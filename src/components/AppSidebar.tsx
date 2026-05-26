@@ -179,7 +179,7 @@ export function AppSidebar() {
           </>
         )}
       </SidebarContent>
-      <SidebarFooter className="p-3 border-t border-border/40 gap-3">
+      <SidebarFooter className="p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
         {/* Row: Logout + Theme + Accent (sejajar) */}
         <div className="flex items-center gap-2">
           <Button
