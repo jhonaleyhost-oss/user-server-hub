@@ -198,10 +198,6 @@ Login URL: ${panel.login_url}
               Kelola semua server bot yang aktif
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <AccentColorPicker />
-            <ThemeToggle />
-          </div>
         </motion.div>
 
         {/* Panels List */}
