@@ -65,13 +65,6 @@ const Panels = () => {
   const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
   const [waNumbers, setWaNumbers] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-    fetchPanels();
-  }, [user]);
 
   const fetchPanels = async () => {
     if (!user) return;
