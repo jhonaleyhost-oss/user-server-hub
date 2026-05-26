@@ -1,4 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { LogOut, LayoutDashboard, List, Crown, Sparkles } from "lucide-react";
 import {
   Sidebar,
@@ -19,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AppSidebar() {
   const { pathname } = useLocation();
@@ -26,6 +28,18 @@ export function AppSidebar() {
   const { isAdmin } = useUserRole();
   const { role } = useUserRole();
   const navigate = useNavigate();
+
+  const [fullName, setFullName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setFullName(data?.full_name ?? null));
+  }, [user]);
 
   const items = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -40,7 +54,8 @@ export function AppSidebar() {
     navigate("/auth");
   };
 
-  const username = user?.email?.split("@")[0] ?? "Guest";
+  const emailPrefix = user?.email?.split("@")[0] ?? "Guest";
+  const username = fullName?.trim() || emailPrefix;
   const initial = username.charAt(0).toUpperCase();
 
   const getRoleLabel = () => {
