@@ -117,12 +117,7 @@ export default function Users() {
                 const username = u.full_name?.trim() || "Pengguna";
                 const initial = username.charAt(0).toUpperCase();
                 return (
-                  <motion.div
-                    key={u.user_id}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                  >
+                  <div key={u.user_id}>
                     <GlassCard className="p-3 flex items-center gap-3">
                       {u.avatar_url ? (
                         <img
@@ -148,7 +143,7 @@ export default function Users() {
                         {roleLabel(u.role)}
                       </span>
                     </GlassCard>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
