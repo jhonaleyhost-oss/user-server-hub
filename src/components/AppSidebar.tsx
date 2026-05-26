@@ -98,7 +98,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="flex h-svh min-h-0 flex-1 flex-col overflow-hidden md:h-full">
         <div>
           <div className="p-3 pt-4">
             <button
