@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, List, Crown, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,7 +11,6 @@ import {
   SidebarMenuItem,
   SidebarFooter,
   SidebarHeader,
-  useSidebar,
 } from "@/components/ui/sidebar";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,17 +18,15 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
   const { pathname } = useLocation();
   const { signOut } = useAuth();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
 
   const items = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "List Panel", url: "/panels", icon: List },
-    ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: Crown }] : []),
+    { title: "Dashboard", url: "/" },
+    { title: "List Panel", url: "/panels" },
+    ...(isAdmin ? [{ title: "Admin Panel", url: "/admin" }] : []),
   ];
 
   const isActive = (path: string) => pathname === path;
@@ -40,9 +37,9 @@ export function AppSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="offcanvas">
       <SidebarHeader className="p-3">
-        {!collapsed && <Logo />}
+        <Logo />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -51,10 +48,9 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <NavLink to={item.url} end className="flex items-center gap-2">
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                    <NavLink to={item.url} end>
+                      <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -66,9 +62,9 @@ export function AppSidebar() {
       <SidebarFooter className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} tooltip="Logout" className="text-destructive hover:text-destructive">
+            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive">
               <LogOut className="h-4 w-4" />
-              {!collapsed && <span>Logout</span>}
+              <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
