@@ -267,6 +267,7 @@ export type Database = {
         Returns: {
           avatar_url: string
           full_name: string
+          panel_count: number
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]
