@@ -16,6 +16,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/PageTransition';
+import AppShell from '@/components/AppShell';
 
 import GlassCard from '@/components/GlassCard';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -180,6 +181,7 @@ Login URL: ${panel.login_url}
 
   return (
     <PageTransition>
+    <AppShell>
     <div className="min-h-screen py-8 px-4 bg-background">
 
 
@@ -199,13 +201,6 @@ Login URL: ${panel.login_url}
           <div className="flex items-center gap-2">
             <AccentColorPicker />
             <ThemeToggle />
-            <Link
-              to="/"
-              className="btn-secondary flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4 text-primary" />
-              <span className="hidden sm:inline">Buat Baru</span>
-            </Link>
           </div>
         </motion.div>
 
@@ -414,6 +409,7 @@ Login URL: ${panel.login_url}
         </motion.div>
       </div>
     </div>
+    </AppShell>
     </PageTransition>
   );
 };

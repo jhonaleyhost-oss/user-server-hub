@@ -33,6 +33,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/PageTransition';
+import AppShell from '@/components/AppShell';
 
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
@@ -848,6 +849,7 @@ const Admin = () => {
 
   return (
     <PageTransition>
+    <AppShell>
     <div className="min-h-screen py-6 px-4 bg-background">
 
       <div className="w-full max-w-6xl mx-auto relative z-10">
@@ -855,9 +857,6 @@ const Admin = () => {
         <GlassCard className="p-4 mb-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Link to="/" className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber to-amber/50 flex items-center justify-center">
                   <Crown className="w-5 h-5 text-background" />
@@ -1664,6 +1663,7 @@ const Admin = () => {
         </p>
       </div>
     </div>
+    </AppShell>
     </PageTransition>
   );
 };
