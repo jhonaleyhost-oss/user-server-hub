@@ -200,20 +200,44 @@ export default function Profile() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="avatar" className="flex items-center gap-2 text-xs">
-                <ImageIcon className="w-3.5 h-3.5" /> URL Foto Profil
+              <Label className="flex items-center gap-2 text-xs">
+                <Upload className="w-3.5 h-3.5" /> Foto Profil
               </Label>
-              <Input
-                id="avatar"
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="https://example.com/foto.jpg"
-                disabled={loading}
-                className="h-11"
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleUploadAvatar(f);
+                }}
               />
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || loading}
+                  className="flex-1 h-11 gap-2"
+                >
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {avatarUrl ? "Ganti Foto" : "Upload Foto"}
+                </Button>
+                {avatarUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRemoveAvatar}
+                    disabled={uploading || loading}
+                    className="h-11 gap-2 text-destructive border-destructive/30 hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
               <p className="text-[11px] text-muted-foreground">
-                Tempel link gambar dari internet (jpg, png, webp).
+                JPG / PNG / WEBP, maksimal 5 MB.
               </p>
             </div>
 
