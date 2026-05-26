@@ -219,12 +219,7 @@ Login URL: ${panel.login_url}
             </GlassCard>
           ) : (
             panels.map((panel, index) => (
-              <motion.div
-                key={panel.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+              <div key={panel.id}>
                 <GlassCard className="overflow-hidden" animate={false}>
                   {/* Header */}
                   <div
