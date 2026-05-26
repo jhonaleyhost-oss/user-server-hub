@@ -99,8 +99,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <div className="flex h-full min-h-0 flex-col">
-        <SidebarContent className="gap-0">
+      <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
+        <div>
           <div className="p-3 pt-4">
             <button
               onClick={() => navigate("/profile")}
@@ -131,6 +131,9 @@ export function AppSidebar() {
 
           <SidebarSeparator />
 
+        </div>
+
+        <SidebarContent className="min-h-0 gap-0 overflow-y-auto">
           <SidebarGroup>
             <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -150,7 +153,7 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarContent>
 
-        <div className="mt-auto">
+        <div className="bg-sidebar">
           {role === "free" && (
             <>
               <SidebarSeparator />
