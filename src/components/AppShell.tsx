@@ -99,8 +99,8 @@ const HeaderProfile = () => {
           {initial}
         </div>
       )}
-      <div className="flex items-center gap-1.5 leading-none min-w-0">
-        <span className="text-xs font-semibold text-foreground truncate max-w-[110px]">
+      <div className="flex flex-col items-start gap-0.5 leading-none min-w-0">
+        <span className="text-xs font-semibold text-foreground truncate max-w-[120px]">
           {username}
         </span>
         <span
