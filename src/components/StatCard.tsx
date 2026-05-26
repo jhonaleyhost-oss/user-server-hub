@@ -13,12 +13,7 @@ interface StatCardProps {
 
 const StatCard = ({ icon: Icon, label, value, status, iconColor = 'text-primary', delay = 0 }: StatCardProps) => {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay }}
-      className="stat-card"
-    >
+    <div className="stat-card">
       <div className="flex flex-col items-center justify-center h-full min-h-[96px]">
         <div className={cn('p-2 rounded-lg mb-2', 'bg-primary/10')}>
           <Icon className={cn('w-5 h-5', iconColor)} />
@@ -39,7 +34,7 @@ const StatCard = ({ icon: Icon, label, value, status, iconColor = 'text-primary'
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };
 
