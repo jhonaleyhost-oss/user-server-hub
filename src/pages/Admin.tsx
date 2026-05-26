@@ -848,8 +848,8 @@ const Admin = () => {
   }
 
   return (
-    <PageTransition>
     <AppShell>
+    <PageTransition>
     <div className="min-h-screen py-6 px-4 bg-background">
 
       <div className="w-full max-w-6xl mx-auto relative z-10">
@@ -1659,8 +1659,8 @@ const Admin = () => {
         </p>
       </div>
     </div>
-    </AppShell>
     </PageTransition>
+    </AppShell>
   );
 };
 
