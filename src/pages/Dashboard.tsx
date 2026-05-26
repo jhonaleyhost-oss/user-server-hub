@@ -283,17 +283,6 @@ const Dashboard = () => {
 
 
       <div className="w-full max-w-2xl mx-auto relative z-10">
-        {/* Header */}
-        <GlassCard className="p-4 mb-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Logo />
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <AccentColorPicker />
-              <ThemeToggle />
-            </div>
-          </div>
-        </GlassCard>
-
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <StatCard
@@ -327,108 +316,6 @@ const Dashboard = () => {
         <div className="mb-6">
           <ServerStatusDisplay selectedServerId={userServerId} />
         </div>
-
-        {/* Admin Link */}
-        {isAdmin && (
-          <Link
-            to="/admin"
-            className="mb-6 block w-full p-3 bg-gradient-to-r from-amber/20 to-amber/10 border border-amber/30 rounded-xl text-center text-amber font-semibold hover:scale-[1.01] transition-transform"
-          >
-            <Crown className="w-5 h-5 inline mr-2" />
-            Akses Panel Admin
-          </Link>
-        )}
-
-        {/* User Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-6 bg-gradient-to-r from-secondary to-secondary/50 border border-border rounded-xl p-5"
-        >
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-primary/10 rounded-lg text-primary">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-foreground mb-1">
-                Halo, {user?.email?.split('@')[0]}!
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Status: <span className="font-medium text-primary">{getRoleLabel()}</span> • 
-                Panel: {panelCount}/{getMaxPanels()}
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Upgrade Banner for Free Users */}
-        {role === 'free' && (
-          <Collapsible open={upgradeOpen} onOpenChange={setUpgradeOpen}>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.35 }}
-              className="mb-6"
-            >
-              <CollapsibleTrigger asChild>
-                <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-r from-primary to-accent cursor-pointer hover:shadow-lg transition-all">
-                  <div className="bg-background rounded-[11px] p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber/10 rounded-lg text-amber">
-                        <Star className="w-5 h-5 fill-current" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground text-sm">Upgrade ke Premium</p>
-                        <p className="text-xs text-muted-foreground">Buka akses Unlimited & Server Private</p>
-                      </div>
-                    </div>
-                    <motion.div
-                      animate={{ rotate: upgradeOpen ? 180 : 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </motion.div>
-                  </div>
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="mt-4 p-5 bg-secondary/50 rounded-xl border border-border animate-in slide-in-from-top-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Unlimited RAM & CPU</li>
-                      <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Create Panel Tanpa Batas</li>
-                      <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Akses 2 Type Panel</li>
-                      <li className="flex items-center gap-2"><Check className="w-4 h-4 text-emerald" /> Akses Permanen</li>
-                    </ul>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-emerald" /> Anti-Intip & Aman 100%</li>
-                      <li className="flex items-center gap-2"><Zap className="w-4 h-4 text-emerald" /> Server Private Ram 32 Core 16</li>
-                      <li className="flex items-center gap-2"><Code className="w-4 h-4 text-emerald" /> Support Python & Node.js</li>
-                    </ul>
-                  </div>
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-border">
-                    <div className="text-center sm:text-left">
-                      <p className="text-xs text-muted-foreground">Harga Spesial</p>
-                      <p className="text-xl font-bold text-amber">
-                        Rp 35.000 <span className="text-xs font-normal text-muted-foreground">/lifetime</span>
-                      </p>
-                    </div>
-                    <Button 
-                      className="w-full sm:w-auto bg-amber hover:bg-amber/90 text-background font-bold gap-2"
-                      onClick={() => window.open('https://t.me/upgradeuser_bot', '_blank')}
-                    >
-                      <Send className="w-4 h-4" />
-                      Upgrade Ke Reseller
-                    </Button>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </motion.div>
-          </Collapsible>
-        )}
 
         {/* Create Panel Form */}
         <GlassCard className="p-6 sm:p-8" delay={0.4}>
