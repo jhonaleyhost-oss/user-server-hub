@@ -100,7 +100,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarContent className="gap-0">
+      <SidebarContent className="min-h-0 gap-0">
         {/* User Card */}
         <div className="p-3 pt-4">
           <button
@@ -132,9 +132,9 @@ export function AppSidebar() {
 
         <SidebarSeparator />
 
-        <SidebarGroup>
+        <SidebarGroup className="flex-1 min-h-0">
           <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupContent className="min-h-0">
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
@@ -177,7 +177,7 @@ export function AppSidebar() {
           </>
         )}
       </SidebarContent>
-      <SidebarFooter className="p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
+      <SidebarFooter className="mt-auto p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
         {/* Row: Logout + Theme + Accent (sejajar) */}
         <div className="flex items-center gap-2">
           <Button
