@@ -54,7 +54,7 @@ interface UserPanel {
 }
 
 const Panels = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { role } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -66,12 +66,13 @@ const Panels = () => {
   const [waNumbers, setWaNumbers] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       navigate('/auth');
       return;
     }
     fetchPanels();
-  }, [user]);
+  }, [user, authLoading]);
 
   const fetchPanels = async () => {
     if (!user) return;
