@@ -1660,7 +1660,7 @@ const Admin = () => {
 
         {/* Footer */}
         <p className="text-center text-muted-foreground text-xs mt-8">
-          Admin Panel &copy; 2024 Jhonaley Panel
+          Admin Panel &copy; 2026 Jhonaley Panel
         </p>
       </div>
     </div>
