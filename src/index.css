@@ -254,26 +254,14 @@
 
 @layer components {
   .glass-card {
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(8px);
     border: 1px solid hsl(var(--border) / 0.5);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     position: relative;
   }
 
   .glass-card::before {
-    content: '';
-    position: absolute;
-    inset: -2px;
-    border-radius: inherit;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.3), hsl(var(--accent) / 0.3));
-    filter: blur(20px);
-    opacity: 0;
-    z-index: -1;
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .glass-card:hover::before {
-    opacity: 1;
+    content: none;
   }
 
   :root .glass-card {
