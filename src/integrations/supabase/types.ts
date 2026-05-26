@@ -262,6 +262,15 @@ export type Database = {
     }
     Functions: {
       decrement_panel_count: { Args: { _user_id: string }; Returns: undefined }
+      get_public_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          full_name: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       get_server_keys: {
         Args: { _server_id: string }
         Returns: {
