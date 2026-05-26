@@ -4,6 +4,7 @@ import Dashboard from '@/pages/Dashboard';
 import Auth from '@/pages/Auth';
 import Panels from '@/pages/Panels';
 import Admin from '@/pages/Admin';
+import Upgrade from '@/pages/Upgrade';
 import NotFound from '@/pages/NotFound';
 
 export const AnimatedRoutes = () => {
@@ -16,6 +17,7 @@ export const AnimatedRoutes = () => {
         <Route path="/auth" element={<Auth />} />
         <Route path="/panels" element={<Panels />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/upgrade" element={<Upgrade />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

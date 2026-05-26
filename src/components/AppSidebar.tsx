@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, Send } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -128,11 +128,11 @@ export function AppSidebar() {
                   </p>
                   <Button
                     size="sm"
-                    onClick={() => window.open("https://t.me/upgradeuser_bot", "_blank")}
+                    onClick={() => navigate("/upgrade")}
                     className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
                   >
-                    <Send className="w-3.5 h-3.5" />
-                    Upgrade
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Lihat Detail
                   </Button>
                 </div>
               </div>
