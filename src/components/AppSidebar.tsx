@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -55,7 +55,12 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "List Panel", url: "/panels", icon: List },
     { title: "Profil Saya", url: "/profile", icon: UserCog },
-    ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: Crown }] : []),
+    ...(isAdmin
+      ? [
+          { title: "Pengguna", url: "/users", icon: UsersIcon },
+          { title: "Admin Panel", url: "/admin", icon: Crown },
+        ]
+      : []),
   ];
 
   const isActive = (path: string) => pathname === path;
