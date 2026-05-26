@@ -10,7 +10,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import Logo from "@/components/Logo";
@@ -100,7 +99,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarContent className="min-h-0 gap-0 overflow-hidden">
+      <SidebarContent className="gap-0">
+        <div className="flex min-h-full flex-col">
         {/* User Card */}
         <div className="p-3 pt-4">
           <button
@@ -132,7 +132,7 @@ export function AppSidebar() {
 
         <SidebarSeparator />
 
-        <SidebarGroup className="min-h-0 flex-1 overflow-y-auto">
+        <SidebarGroup>
           <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -150,10 +150,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-      </SidebarContent>
-
-      {role === "free" && (
-        <div className="shrink-0">
+        <div className="mt-auto">
+        {role === "free" && (
+        <>
           <SidebarSeparator />
           <div className="p-3">
             <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
@@ -176,9 +175,9 @@ export function AppSidebar() {
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
-      <SidebarFooter className="p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
+      <div className="p-3 border-t border-sidebar-border bg-sidebar">
         {/* Row: Logout + Theme + Accent (sejajar) */}
         <div className="flex items-center gap-2">
           <Button
@@ -198,7 +197,9 @@ export function AppSidebar() {
         <div className="flex items-center justify-center pt-1">
           <Logo size="sm" />
         </div>
-      </SidebarFooter>
+      </div>
+      </div>
+      </SidebarContent>
     </Sidebar>
   );
 }
