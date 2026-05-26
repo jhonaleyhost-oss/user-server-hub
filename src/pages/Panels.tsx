@@ -383,7 +383,7 @@ Login URL: ${panel.login_url}
                     )}
                   </AnimatePresence>
                 </GlassCard>
-              </motion.div>
+                </div>
             ))
           )}
         </div>
