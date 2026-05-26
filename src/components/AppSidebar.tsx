@@ -10,7 +10,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
-  SidebarHeader,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import Logo from "@/components/Logo";
@@ -72,12 +71,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="p-4 border-b border-border/40">
-        <Logo />
-      </SidebarHeader>
       <SidebarContent className="gap-0">
         {/* User Card */}
-        <div className="p-3">
+        <div className="p-3 pt-4">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/50">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
               {initial}
@@ -139,32 +135,27 @@ export function AppSidebar() {
             </div>
           </>
         )}
-
-        <SidebarSeparator />
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Tampilan</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <div className="flex items-center gap-2 px-2 py-1">
-              <ThemeToggle />
-              <AccentColorPicker />
-              <span className="text-xs text-muted-foreground ml-1">Tema & Aksen</span>
-            </div>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-2 border-t border-border/40">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleLogout}
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center gap-3"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Logout</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="p-3 border-t border-border/40 gap-3">
+        {/* Row: Logout + Theme + Accent (sejajar) */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="flex-1 h-10 gap-2 bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+          <ThemeToggle />
+          <AccentColorPicker />
+        </div>
+
+        {/* Logo + version */}
+        <div className="flex items-center justify-center pt-1">
+          <Logo size="sm" />
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
