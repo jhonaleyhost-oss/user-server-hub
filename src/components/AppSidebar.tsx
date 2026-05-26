@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,20 +30,25 @@ export function AppSidebar() {
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, avatar_url")
       .eq("user_id", user.id)
       .maybeSingle()
-      .then(({ data }) => setFullName(data?.full_name ?? null));
+      .then(({ data }) => {
+        setFullName(data?.full_name ?? null);
+        setAvatarUrl(data?.avatar_url ?? null);
+      });
   }, [user]);
 
   const items = [
     { title: "Dashboard", url: "/", icon: LayoutDashboard },
     { title: "List Panel", url: "/panels", icon: List },
+    { title: "Profil Saya", url: "/profile", icon: UserCog },
     ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: Crown }] : []),
   ];
 
@@ -89,10 +94,22 @@ export function AppSidebar() {
       <SidebarContent className="gap-0">
         {/* User Card */}
         <div className="p-3 pt-4">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/50">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
-              {initial}
-            </div>
+          <button
+            onClick={() => navigate("/profile")}
+            className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/40 hover:bg-secondary/60 border border-border/50 transition-colors text-left"
+          >
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={username}
+                className="w-10 h-10 rounded-lg object-cover shadow-md shrink-0"
+                onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+                {initial}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-foreground truncate">{username}</p>
               <span
@@ -101,7 +118,7 @@ export function AppSidebar() {
                 {getRoleLabel()}
               </span>
             </div>
-          </div>
+          </button>
         </div>
 
         <SidebarSeparator />
