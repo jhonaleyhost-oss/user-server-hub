@@ -115,7 +115,7 @@ const AppShell = ({ children }: AppShellProps) => {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center justify-between border-b border-border/40 bg-background/70 backdrop-blur sticky top-0 z-30">
+          <header className="h-14 flex items-center justify-between border-b border-sidebar-border bg-background/70 backdrop-blur sticky top-0 z-30">
             <HamburgerTrigger />
             <HeaderProfile />
           </header>
