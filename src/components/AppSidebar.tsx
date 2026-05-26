@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon } from "lucide-react";
 import {
   Sidebar,
-  SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -99,7 +98,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <div className="relative flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div>
           <div className="p-3 pt-4">
             <button
@@ -133,7 +132,7 @@ export function AppSidebar() {
 
         </div>
 
-        <SidebarContent className="min-h-0 gap-0 overflow-y-auto pb-48">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <SidebarGroup>
             <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -151,9 +150,9 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        </SidebarContent>
+        </div>
 
-        <div className="absolute inset-x-0 bottom-0 bg-sidebar">
+        <div className="shrink-0 bg-sidebar">
           {role === "free" && (
             <>
               <SidebarSeparator />
