@@ -57,7 +57,10 @@ export default function Profile() {
       .eq("user_id", user.id);
     setSavingProfile(false);
     if (error) toast.error("Gagal menyimpan: " + error.message);
-    else toast.success("Profil berhasil diperbarui");
+    else {
+      window.dispatchEvent(new Event("profile:updated"));
+      toast.success("Profil berhasil diperbarui");
+    }
   };
 
   const handleUploadAvatar = async (file: File) => {
@@ -89,6 +92,7 @@ export default function Profile() {
       if (dbErr) throw dbErr;
 
       setAvatarUrl(publicUrl);
+      window.dispatchEvent(new Event("profile:updated"));
       toast.success("Foto profil berhasil diunggah");
     } catch (err: any) {
       toast.error("Gagal upload: " + (err.message || "unknown"));
@@ -109,6 +113,7 @@ export default function Profile() {
     if (error) toast.error("Gagal: " + error.message);
     else {
       setAvatarUrl("");
+      window.dispatchEvent(new Event("profile:updated"));
       toast.success("Foto profil dihapus");
     }
   };
