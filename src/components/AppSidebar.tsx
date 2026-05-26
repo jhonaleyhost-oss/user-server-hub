@@ -100,7 +100,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarContent className="gap-0">
+      <SidebarContent className="gap-0 flex-none">
         {/* User Card */}
         <div className="p-3 pt-4">
           <button
