@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LogOut } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, Send } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -11,22 +11,27 @@ import {
   SidebarMenuItem,
   SidebarFooter,
   SidebarHeader,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import Logo from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
+import AccentColorPicker from "@/components/AccentColorPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 export function AppSidebar() {
   const { pathname } = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { isAdmin } = useUserRole();
+  const { role } = useUserRole();
   const navigate = useNavigate();
 
   const items = [
-    { title: "Dashboard", url: "/" },
-    { title: "List Panel", url: "/panels" },
-    ...(isAdmin ? [{ title: "Admin Panel", url: "/admin" }] : []),
+    { title: "Dashboard", url: "/", icon: LayoutDashboard },
+    { title: "List Panel", url: "/panels", icon: List },
+    ...(isAdmin ? [{ title: "Admin Panel", url: "/admin", icon: Crown }] : []),
   ];
 
   const isActive = (path: string) => pathname === path;
@@ -36,20 +41,69 @@ export function AppSidebar() {
     navigate("/auth");
   };
 
+  const username = user?.email?.split("@")[0] ?? "Guest";
+  const initial = username.charAt(0).toUpperCase();
+
+  const getRoleLabel = () => {
+    switch (role) {
+      case "admin":
+        return "Admin";
+      case "reseller":
+        return "Reseller";
+      case "premium":
+        return "Premium";
+      default:
+        return "Free";
+    }
+  };
+
+  const getRoleStyle = () => {
+    switch (role) {
+      case "admin":
+        return "bg-amber/15 text-amber border-amber/30";
+      case "reseller":
+        return "bg-primary/15 text-primary border-primary/30";
+      case "premium":
+        return "bg-accent/15 text-accent border-accent/30";
+      default:
+        return "bg-secondary text-muted-foreground border-border";
+    }
+  };
+
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="p-3">
+      <SidebarHeader className="p-4 border-b border-border/40">
         <Logo />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-0">
+        {/* User Card */}
+        <div className="p-3">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/50">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+              {initial}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground truncate">{username}</p>
+              <span
+                className={`inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md border ${getRoleStyle()}`}
+              >
+                {getRoleLabel()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <SidebarSeparator />
+
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} end>
+                    <NavLink to={item.url} end className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -58,11 +112,54 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {role === "free" && (
+          <>
+            <SidebarSeparator />
+            <div className="p-3">
+              <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
+                <div className="rounded-[11px] bg-background p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Sparkles className="w-4 h-4 text-amber" />
+                    <p className="text-sm font-bold text-foreground">Upgrade Premium</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Unlimited RAM, CPU & akses server private.
+                  </p>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open("https://t.me/upgradeuser_bot", "_blank")}
+                    className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Upgrade
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        <SidebarSeparator />
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Tampilan</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <div className="flex items-center gap-2 px-2 py-1">
+              <ThemeToggle />
+              <AccentColorPicker />
+              <span className="text-xs text-muted-foreground ml-1">Tema & Aksen</span>
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 border-t border-border/40">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive">
+            <SidebarMenuButton
+              onClick={handleLogout}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center gap-3"
+            >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>
             </SidebarMenuButton>
