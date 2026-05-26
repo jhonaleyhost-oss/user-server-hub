@@ -155,7 +155,7 @@ export default function Profile() {
   return (
     <AppShell>
       <PageTransition>
-        <div className="max-w-2xl mx-auto space-y-6 pb-8">
+        <div className="max-w-2xl mx-auto space-y-6 pb-8 px-4">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
