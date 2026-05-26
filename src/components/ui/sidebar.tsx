@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -152,21 +151,35 @@ const Sidebar = React.forwardRef<
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
-        <SheetContent
+      <>
+        {openMobile && (
+          <button
+            type="button"
+            aria-label="Close Sidebar"
+            className="fixed inset-0 z-40 bg-black/80 md:hidden"
+            onClick={() => setOpenMobile(false)}
+          />
+        )}
+        <div
+          ref={ref}
           data-sidebar="sidebar"
           data-mobile="true"
-            className="flex h-svh w-[--sidebar-width] flex-col overflow-hidden bg-sidebar p-0 text-sidebar-foreground !transition-none data-[state=open]:!animate-none data-[state=closed]:!animate-none data-[state=open]:!duration-0 data-[state=closed]:!duration-0 [&>button]:hidden"
+          data-state={openMobile ? "open" : "closed"}
+          className={cn(
+            "fixed inset-y-0 left-0 z-50 flex h-svh w-[--sidebar-width] flex-col overflow-hidden bg-sidebar text-sidebar-foreground md:hidden",
+            openMobile ? "translate-x-0" : "-translate-x-full pointer-events-none",
+            className,
+          )}
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
             } as React.CSSProperties
           }
-          side={side}
+          {...props}
         >
-            <div className="flex h-svh min-h-0 w-full flex-col overflow-hidden">{children}</div>
-        </SheetContent>
-      </Sheet>
+          <div className="flex h-svh min-h-0 w-full flex-col overflow-hidden">{children}</div>
+        </div>
+      </>
     );
   }
 
