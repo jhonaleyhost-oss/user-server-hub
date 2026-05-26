@@ -63,10 +63,6 @@ export default function Users() {
   });
 
   const total = users.length;
-  const adminCount = users.filter((u) => u.role === "admin").length;
-  const resellerCount = users.filter((u) => u.role === "reseller").length;
-  const premiumCount = users.filter((u) => u.role === "premium").length;
-  const freeCount = users.filter((u) => u.role === "free").length;
 
   return (
     <AppShell>
@@ -88,28 +84,10 @@ export default function Users() {
           </motion.div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-            <GlassCard className="p-3">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Total</p>
-              <p className="text-2xl font-bold text-foreground">{total}</p>
-            </GlassCard>
-            <GlassCard className="p-3">
-              <p className="text-[10px] uppercase tracking-wide text-amber">Admin</p>
-              <p className="text-2xl font-bold text-amber">{adminCount}</p>
-            </GlassCard>
-            <GlassCard className="p-3">
-              <p className="text-[10px] uppercase tracking-wide text-primary">Reseller</p>
-              <p className="text-2xl font-bold text-primary">{resellerCount}</p>
-            </GlassCard>
-            <GlassCard className="p-3">
-              <p className="text-[10px] uppercase tracking-wide text-accent">Premium</p>
-              <p className="text-2xl font-bold text-accent">{premiumCount}</p>
-            </GlassCard>
-            <GlassCard className="p-3 col-span-2 sm:col-span-1">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Free</p>
-              <p className="text-2xl font-bold text-foreground">{freeCount}</p>
-            </GlassCard>
-          </div>
+          <GlassCard className="p-4 flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Pengguna</p>
+            <p className="text-2xl font-bold text-foreground">{total}</p>
+          </GlassCard>
 
           {/* Search */}
           <div className="relative">
