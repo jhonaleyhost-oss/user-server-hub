@@ -99,7 +99,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto]">
+      <div className="relative flex h-full min-h-0 flex-col">
         <div>
           <div className="p-3 pt-4">
             <button
@@ -133,7 +133,7 @@ export function AppSidebar() {
 
         </div>
 
-        <SidebarContent className="min-h-0 gap-0 overflow-y-auto">
+        <SidebarContent className="min-h-0 gap-0 overflow-y-auto pb-48">
           <SidebarGroup>
             <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -153,7 +153,7 @@ export function AppSidebar() {
           </SidebarGroup>
         </SidebarContent>
 
-        <div className="bg-sidebar">
+        <div className="absolute inset-x-0 bottom-0 bg-sidebar">
           {role === "free" && (
             <>
               <SidebarSeparator />
