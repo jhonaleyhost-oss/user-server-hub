@@ -174,11 +174,11 @@ export default function Profile() {
                 <img
                   src={avatarUrl}
                   alt="Avatar"
-                  className="w-16 h-16 rounded-xl object-cover border border-border/50 shadow-md"
+                  className="w-16 h-16 rounded-full object-cover border border-border/50 shadow-md"
                   onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
                 />
               ) : (
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-2xl shadow-md">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-2xl shadow-md">
                   {initial}
                 </div>
               )}

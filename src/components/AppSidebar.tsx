@@ -108,11 +108,11 @@ export function AppSidebar() {
               <img
                 src={avatarUrl}
                 alt={username}
-                className="w-10 h-10 rounded-lg object-cover shadow-md shrink-0"
+                className="w-10 h-10 rounded-full object-cover shadow-md shrink-0"
                 onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
               />
             ) : (
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
                 {initial}
               </div>
             )}
