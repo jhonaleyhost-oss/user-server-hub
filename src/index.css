@@ -186,11 +186,10 @@
   }
 
   body::before {
-    animation: gradient-rotate 25s ease-in-out infinite;
+    /* animation disabled for performance */
   }
 
   body::after {
-    animation: gradient-rotate 30s ease-in-out infinite reverse;
     opacity: 0.4;
   }
 
