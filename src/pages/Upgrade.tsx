@@ -100,6 +100,58 @@ const Upgrade = () => {
               </p>
             </motion.div>
 
+            {/* Benefits Grid */}
+            <GlassCard className="p-6 mb-6">
+              <h3 className="font-bold text-foreground mb-4 text-center">Yang Kamu Dapatkan</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Check className="w-4 h-4 text-emerald shrink-0" /> Unlimited RAM & CPU
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Tipe Panel
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses Permanen
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip & Aman 100%
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Private RAM 32 / Core 16
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                  <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python & Node.js
+                </div>
+              </div>
+            </GlassCard>
+
+            {/* Price + CTA */}
+            <GlassCard className="p-6 text-center mb-6" delay={0.1}>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
+                Harga Spesial
+              </p>
+              <p className="text-4xl font-bold text-amber mb-1">
+                Rp 55.000
+                <span className="text-sm font-normal text-muted-foreground"> /lifetime</span>
+              </p>
+              <p className="text-xs text-muted-foreground mb-5">
+                Bayar sekali, pakai selamanya.
+              </p>
+              <Button
+                onClick={() => window.open('https://t.me/upgradeuser_bot', '_blank')}
+                className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-12"
+              >
+                <Send className="w-4 h-4" />
+                Upgrade Ke Reseller via Telegram
+              </Button>
+              <p className="text-xs text-muted-foreground mt-3">
+                Akan diarahkan ke @upgradeuser_bot
+              </p>
+            </GlassCard>
+
             {/* Promo Content from DB */}
             {loading ? (
               <GlassCard className="p-8 text-center">
@@ -158,58 +210,6 @@ const Upgrade = () => {
                 )}
               </GlassCard>
             ) : null}
-
-            {/* Benefits Grid */}
-            <GlassCard className="p-6 mb-6">
-              <h3 className="font-bold text-foreground mb-4 text-center">Yang Kamu Dapatkan</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Unlimited RAM & CPU
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Tipe Panel
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses Permanen
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip & Aman 100%
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Private RAM 32 / Core 16
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
-                  <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python & Node.js
-                </div>
-              </div>
-            </GlassCard>
-
-            {/* Price + CTA */}
-            <GlassCard className="p-6 text-center" delay={0.2}>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                Harga Spesial
-              </p>
-              <p className="text-4xl font-bold text-amber mb-1">
-                Rp 35.000
-                <span className="text-sm font-normal text-muted-foreground"> /lifetime</span>
-              </p>
-              <p className="text-xs text-muted-foreground mb-5">
-                Bayar sekali, pakai selamanya.
-              </p>
-              <Button
-                onClick={() => window.open('https://t.me/upgradeuser_bot', '_blank')}
-                className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-12"
-              >
-                <Send className="w-4 h-4" />
-                Upgrade Ke Reseller via Telegram
-              </Button>
-              <p className="text-xs text-muted-foreground mt-3">
-                Akan diarahkan ke @upgradeuser_bot
-              </p>
-            </GlassCard>
           </div>
         </div>
       </AppShell>
