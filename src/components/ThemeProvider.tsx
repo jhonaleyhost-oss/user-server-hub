@@ -33,9 +33,6 @@ export function ThemeProvider({
   useEffect(() => {
     const root = window.document.documentElement;
 
-    // Add transition class for smooth theme change
-    root.classList.add("theme-transition");
-
     root.classList.remove("light", "dark");
 
     if (theme === "system") {
@@ -48,13 +45,6 @@ export function ThemeProvider({
     } else {
       root.classList.add(theme);
     }
-
-    // Remove transition class after animation completes
-    const timeout = setTimeout(() => {
-      root.classList.remove("theme-transition");
-    }, 300);
-
-    return () => clearTimeout(timeout);
   }, [theme]);
 
   const value = {
