@@ -252,7 +252,7 @@ const Auth = () => {
 
         {/* Footer */}
         <p className="text-center text-muted-foreground text-xs mt-8">
-          &copy; 2024 Jhonaley Panel. All Rights Reserved.
+          &copy; 2026 Jhonaley Panel. All Rights Reserved.
         </p>
       </div>
     </div>
