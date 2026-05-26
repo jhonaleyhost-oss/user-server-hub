@@ -167,7 +167,7 @@ const Sidebar = React.forwardRef<
           data-state={openMobile ? "open" : "closed"}
           className={cn(
             "fixed inset-y-0 left-0 z-50 flex h-svh w-[--sidebar-width] flex-col overflow-hidden bg-sidebar text-sidebar-foreground md:hidden",
-            "transition-transform duration-200 ease-out will-change-transform [transform:translate3d(0,0,0)]",
+            "transition-transform duration-200 ease-out will-change-transform",
             openMobile ? "translate-x-0" : "-translate-x-full pointer-events-none",
             className,
           )}
