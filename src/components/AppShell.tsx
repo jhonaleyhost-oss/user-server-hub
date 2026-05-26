@@ -15,7 +15,7 @@ const HamburgerTrigger = () => {
       variant="outline"
       size="icon"
       onClick={toggleSidebar}
-      className="ml-3 h-10 w-10 rounded-lg bg-secondary/60 hover:bg-secondary border-border/60 shadow-sm"
+      className="ml-3 h-11 w-11 rounded-full bg-secondary/50 hover:bg-secondary border border-sidebar-border shadow-sm"
       aria-label="Toggle Sidebar"
     >
       <Menu className="h-5 w-5" strokeWidth={2.5} />
@@ -78,7 +78,7 @@ const HeaderProfile = () => {
   return (
     <button
       onClick={() => navigate("/profile")}
-      className={`mr-3 flex items-center gap-2.5 pl-2.5 pr-3 h-10 rounded-full bg-secondary/50 hover:bg-secondary border border-sidebar-border transition-all duration-300 ease-in-out ${
+      className={`mr-3 flex items-center gap-2 pl-1 pr-3 h-11 rounded-full bg-secondary/50 hover:bg-secondary border border-sidebar-border transition-all duration-300 ease-in-out ${
         sidebarOpen
           ? "translate-x-[120%] opacity-0 pointer-events-none"
           : "translate-x-0 opacity-100"
@@ -91,20 +91,20 @@ const HeaderProfile = () => {
         <img
           src={avatarUrl}
           alt={username}
-          className="w-7 h-7 rounded-full object-cover shrink-0"
+          className="w-9 h-9 rounded-full object-cover shrink-0"
           onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
         />
       ) : (
-        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-bold shrink-0">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-bold shrink-0">
           {initial}
         </div>
       )}
-      <div className="flex flex-col items-start leading-tight min-w-0">
+      <div className="flex items-center gap-1.5 leading-none min-w-0">
         <span className="text-xs font-semibold text-foreground truncate max-w-[110px]">
           {username}
         </span>
         <span
-          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 rounded border ${roleStyle} mt-0.5`}
+          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle}`}
         >
           {roleLabel}
         </span>
