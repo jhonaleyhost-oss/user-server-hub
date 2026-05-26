@@ -101,7 +101,6 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarContent className="min-h-0 gap-0 overflow-hidden">
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {/* User Card */}
         <div className="p-3 pt-4">
           <button
@@ -133,7 +132,7 @@ export function AppSidebar() {
 
         <SidebarSeparator />
 
-        <SidebarGroup>
+        <SidebarGroup className="min-h-0 flex-1 overflow-y-auto">
           <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -151,35 +150,35 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {role === "free" && (
-          <div className="mt-auto">
-            <SidebarSeparator />
-            <div className="p-3">
-              <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
-                <div className="rounded-[11px] bg-background p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="w-4 h-4 text-amber" />
-                    <p className="text-sm font-bold text-foreground">Upgrade Premium</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Unlimited RAM, CPU & akses server private.
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate("/upgrade")}
-                    className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Lihat Detail
-                  </Button>
+      </SidebarContent>
+
+      {role === "free" && (
+        <div className="shrink-0">
+          <SidebarSeparator />
+          <div className="p-3">
+            <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
+              <div className="rounded-[11px] bg-background p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-4 h-4 text-amber" />
+                  <p className="text-sm font-bold text-foreground">Upgrade Premium</p>
                 </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Unlimited RAM, CPU & akses server private.
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/upgrade")}
+                  className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Lihat Detail
+                </Button>
               </div>
             </div>
           </div>
-        )}
         </div>
-      </SidebarContent>
-      <SidebarFooter className="mt-auto p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
+      )}
+      <SidebarFooter className="p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
         {/* Row: Logout + Theme + Accent (sejajar) */}
         <div className="flex items-center gap-2">
           <Button
