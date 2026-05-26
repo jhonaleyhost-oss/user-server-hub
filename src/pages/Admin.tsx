@@ -1664,6 +1664,7 @@ const Admin = () => {
       </div>
     </div>
     </PageTransition>
+      </AppShell>
   );
 };
 
