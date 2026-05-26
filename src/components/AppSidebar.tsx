@@ -10,7 +10,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import Logo from "@/components/Logo";
@@ -100,104 +99,109 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarContent className="gap-0">
-        {/* User Card */}
-        <div className="p-3 pt-4">
-          <button
-            onClick={() => navigate("/profile")}
-            className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/40 hover:bg-secondary/60 border border-border/50 transition-colors text-left"
-          >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={username}
-                className="w-10 h-10 rounded-full object-cover shadow-md shrink-0"
-                onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
-                {initial}
+      <div className="relative flex h-full min-h-0 flex-col">
+        <div>
+          <div className="p-3 pt-4">
+            <button
+              onClick={() => navigate("/profile")}
+              className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/40 hover:bg-secondary/60 border border-border/50 transition-colors text-left"
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={username}
+                  className="w-10 h-10 rounded-full object-cover shadow-md shrink-0"
+                  onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-base shadow-md shrink-0">
+                  {initial}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-foreground truncate">{username}</p>
+                <span
+                  className={`inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md border ${getRoleStyle()}`}
+                >
+                  {getRoleLabel()}
+                </span>
               </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground truncate">{username}</p>
-              <span
-                className={`inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md border ${getRoleStyle()}`}
-              >
-                {getRoleLabel()}
-              </span>
-            </div>
-          </button>
+            </button>
+          </div>
+
+          <SidebarSeparator />
+
         </div>
 
-        <SidebarSeparator />
+        <SidebarContent className="min-h-0 gap-0 overflow-y-auto pb-48">
+          <SidebarGroup>
+            <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {items.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <NavLink to={item.url} end className="flex items-center gap-3">
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} end className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {role === "free" && (
-          <>
-            <SidebarSeparator />
-            <div className="p-3">
-              <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
-                <div className="rounded-[11px] bg-background p-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="w-4 h-4 text-amber" />
-                    <p className="text-sm font-bold text-foreground">Upgrade Premium</p>
+        <div className="absolute inset-x-0 bottom-0 bg-sidebar">
+          {role === "free" && (
+            <>
+              <SidebarSeparator />
+              <div className="p-3">
+                <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
+                  <div className="rounded-[11px] bg-background p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Sparkles className="w-4 h-4 text-amber" />
+                      <p className="text-sm font-bold text-foreground">Upgrade Premium</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Unlimited RAM, CPU & akses server private.
+                    </p>
+                    <Button
+                      size="sm"
+                      onClick={() => navigate("/upgrade")}
+                      className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Lihat Detail
+                    </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Unlimited RAM, CPU & akses server private.
-                  </p>
-                  <Button
-                    size="sm"
-                    onClick={() => navigate("/upgrade")}
-                    className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Lihat Detail
-                  </Button>
                 </div>
               </div>
-            </div>
-          </>
-        )}
-      </SidebarContent>
-      <SidebarFooter className="p-3 border-t border-sidebar-border gap-2 shrink-0 bg-sidebar">
-        {/* Row: Logout + Theme + Accent (sejajar) */}
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            size="sm"
-            className="flex-1 h-10 gap-2 bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
-          </Button>
-          <ThemeToggle />
-          <AccentColorPicker />
-        </div>
+            </>
+          )}
 
-        {/* Logo + version */}
-        <div className="flex items-center justify-center pt-1">
-          <Logo size="sm" />
+          <div className="p-3 border-t border-sidebar-border bg-sidebar">
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="flex-1 h-10 gap-2 bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </Button>
+              <ThemeToggle />
+              <AccentColorPicker />
+            </div>
+
+            <div className="flex items-center justify-center pt-1">
+              <Logo size="sm" />
+            </div>
+          </div>
         </div>
-      </SidebarFooter>
+      </div>
     </Sidebar>
   );
 }
