@@ -34,15 +34,21 @@ export function AppSidebar() {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("full_name, avatar_url")
-      .eq("user_id", user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        setFullName(data?.full_name ?? null);
-        setAvatarUrl(data?.avatar_url ?? null);
-      });
+    const load = () => {
+      supabase
+        .from("profiles")
+        .select("full_name, avatar_url")
+        .eq("user_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setFullName(data?.full_name ?? null);
+          setAvatarUrl(data?.avatar_url ?? null);
+        });
+    };
+    load();
+    const onUpdate = () => load();
+    window.addEventListener("profile:updated", onUpdate);
+    return () => window.removeEventListener("profile:updated", onUpdate);
   }, [user]);
 
   const items = [
