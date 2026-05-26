@@ -283,17 +283,6 @@ const Dashboard = () => {
 
 
       <div className="w-full max-w-2xl mx-auto relative z-10">
-        {/* Header */}
-        <GlassCard className="p-4 mb-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <Logo />
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <AccentColorPicker />
-              <ThemeToggle />
-            </div>
-          </div>
-        </GlassCard>
-
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <StatCard
