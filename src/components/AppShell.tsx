@@ -27,6 +27,8 @@ const HeaderProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { role } = useUserRole();
+  const { openMobile, open, isMobile } = useSidebar();
+  const sidebarOpen = isMobile ? openMobile : open;
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -76,8 +78,14 @@ const HeaderProfile = () => {
   return (
     <button
       onClick={() => navigate("/profile")}
-      className="mr-3 flex items-center gap-2.5 pl-2.5 pr-3 h-10 rounded-full bg-secondary/50 hover:bg-secondary border border-border/60 transition-colors"
+      className={`mr-3 flex items-center gap-2.5 pl-2.5 pr-3 h-10 rounded-full bg-secondary/50 hover:bg-secondary border border-sidebar-border transition-all duration-300 ease-in-out ${
+        sidebarOpen
+          ? "translate-x-[120%] opacity-0 pointer-events-none"
+          : "translate-x-0 opacity-100"
+      }`}
       aria-label="Buka profil"
+      aria-hidden={sidebarOpen}
+      tabIndex={sidebarOpen ? -1 : 0}
     >
       {avatarUrl ? (
         <img
