@@ -264,7 +264,7 @@ const Upgrade = () => {
 
   const handleDownloadQris = async () => {
     try {
-      const svg = document.getElementById('qris-svg') as SVGSVGElement | null;
+      const svg = document.getElementById('qris-svg') as unknown as SVGSVGElement | null;
       if (!svg) return;
       const SCALE = 4;
       const svgRect = svg.getBoundingClientRect();
