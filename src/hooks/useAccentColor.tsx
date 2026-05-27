@@ -14,7 +14,7 @@ const STORAGE_KEY = "jhonaley-accent-color";
 export function AccentColorProvider({ children }: { children: React.ReactNode }) {
   const [accent, setAccentState] = useState<AccentColor>(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return (stored as AccentColor) || "pink";
+    return (stored as AccentColor) || "blue";
   });
 
   useEffect(() => {
