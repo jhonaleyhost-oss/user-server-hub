@@ -314,12 +314,19 @@ const Chat = () => {
 
   const handleDelete = async (id: string) => {
     const target = messagesRef.current.find((m) => m.id === id);
-    const { error } = await supabase.from("messages").delete().eq("id", id);
+    const { error } = await supabase
+      .from("messages")
+      .update({ deleted: true, content: null, image_url: null })
+      .eq("id", id);
     if (error) {
       toast.error("Gagal menghapus pesan");
       return;
     }
-    setMessages((prev) => prev.filter((m) => m.id !== id));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, deleted: true, content: null, image_url: null } : m
+      )
+    );
     if (lightbox && target?.image_url === lightbox) setLightbox(null);
 
     // Cleanup storage object so the photo file is also removed.
