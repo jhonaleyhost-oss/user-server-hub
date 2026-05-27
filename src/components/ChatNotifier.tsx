@@ -61,10 +61,13 @@ const ChatNotifier = () => {
           let title = "Pesan baru";
           let icon: string | undefined;
           try {
-            const { data } = await supabase.rpc("get_public_users", {
-              p_user_ids: [m.user_id],
-            });
-            const p = Array.isArray(data) ? (data as Array<{ full_name: string | null; avatar_url: string | null }>)[0] : null;
+            const { data } = await supabase.rpc("get_public_users");
+            const list = (data ?? []) as Array<{
+              user_id: string;
+              full_name: string | null;
+              avatar_url: string | null;
+            }>;
+            const p = list.find((u) => u.user_id === m.user_id);
             if (p?.full_name) title = p.full_name;
             if (p?.avatar_url) icon = p.avatar_url;
           } catch {
