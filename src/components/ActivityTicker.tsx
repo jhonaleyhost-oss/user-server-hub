@@ -164,20 +164,21 @@ const ActivityTicker = () => {
       .channel("activity-ticker")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "user_panels" },
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.panel" },
         async (payload) => {
           const row = payload.new as {
             id: string;
-            user_id: string;
-            username: string;
+            actor_user_id: string;
+            actor_name: string | null;
+            detail: string | null;
             created_at: string;
           };
-          const name = await nameOf(row.user_id);
+          const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
           push({
             id: `panel-${row.id}`,
             kind: "panel",
             text: `${name} membuat panel`,
-            detail: row.username,
+            detail: row.detail ?? undefined,
             created_at: row.created_at,
           });
         }
