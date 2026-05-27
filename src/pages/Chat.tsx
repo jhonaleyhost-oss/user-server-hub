@@ -191,6 +191,17 @@ const Chat = () => {
           if (old.image_url && old.image_url === lightbox) setLightbox(null);
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          const updated = payload.new as ChatMessage;
+          setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+          if (updated.deleted && lightbox && payload.old && (payload.old as ChatMessage).image_url === lightbox) {
+            setLightbox(null);
+          }
+        }
+      )
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState() as Record<string, PresenceState[]>;
         setOnlineUsers(new Set(Object.keys(state)));
