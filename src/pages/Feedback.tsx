@@ -243,12 +243,14 @@ const Feedback = () => {
     await supabase.from("tips").insert({
       user_id: user.id,
       username: fullName || "Anonim",
+      role,
       amount: tipAmount,
       order_id: oid,
       status: "pending",
     });
+    setPollingOid(oid);
     window.open(pakasirUrl, "_blank", "noopener,noreferrer");
-    toast.success("Halaman QRIS dibuka. Setelah bayar, upload bukti di bawah ya!");
+    toast.success("Halaman QRIS dibuka. Status pembayaran akan dicek otomatis.");
   };
 
   const handleCopyUrl = async () => {
