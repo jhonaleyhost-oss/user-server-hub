@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Search, Loader2 } from "lucide-react";
+import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import AppShell from "@/components/AppShell";
 import GlassCard from "@/components/GlassCard";
 import { PageTransition } from "@/components/PageTransition";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Role = "admin" | "reseller" | "premium" | "free";
 
@@ -15,6 +21,7 @@ interface UserRow {
   avatar_url: string | null;
   role: Role;
   panel_count: number;
+  created_at: string | null;
 }
 
 const roleStyle = (role: Role) => {
@@ -37,6 +44,7 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<UserRow | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -48,6 +56,7 @@ export default function Users() {
         avatar_url: p.avatar_url,
         role: (p.role ?? "free") as Role,
         panel_count: Number(p.panel_count ?? 0),
+        created_at: p.created_at ?? null,
       }));
       setUsers(merged);
       setLoading(false);
@@ -117,8 +126,12 @@ export default function Users() {
                 const username = u.full_name?.trim() || "Pengguna";
                 const initial = username.charAt(0).toUpperCase();
                 return (
-                  <div key={u.user_id}>
-                    <GlassCard className="p-3 flex items-center gap-3">
+                  <div
+                    key={u.user_id}
+                    onClick={() => setSelected(u)}
+                    className="cursor-pointer"
+                  >
+                    <GlassCard className="p-3 flex items-center gap-3 hover:border-primary/40 transition-colors">
                       {u.avatar_url ? (
                         <img
                           src={u.avatar_url}
@@ -149,6 +162,77 @@ export default function Users() {
             </div>
           )}
         </div>
+
+        <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Profil Pengguna</DialogTitle>
+            </DialogHeader>
+            {selected && (
+              <div className="space-y-4">
+                <div className="flex flex-col items-center text-center gap-3 pt-2">
+                  {selected.avatar_url ? (
+                    <img
+                      src={selected.avatar_url}
+                      alt={selected.full_name ?? "Pengguna"}
+                      className="w-20 h-20 rounded-full object-cover border border-border/50"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-2xl">
+                      {(selected.full_name?.trim() || "P").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-lg font-bold text-foreground">
+                      {selected.full_name?.trim() || "Pengguna"}
+                    </p>
+                    <span
+                      className={`inline-block mt-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border ${roleStyle(selected.role)}`}
+                    >
+                      {roleLabel(selected.role)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-border/50">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Server className="w-4 h-4 text-primary" />
+                      Panel Dibuat
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {selected.panel_count}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-border/50">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Shield className="w-4 h-4 text-accent" />
+                      Role
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {roleLabel(selected.role)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-border/50">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="w-4 h-4 text-amber" />
+                      Bergabung
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      {selected.created_at
+                        ? new Date(selected.created_at).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </PageTransition>
     </AppShell>
   );
