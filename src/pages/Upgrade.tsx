@@ -354,6 +354,9 @@ const Upgrade = () => {
                 <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
                   <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python & Node.js
                 </div>
+                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Tidak ada biaya tambahan lain / Anti PTPT
+                </div>
               </div>
             </GlassCard>
 
