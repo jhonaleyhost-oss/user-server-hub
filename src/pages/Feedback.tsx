@@ -124,6 +124,7 @@ const Feedback = () => {
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [tips, setTips] = useState<TipRow[]>([]);
   const [showQris, setShowQris] = useState(false);
+  const [payMethod, setPayMethod] = useState<"qris" | "all">("qris");
 
   useEffect(() => {
     if (authLoading) return;
@@ -297,9 +298,9 @@ const Feedback = () => {
     [orderId, user?.id]
   );
 
-  const pakasirUrl = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?qris_only=1&order_id=${encodeURIComponent(
-    generatedOrderId
-  )}`;
+  const pakasirUrl = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?${
+    payMethod === "qris" ? "qris_only=1&" : ""
+  }order_id=${encodeURIComponent(generatedOrderId)}`;
 
   const handleOpenQris = async () => {
     if (!user) return;
@@ -477,20 +478,73 @@ const Feedback = () => {
             </div>
 
             {!showQris && (
-              <Button
-                onClick={() => {
-                  if (!validAmount) {
-                    toast.error("Masukkan nominal Rp 1.000 - Rp 100.000");
-                    return;
-                  }
-                  setOrderId("");
-                  setShowQris(true);
-                }}
-                className="w-full h-11 mt-4 gap-2"
-              >
-                <QrCode className="w-4 h-4" />
-                Generate QRIS
-              </Button>
+              <>
+                <label className="text-xs text-muted-foreground mb-1 mt-4 block">
+                  Metode Pembayaran
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("qris")}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                      payMethod === "qris"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary/40 border-border hover:bg-secondary"
+                    }`}
+                  >
+                    QRIS Saja
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPayMethod("all")}
+                    className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-colors ${
+                      payMethod === "all"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary/40 border-border hover:bg-secondary"
+                    }`}
+                  >
+                    DANA / OVO / GoPay / Bank
+                  </button>
+                </div>
+                <Button
+                  onClick={() => {
+                    if (!validAmount) {
+                      toast.error("Masukkan nominal Rp 1.000 - Rp 100.000");
+                      return;
+                    }
+                    setOrderId("");
+                    if (payMethod === "all") {
+                      // E-wallet/bank only works via Pakasir hosted page
+                      const oid = `TIP-${user?.id?.slice(0, 6) ?? "guest"}-${Date.now()}`;
+                      setOrderId(oid);
+                      supabase.from("tips").insert({
+                        user_id: user!.id,
+                        username: fullName || "Anonim",
+                        role,
+                        amount: tipAmount,
+                        order_id: oid,
+                        status: "pending",
+                      });
+                      setPollingOid(oid);
+                      const url = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?order_id=${encodeURIComponent(oid)}`;
+                      window.open(url, "_blank", "noopener,noreferrer");
+                      toast.success("Halaman pembayaran dibuka. Status akan dicek otomatis.");
+                    } else {
+                      setShowQris(true);
+                    }
+                  }}
+                  className="w-full h-11 mt-3 gap-2"
+                >
+                  <QrCode className="w-4 h-4" />
+                  {payMethod === "qris" ? "Generate QRIS" : "Lanjut Bayar"}
+                </Button>
+                {pollingOid && payMethod === "all" && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-3">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Menunggu konfirmasi pembayaran...
+                  </div>
+                )}
+              </>
             )}
 
             {/* QRIS Canvas */}
