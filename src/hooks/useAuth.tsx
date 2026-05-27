@@ -21,6 +21,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const forceLogoutInProgress = useRef(false);
 
   useEffect(() => {
+    if (session) {
+      forceLogoutInProgress.current = false;
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -147,6 +151,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     // Always clear local state regardless of server response
+    forceLogoutInProgress.current = false;
     setUser(null);
     setSession(null);
     try {
