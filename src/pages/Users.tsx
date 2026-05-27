@@ -155,11 +155,11 @@ export default function Users() {
                 placeholder="Cari nama atau role..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10"
+                className="pl-9 h-10 rounded-full"
               />
             </div>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
-              <SelectTrigger className="h-10 w-auto min-w-[44px] px-3 gap-2">
+              <SelectTrigger className="h-10 w-auto min-w-[44px] px-4 gap-2 rounded-full">
                 <ArrowUpDown className="w-4 h-4 text-primary shrink-0" />
                 <span className="hidden sm:inline text-xs">{sortLabel[sortBy]}</span>
               </SelectTrigger>
