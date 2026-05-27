@@ -432,19 +432,21 @@ const Chat = () => {
                             mine
                               ? "bg-primary/20 text-foreground border-primary/30 rounded-br-md"
                               : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
-                          }`}
+                          } ${m.image_url && !m.content ? "!p-1" : ""}`}
                         >
                           {replied && (
                             <button
                               type="button"
                               onClick={() => scrollToMessage(replied.id)}
-                              className="block w-full text-left mb-1.5 px-2 py-1 rounded-lg bg-background/40 border-l-2 border-primary/60 hover:bg-background/60 transition-colors"
+                              className={`block w-full text-left mb-1.5 px-2 py-1 rounded-lg bg-background/40 border-l-2 border-primary/60 hover:bg-background/60 transition-colors ${
+                                m.image_url && !m.content ? "mx-0" : ""
+                              }`}
                             >
                               <div className="text-[10px] font-semibold text-primary truncate">
                                 {repliedName}
                               </div>
                               <div className="text-[11px] text-muted-foreground truncate">
-                                {replied.content}
+                                {replied.content || (replied.image_url ? "📷 Foto" : "")}
                               </div>
                             </button>
                           )}
@@ -453,7 +455,25 @@ const Chat = () => {
                               Pesan asli sudah dihapus
                             </div>
                           )}
-                          {m.content}
+                          {m.image_url && (
+                            <button
+                              type="button"
+                              onClick={() => setLightbox(m.image_url!)}
+                              className="block overflow-hidden rounded-xl border border-border/40"
+                            >
+                              <img
+                                src={m.image_url}
+                                alt="foto"
+                                loading="lazy"
+                                className="max-w-[220px] max-h-[280px] object-cover w-auto h-auto"
+                              />
+                            </button>
+                          )}
+                          {m.content && (
+                            <div className={m.image_url ? "mt-1.5 px-2 pb-1" : ""}>
+                              {m.content}
+                            </div>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
