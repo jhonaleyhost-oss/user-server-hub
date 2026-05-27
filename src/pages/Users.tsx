@@ -193,7 +193,7 @@ export default function Users() {
                     onClick={() => setSelected(u)}
                     className="cursor-pointer"
                   >
-                    <GlassCard className="p-3 flex items-center gap-3 hover:border-primary/40 transition-colors">
+                    <GlassCard className="!rounded-full p-2 pr-4 flex items-center gap-3 hover:border-primary/40 transition-colors">
                       {u.avatar_url ? (
                         <img
                           src={u.avatar_url}
