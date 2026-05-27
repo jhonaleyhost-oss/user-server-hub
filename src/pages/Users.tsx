@@ -126,11 +126,12 @@ export default function Users() {
                 const username = u.full_name?.trim() || "Pengguna";
                 const initial = username.charAt(0).toUpperCase();
                 return (
-                  <div key={u.user_id}>
-                    <GlassCard
-                      onClick={() => setSelected(u)}
-                      className="p-3 flex items-center gap-3 cursor-pointer hover:border-primary/40 transition-colors"
-                    >
+                  <div
+                    key={u.user_id}
+                    onClick={() => setSelected(u)}
+                    className="cursor-pointer"
+                  >
+                    <GlassCard className="p-3 flex items-center gap-3 hover:border-primary/40 transition-colors">
                       {u.avatar_url ? (
                         <img
                           src={u.avatar_url}
