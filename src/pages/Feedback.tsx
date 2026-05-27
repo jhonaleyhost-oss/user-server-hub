@@ -124,6 +124,7 @@ const Feedback = () => {
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [tips, setTips] = useState<TipRow[]>([]);
   const [showQris, setShowQris] = useState(false);
+  const [payMethod, setPayMethod] = useState<"qris" | "all">("qris");
 
   useEffect(() => {
     if (authLoading) return;
