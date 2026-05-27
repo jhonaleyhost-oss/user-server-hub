@@ -294,6 +294,11 @@ const Upgrade = () => {
                 <p className="text-xs text-muted-foreground uppercase tracking-wider text-center mb-4">
                   Pilih Paket Reseller
                 </p>
+                <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
+                  <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan VPS{' '}
+                  <span className="font-semibold">Digital Ocean</span>. Jika ingin yang{' '}
+                  <span className="font-semibold">anti mokad</span>, silahkan scroll ke bawah dan pilih paket tersebut.
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                   {PLANS.map((p) => {
                     const active = p.key === selected;
