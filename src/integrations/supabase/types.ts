@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string
+          deleted: boolean
           id: string
           image_url: string | null
           reply_to_id: string | null
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           content?: string | null
           created_at?: string
+          deleted?: boolean
           id?: string
           image_url?: string | null
           reply_to_id?: string | null
@@ -34,6 +36,7 @@ export type Database = {
         Update: {
           content?: string | null
           created_at?: string
+          deleted?: boolean
           id?: string
           image_url?: string | null
           reply_to_id?: string | null
