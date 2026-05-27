@@ -300,12 +300,24 @@ const Chat = () => {
   };
 
   const handleDelete = async (id: string) => {
+    const target = messagesRef.current.find((m) => m.id === id);
     const { error } = await supabase.from("messages").delete().eq("id", id);
     if (error) {
       toast.error("Gagal menghapus pesan");
       return;
     }
     setMessages((prev) => prev.filter((m) => m.id !== id));
+    if (lightbox && target?.image_url === lightbox) setLightbox(null);
+
+    // Cleanup storage object so the photo file is also removed.
+    if (target?.image_url) {
+      const marker = "/storage/v1/object/public/chat-images/";
+      const idx = target.image_url.indexOf(marker);
+      if (idx !== -1) {
+        const path = target.image_url.slice(idx + marker.length);
+        await supabase.storage.from("chat-images").remove([path]).catch(() => {});
+      }
+    }
   };
 
   const typingNames = useMemo(() => {
