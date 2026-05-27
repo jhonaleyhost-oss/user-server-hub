@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -14,9 +14,10 @@ import { toast } from "sonner";
 interface ChatMessage {
   id: string;
   user_id: string;
-  content: string;
+  content: string | null;
   created_at: string;
   reply_to_id: string | null;
+  image_url: string | null;
 }
 
 interface ProfileLite {
@@ -76,11 +77,14 @@ const Chat = () => {
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastTypingSentRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   useEffect(() => {
     messagesRef.current = messages;
@@ -257,6 +261,44 @@ const Chat = () => {
     setReplyTo(null);
   };
 
+  const handleImagePick = () => fileInputRef.current?.click();
+
+  const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file foto yang diperbolehkan");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran foto maksimal 5 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("chat-images").getPublicUrl(path);
+      const { error: insErr } = await supabase.from("messages").insert({
+        user_id: user.id,
+        content: null,
+        image_url: pub.publicUrl,
+        reply_to_id: replyTo?.id ?? null,
+      });
+      if (insErr) throw insErr;
+      setReplyTo(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mengunggah foto");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("messages").delete().eq("id", id);
     if (error) {
@@ -390,19 +432,21 @@ const Chat = () => {
                             mine
                               ? "bg-primary/20 text-foreground border-primary/30 rounded-br-md"
                               : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
-                          }`}
+                          } ${m.image_url && !m.content ? "!p-1" : ""}`}
                         >
                           {replied && (
                             <button
                               type="button"
                               onClick={() => scrollToMessage(replied.id)}
-                              className="block w-full text-left mb-1.5 px-2 py-1 rounded-lg bg-background/40 border-l-2 border-primary/60 hover:bg-background/60 transition-colors"
+                              className={`block w-full text-left mb-1.5 px-2 py-1 rounded-lg bg-background/40 border-l-2 border-primary/60 hover:bg-background/60 transition-colors ${
+                                m.image_url && !m.content ? "mx-0" : ""
+                              }`}
                             >
                               <div className="text-[10px] font-semibold text-primary truncate">
                                 {repliedName}
                               </div>
                               <div className="text-[11px] text-muted-foreground truncate">
-                                {replied.content}
+                                {replied.content || (replied.image_url ? "📷 Foto" : "")}
                               </div>
                             </button>
                           )}
@@ -411,7 +455,25 @@ const Chat = () => {
                               Pesan asli sudah dihapus
                             </div>
                           )}
-                          {m.content}
+                          {m.image_url && (
+                            <button
+                              type="button"
+                              onClick={() => setLightbox(m.image_url!)}
+                              className="block overflow-hidden rounded-xl border border-border/40"
+                            >
+                              <img
+                                src={m.image_url}
+                                alt="foto"
+                                loading="lazy"
+                                className="max-w-[220px] max-h-[280px] object-cover w-auto h-auto"
+                              />
+                            </button>
+                          )}
+                          {m.content && (
+                            <div className={m.image_url ? "mt-1.5 px-2 pb-1" : ""}>
+                              {m.content}
+                            </div>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
@@ -480,6 +542,28 @@ const Chat = () => {
                 </div>
               )}
               <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelected}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={handleImagePick}
+                  disabled={uploading || !user}
+                  className="h-11 w-11 rounded-full shrink-0"
+                  aria-label="Kirim foto"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-4 h-4" />
+                  )}
+                </Button>
                 <Input
                   ref={inputRef}
                   value={input}
@@ -504,6 +588,28 @@ const Chat = () => {
               </form>
             </div>
           </GlassCard>
+
+          {lightbox && (
+            <div
+              onClick={() => setLightbox(null)}
+              className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in"
+            >
+              <button
+                type="button"
+                onClick={() => setLightbox(null)}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-secondary/80 hover:bg-secondary flex items-center justify-center"
+                aria-label="Tutup"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={lightbox}
+                alt="foto"
+                className="max-w-full max-h-full object-contain rounded-xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
         </div>
       </PageTransition>
     </AppShell>
