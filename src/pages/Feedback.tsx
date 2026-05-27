@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift } from "lucide-react";
+import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
