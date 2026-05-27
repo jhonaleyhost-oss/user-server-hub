@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,13 +16,14 @@ interface ChatMessage {
   user_id: string;
   content: string;
   created_at: string;
+  reply_to_id: string | null;
 }
 
 interface ProfileLite {
   user_id: string;
   full_name: string | null;
-  email: string | null;
   avatar_url: string | null;
+  role: string;
 }
 
 interface PresenceState {
@@ -44,6 +44,19 @@ const roleStyle = (role: string) => {
   }
 };
 
+const roleLabel = (role: string) => {
+  switch (role) {
+    case "admin":
+      return "Admin";
+    case "reseller":
+      return "Reseller";
+    case "premium":
+      return "Premium";
+    default:
+      return "Free";
+  }
+};
+
 const formatTime = (iso: string) => {
   const d = new Date(iso);
   return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
@@ -61,11 +74,17 @@ const Chat = () => {
   const [loading, setLoading] = useState(true);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSentRef = useRef<number>(0);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -88,21 +107,27 @@ const Chat = () => {
     };
   }, []);
 
-  // Load profiles for unknown user_ids in batch
-  const loadProfiles = async (userIds: string[]) => {
-    const missing = userIds.filter((id) => !profiles[id]);
-    if (missing.length === 0) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("user_id, full_name, email, avatar_url")
-      .in("user_id", missing);
-    if (data) {
-      setProfiles((prev) => {
-        const next = { ...prev };
-        for (const p of data) next[p.user_id] = p as ProfileLite;
-        return next;
-      });
-    }
+  // Load public profile info (name, avatar, role) for all users via RPC
+  const refreshProfiles = async () => {
+    const { data, error } = await supabase.rpc("get_public_users");
+    if (error || !data) return;
+    setProfiles((prev) => {
+      const next = { ...prev };
+      for (const p of data as Array<{
+        user_id: string;
+        full_name: string | null;
+        avatar_url: string | null;
+        role: string;
+      }>) {
+        next[p.user_id] = {
+          user_id: p.user_id,
+          full_name: p.full_name,
+          avatar_url: p.avatar_url,
+          role: p.role,
+        };
+      }
+      return next;
+    });
   };
 
   // Fetch initial messages
@@ -124,7 +149,7 @@ const Chat = () => {
       }
       const ordered = (data ?? []).slice().reverse() as ChatMessage[];
       setMessages(ordered);
-      await loadProfiles(Array.from(new Set(ordered.map((m) => m.user_id))));
+      await refreshProfiles();
       setLoading(false);
     })();
     return () => {
@@ -149,7 +174,7 @@ const Chat = () => {
         async (payload) => {
           const m = payload.new as ChatMessage;
           setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
-          await loadProfiles([m.user_id]);
+          if (!profiles[m.user_id]) await refreshProfiles();
         }
       )
       .on(
@@ -222,13 +247,14 @@ const Chat = () => {
     setSending(true);
     const { error } = await supabase
       .from("messages")
-      .insert({ user_id: user.id, content: text });
+      .insert({ user_id: user.id, content: text, reply_to_id: replyTo?.id ?? null });
     setSending(false);
     if (error) {
       toast.error(error.message || "Gagal mengirim pesan");
       return;
     }
     setInput("");
+    setReplyTo(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -244,7 +270,7 @@ const Chat = () => {
     return Object.keys(typingUsers)
       .map((uid) => {
         const p = profiles[uid];
-        return p?.full_name?.trim() || p?.email?.split("@")[0] || "Seseorang";
+        return p?.full_name?.trim() || "Seseorang";
       })
       .slice(0, 3);
   }, [typingUsers, profiles]);
@@ -253,7 +279,15 @@ const Chat = () => {
 
   const displayName = (uid: string) => {
     const p = profiles[uid];
-    return p?.full_name?.trim() || p?.email?.split("@")[0] || "Pengguna";
+    return p?.full_name?.trim() || "Pengguna";
+  };
+
+  const scrollToMessage = (id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    setHighlightId(id);
+    setTimeout(() => setHighlightId((curr) => (curr === id ? null : curr)), 1500);
   };
 
   return (
