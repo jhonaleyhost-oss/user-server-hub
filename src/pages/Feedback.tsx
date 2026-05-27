@@ -215,6 +215,7 @@ const Feedback = () => {
   // Poll Pakasir status while waiting for payment
   useEffect(() => {
     if (!pollingOid) return;
+    const amt = Math.max(1000, Math.min(100000, parseInt(amount || "0", 10) || 0));
     let stopped = false;
     const startedAt = Date.now();
     const interval = setInterval(async () => {
@@ -227,7 +228,7 @@ const Feedback = () => {
       }
       try {
         const { data } = await supabase.functions.invoke("check-tip", {
-          body: { order_id: pollingOid, amount: tipAmount },
+          body: { order_id: pollingOid, amount: amt },
         });
         if (data?.completed) {
           toast.success("Pembayaran berhasil! Terima kasih banyak 💖");
@@ -242,7 +243,7 @@ const Feedback = () => {
       stopped = true;
       clearInterval(interval);
     };
-  }, [pollingOid, tipAmount]);
+  }, [pollingOid, amount]);
 
   const stats = useMemo(() => {
     if (!items.length) return { avg: 0, count: 0, dist: [0, 0, 0, 0, 0] };
