@@ -152,6 +152,8 @@ export type Database = {
           id: string
           ip_address: string | null
           panel_creations_count: number
+          reseller_expires_at: string | null
+          reseller_permanent: boolean
           updated_at: string
           user_id: string
         }
@@ -164,6 +166,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           panel_creations_count?: number
+          reseller_expires_at?: string | null
+          reseller_permanent?: boolean
           updated_at?: string
           user_id: string
         }
@@ -176,6 +180,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           panel_creations_count?: number
+          reseller_expires_at?: string | null
+          reseller_permanent?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -226,6 +232,51 @@ export type Database = {
           pltc_vault_id?: string | null
           server_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      reseller_orders: {
+        Row: {
+          amount: number
+          created_at: string
+          duration_days: number | null
+          expires_at: string | null
+          id: string
+          order_id: string
+          paid_at: string | null
+          permanent: boolean
+          plan: string
+          status: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          order_id: string
+          paid_at?: string | null
+          permanent?: boolean
+          plan: string
+          status?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          duration_days?: number | null
+          expires_at?: string | null
+          id?: string
+          order_id?: string
+          paid_at?: string | null
+          permanent?: boolean
+          plan?: string
+          status?: string
+          user_id?: string
+          username?: string
         }
         Relationships: []
       }
@@ -392,7 +443,17 @@ export type Database = {
       }
     }
     Functions: {
+      activate_reseller: { Args: { _order_id: string }; Returns: Json }
       decrement_panel_count: { Args: { _user_id: string }; Returns: undefined }
+      get_my_reseller_status: {
+        Args: never
+        Returns: {
+          days_left: number
+          expires_at: string
+          is_reseller: boolean
+          permanent: boolean
+        }[]
+      }
       get_panel_activity: {
         Args: { _limit?: number }
         Returns: {
@@ -435,6 +496,23 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
+      get_upgrade_activity: {
+        Args: { _limit?: number }
+        Returns: {
+          amount: number
+          avatar_url: string
+          created_at: string
+          duration_days: number
+          expires_at: string
+          full_name: string
+          id: string
+          paid_at: string
+          permanent: boolean
+          plan: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]
