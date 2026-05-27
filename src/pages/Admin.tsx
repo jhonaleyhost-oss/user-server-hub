@@ -466,6 +466,25 @@ const Admin = () => {
     }
   };
 
+  const clearAllDeviceInfo = async () => {
+    try {
+      const ids = devices.map((d) => d.id);
+      if (ids.length === 0) return;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ip_address: null, device_fingerprint: null })
+        .in('id', ids);
+      if (error) throw error;
+      toast({
+        title: 'Berhasil',
+        description: `${ids.length} IP & Fingerprint berhasil direset.`,
+      });
+      fetchDevices();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Gagal', description: err.message });
+    }
+  };
+
   const updateUserRole = async (userId: string, newRole: AppRole) => {
     try {
       const { error } = await supabase
