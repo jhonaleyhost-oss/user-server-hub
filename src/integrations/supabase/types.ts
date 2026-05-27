@@ -19,21 +19,32 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          reply_to_id: string | null
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          reply_to_id?: string | null
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          reply_to_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       popup_settings: {
         Row: {
@@ -277,6 +288,15 @@ export type Database = {
           location_id?: number | null
           name?: string | null
           server_type?: string | null
+        }
+        Relationships: []
+      }
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
+          user_id: string | null
         }
         Relationships: []
       }
