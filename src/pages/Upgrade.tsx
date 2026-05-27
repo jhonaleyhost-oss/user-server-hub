@@ -14,6 +14,8 @@ import {
   Copy,
   X,
   CheckCircle2,
+  CalendarClock,
+  RefreshCw,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,9 +110,27 @@ const Upgrade = () => {
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const [fullName, setFullName] = useState('Pengguna');
+  const [status, setStatus] = useState<{
+    is_reseller: boolean;
+    permanent: boolean;
+    expires_at: string | null;
+    days_left: number | null;
+  } | null>(null);
 
   const plan = useMemo(() => PLANS.find((p) => p.key === selected)!, [selected]);
   const isAlreadyReseller = role === 'reseller' || role === 'admin';
+  const isPermanent = !!status?.permanent || role === 'admin';
+
+  const loadStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase.rpc('get_my_reseller_status');
+    if (data && data.length > 0) setStatus(data[0] as any);
+  };
+
+  useEffect(() => {
+    loadStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, role, paid]);
 
   useEffect(() => {
     if (!user) return;
@@ -189,9 +209,12 @@ const Upgrade = () => {
       toast.error('Silakan login dulu');
       return;
     }
-    if (isAlreadyReseller) {
-      toast.info('Kamu sudah Reseller / Admin');
+    if (isPermanent) {
+      toast.info('Kamu sudah Reseller Permanen, tidak perlu perpanjang.');
       return;
+    }
+    if (plan.key === 'perm' && isAlreadyReseller) {
+      // allowed: upgrade dari berlangganan ke permanen
     }
     const oid = generateRef();
     setOrderId(oid);
