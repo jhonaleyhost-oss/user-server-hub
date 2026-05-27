@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield } from "lucide-react";
+import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import AppShell from "@/components/AppShell";
@@ -12,6 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Role = "admin" | "reseller" | "premium" | "free";
 
@@ -40,11 +47,29 @@ const roleStyle = (role: Role) => {
 const roleLabel = (role: Role) =>
   role === "admin" ? "Admin" : role === "reseller" ? "Reseller" : role === "premium" ? "Premium" : "Free";
 
+type SortKey =
+  | "newest"
+  | "oldest"
+  | "panels_desc"
+  | "panels_asc"
+  | "name_asc"
+  | "name_desc";
+
+const sortLabel: Record<SortKey, string> = {
+  newest: "Terbaru Bergabung",
+  oldest: "Terlama Bergabung",
+  panels_desc: "Panel Terbanyak",
+  panels_asc: "Panel Tersedikit",
+  name_asc: "Nama A-Z",
+  name_desc: "Nama Z-A",
+};
+
 export default function Users() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<UserRow | null>(null);
+  const [sortBy, setSortBy] = useState<SortKey>("newest");
 
   useEffect(() => {
     const load = async () => {
@@ -64,14 +89,36 @@ export default function Users() {
     load();
   }, []);
 
-  const filtered = users.filter((u) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      (u.full_name ?? "").toLowerCase().includes(q) ||
-      u.role.toLowerCase().includes(q)
-    );
-  });
+  const filtered = users
+    .filter((u) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        (u.full_name ?? "").toLowerCase().includes(q) ||
+        u.role.toLowerCase().includes(q)
+      );
+    })
+    .slice()
+    .sort((a, b) => {
+      const at = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bt = b.created_at ? new Date(b.created_at).getTime() : 0;
+      const an = (a.full_name ?? "").toLowerCase();
+      const bn = (b.full_name ?? "").toLowerCase();
+      switch (sortBy) {
+        case "newest":
+          return bt - at;
+        case "oldest":
+          return at - bt;
+        case "panels_desc":
+          return b.panel_count - a.panel_count;
+        case "panels_asc":
+          return a.panel_count - b.panel_count;
+        case "name_asc":
+          return an.localeCompare(bn);
+        case "name_desc":
+          return bn.localeCompare(an);
+      }
+    });
 
   const total = users.length;
 
@@ -100,15 +147,30 @@ export default function Users() {
             <p className="text-2xl font-bold text-foreground">{total}</p>
           </GlassCard>
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Cari nama atau role..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10"
-            />
+          {/* Search + Sort */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari nama atau role..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9 h-10"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
+              <SelectTrigger className="h-10 w-auto min-w-[44px] px-3 gap-2">
+                <ArrowUpDown className="w-4 h-4 text-primary shrink-0" />
+                <span className="hidden sm:inline text-xs">{sortLabel[sortBy]}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(sortLabel) as SortKey[]).map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {sortLabel[k]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* List */}
