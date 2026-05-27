@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star, Send, Heart, Upload, QrCode, Loader2, Trash2, Copy } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -384,21 +385,94 @@ const Feedback = () => {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 mt-4">
-              <Button onClick={handleOpenQris} disabled={!validAmount} className="h-11 gap-2">
-                <QrCode className="w-4 h-4" />
-                Bayar QRIS
-              </Button>
-              <Button
-                onClick={handleCopyUrl}
-                disabled={!validAmount}
-                variant="outline"
-                className="h-11 gap-2"
-              >
-                <Copy className="w-4 h-4" />
-                Salin Link
-              </Button>
-            </div>
+            {/* QRIS Canvas */}
+            {validAmount && (
+              <div className="mt-4 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500/30 via-purple-500/30 to-fuchsia-500/30 border border-white/10 p-3 space-y-3">
+                {/* Header */}
+                <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-3 text-center border border-white/10">
+                  <div className="text-base font-extrabold tracking-wide bg-gradient-to-r from-primary via-accent to-amber bg-clip-text text-transparent">
+                    ⚡ ORDER TIP ⚡
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">Scan to Pay</div>
+                </div>
+
+                {/* Total */}
+                <div className="rounded-xl px-4 py-3 text-center bg-gradient-to-r from-rose-500 to-fuchsia-500 text-white shadow-lg">
+                  <div className="text-[11px] font-semibold opacity-90">🧾 TOTAL PEMBAYARAN</div>
+                  <div className="text-2xl font-extrabold">Rp {tipAmount.toLocaleString("id-ID")}</div>
+                </div>
+
+                {/* QR */}
+                <div className="relative mx-auto bg-white rounded-2xl p-5 w-full max-w-[280px]">
+                  {/* Corner brackets */}
+                  <span className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-fuchsia-400 rounded-tl-md" />
+                  <span className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-fuchsia-400 rounded-tr-md" />
+                  <span className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-fuchsia-400 rounded-bl-md" />
+                  <span className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-fuchsia-400 rounded-br-md" />
+                  <div className="relative flex items-center justify-center">
+                    <QRCodeSVG
+                      value={pakasirUrl}
+                      size={232}
+                      level="M"
+                      bgColor="#ffffff"
+                      fgColor="#0a0a0a"
+                      marginSize={0}
+                    />
+                    {/* Center logo */}
+                    <div className="absolute w-12 h-12 rounded-full bg-white border-2 border-fuchsia-400 flex items-center justify-center shadow">
+                      <span className="font-extrabold text-sm bg-gradient-to-br from-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">JN</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Methods */}
+                <div className="text-center text-[10px] font-semibold text-muted-foreground">
+                  ▦ SUPPORTED PAYMENT METHODS ▦
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: "DANA", color: "from-sky-500 to-blue-600" },
+                    { label: "OVO", color: "from-purple-500 to-indigo-600" },
+                    { label: "GOPAY", color: "from-emerald-500 to-green-600" },
+                    { label: "BANK", color: "from-rose-500 to-red-600" },
+                  ].map((m) => (
+                    <div
+                      key={m.label}
+                      className={`text-center text-[11px] font-bold text-white py-1.5 rounded-lg bg-gradient-to-br ${m.color} shadow`}
+                    >
+                      {m.label}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Secure */}
+                <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-2 text-center border border-white/10">
+                  <div className="text-[11px] font-bold text-foreground">🔒 SECURE PAYMENT</div>
+                  <div className="text-[10px] text-muted-foreground">Protected by QRIS • Jhonaley Store</div>
+                </div>
+
+                <div className="text-center text-[10px] text-muted-foreground tracking-widest">
+                  REF: {generatedOrderId.slice(-8).toUpperCase()}
+                </div>
+
+                {/* Actions */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <Button onClick={handleOpenQris} className="h-10 gap-2">
+                    <QrCode className="w-4 h-4" />
+                    Buka di App
+                  </Button>
+                  <Button onClick={handleCopyUrl} variant="outline" className="h-10 gap-2">
+                    <Copy className="w-4 h-4" />
+                    Salin Link
+                  </Button>
+                </div>
+              </div>
+            )}
+            {!validAmount && (
+              <p className="text-xs text-center text-muted-foreground mt-4">
+                Masukkan nominal Rp 1.000 - Rp 100.000 untuk menampilkan QRIS
+              </p>
+            )}
 
             <div className="mt-5 pt-5 border-t border-border/50">
               <label className="text-xs text-muted-foreground mb-1 block">
