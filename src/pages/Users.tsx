@@ -195,7 +195,7 @@ export default function Users() {
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-border/50">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Server className="w-4 h-4 text-primary" />
                       Panel Dibuat
@@ -204,7 +204,7 @@ export default function Users() {
                       {selected.panel_count}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-border/50">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Shield className="w-4 h-4 text-accent" />
                       Role
@@ -213,7 +213,7 @@ export default function Users() {
                       {roleLabel(selected.role)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/40 border border-border/50">
+                  <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="w-4 h-4 text-amber" />
                       Bergabung
