@@ -674,13 +674,43 @@ const Feedback = () => {
                       window.open(url, "_blank", "noopener,noreferrer");
                       toast.success("Halaman pembayaran dibuka. Status akan dicek otomatis.");
                     } else {
-                      setShowQris(true);
+                      (async () => {
+                        const oid = `TIP-${user?.id?.slice(0, 6) ?? "guest"}-${Date.now()}`;
+                        setQrisLoading(true);
+                        setQrisPayload("");
+                        try {
+                          const { data, error } = await supabase.functions.invoke("create-qris", {
+                            body: { amount: tipAmount, order_id: oid },
+                          });
+                          if (error || !data?.qris) {
+                            toast.error("Gagal generate QRIS: " + (error?.message || data?.error || "unknown"));
+                            return;
+                          }
+                          setOrderId(oid);
+                          setQrisPayload(data.qris as string);
+                          await supabase.from("tips").insert({
+                            user_id: user!.id,
+                            username: fullName || "Anonim",
+                            role,
+                            amount: tipAmount,
+                            order_id: oid,
+                            status: "pending",
+                          });
+                          setPollingOid(oid);
+                          setShowQris(true);
+                        } catch (e: any) {
+                          toast.error("Gagal generate QRIS: " + (e?.message || String(e)));
+                        } finally {
+                          setQrisLoading(false);
+                        }
+                      })();
                     }
                   }}
+                  disabled={qrisLoading}
                   className="w-full h-11 mt-3 gap-2"
                 >
-                  <QrCode className="w-4 h-4" />
-                  {payMethod === "qris" ? "Generate QRIS" : "Lanjut Bayar"}
+                  {qrisLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
+                  {payMethod === "qris" ? (qrisLoading ? "Generating..." : "Generate QRIS") : "Lanjut Bayar"}
                 </Button>
                 {pollingOid && payMethod === "all" && (
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-3">
