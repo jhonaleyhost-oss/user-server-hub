@@ -256,50 +256,6 @@ const Feedback = () => {
     toast.success("Link pembayaran disalin");
   };
 
-  const handleUploadProof = async () => {
-    if (!user) return;
-    if (!proofFile) {
-      toast.error("Pilih file bukti transfer terlebih dahulu");
-      return;
-    }
-    if (proofFile.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file maksimal 5MB");
-      return;
-    }
-    if (!validAmount) {
-      toast.error("Nominal harus antara Rp 1.000 - Rp 100.000");
-      return;
-    }
-    setUploadingTip(true);
-    try {
-      const ext = proofFile.name.split(".").pop() || "jpg";
-      const oid = orderId || generatedOrderId;
-      const path = `${user.id}/${oid}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("tip-proofs")
-        .upload(path, proofFile, { upsert: false });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("tip-proofs").getPublicUrl(path);
-
-      const { error: insErr } = await supabase.from("tips").insert({
-        user_id: user.id,
-        username: fullName || "Anonim",
-        amount: tipAmount,
-        order_id: oid,
-        proof_url: pub.publicUrl,
-        status: "submitted",
-      });
-      if (insErr) throw insErr;
-
-      setProofFile(null);
-      toast.success("Bukti tip terkirim. Terima kasih banyak! 💖");
-    } catch (e: any) {
-      toast.error("Gagal upload: " + (e?.message || "Unknown"));
-    } finally {
-      setUploadingTip(false);
-    }
-  };
-
   const presetAmounts = [2000, 5000, 10000, 25000, 50000, 100000];
 
   return (
