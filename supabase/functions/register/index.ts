@@ -82,7 +82,13 @@ serve(async (req) => {
         .eq('ip_address', clientIp)
         .limit(1);
 
-      if (ipProfiles && ipProfiles.length > 0) {
+      const { data: ipBlocked } = await supabase
+        .from('blocked_devices')
+        .select('id')
+        .eq('ip_address', clientIp)
+        .limit(1);
+
+      if ((ipProfiles && ipProfiles.length > 0) || (ipBlocked && ipBlocked.length > 0)) {
         return new Response(
           JSON.stringify({
             success: false,
@@ -104,7 +110,13 @@ serve(async (req) => {
         .eq('device_fingerprint', fingerprint)
         .limit(1);
 
-      if (fpProfiles && fpProfiles.length > 0) {
+      const { data: fpBlocked } = await supabase
+        .from('blocked_devices')
+        .select('id')
+        .eq('device_fingerprint', fingerprint)
+        .limit(1);
+
+      if ((fpProfiles && fpProfiles.length > 0) || (fpBlocked && fpBlocked.length > 0)) {
         return new Response(
           JSON.stringify({
             success: false,
