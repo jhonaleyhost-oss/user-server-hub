@@ -266,31 +266,121 @@ const Upgrade = () => {
     try {
       const svg = document.getElementById('qris-svg') as unknown as SVGSVGElement | null;
       if (!svg) return;
-      const SCALE = 4;
-      const svgRect = svg.getBoundingClientRect();
-      const w = svgRect.width || 232;
-      const h = svgRect.height || 232;
       const xml = new XMLSerializer().serializeToString(svg);
       const svg64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
+        // Canvas wrapper mirroring on-screen card
+        const W = 720;
+        const PAD = 32;
+        const qrSize = 480;
+        const headerH = 88;
+        const totalH = 96;
+        const qrBoxH = qrSize + 56;
+        const footerH = 120;
+        const GAP = 18;
+        const H = PAD + headerH + GAP + totalH + GAP + qrBoxH + GAP + footerH + PAD;
+
         const canvas = document.createElement('canvas');
-        const PAD = 24;
-        canvas.width = w * SCALE + PAD * 2;
-        canvas.height = h * SCALE + PAD * 2 + 40;
+        canvas.width = W;
+        canvas.height = H;
         const ctx = canvas.getContext('2d')!;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, PAD, PAD, w * SCALE, h * SCALE);
-        ctx.fillStyle = '#0a0a0a';
-        ctx.font = 'bold 18px sans-serif';
+
+        // Background gradient (indigo → purple → fuchsia)
+        const bg = ctx.createLinearGradient(0, 0, W, H);
+        bg.addColorStop(0, '#312e81');
+        bg.addColorStop(0.5, '#6b21a8');
+        bg.addColorStop(1, '#a21caf');
+        ctx.fillStyle = bg;
+        roundRect(ctx, 0, 0, W, H, 24);
+        ctx.fill();
+
+        let y = PAD;
+
+        // Header pill
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        roundRect(ctx, PAD, y, W - PAD * 2, headerH, 16);
+        ctx.fill();
+        ctx.fillStyle = '#fde68a';
+        ctx.font = 'bold 28px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(
-          `Rp ${plan.amount.toLocaleString('id-ID')} • ${plan.label}`,
-          canvas.width / 2,
-          canvas.height - 14,
-        );
+        ctx.fillText('👑 UPGRADE RESELLER 👑', W / 2, y + 38);
+        ctx.fillStyle = '#d1d5db';
+        ctx.font = '15px sans-serif';
+        ctx.fillText(`Paket ${plan.label} • ${plan.duration}`, W / 2, y + 66);
+        y += headerH + GAP;
+
+        // Total pill
+        const totalGrad = ctx.createLinearGradient(0, y, W, y + totalH);
+        totalGrad.addColorStop(0, '#f43f5e');
+        totalGrad.addColorStop(1, '#d946ef');
+        ctx.fillStyle = totalGrad;
+        roundRect(ctx, PAD, y, W - PAD * 2, totalH, 16);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '600 14px sans-serif';
+        ctx.fillText('🧾 TOTAL PEMBAYARAN', W / 2, y + 32);
+        ctx.font = 'bold 38px sans-serif';
+        ctx.fillText(`Rp ${plan.amount.toLocaleString('id-ID')}`, W / 2, y + 76);
+        y += totalH + GAP;
+
+        // QR box (white) with fuchsia corner markers
+        const qrX = (W - qrSize) / 2;
+        const qrY = y + 28;
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, PAD, y, W - PAD * 2, qrBoxH, 20);
+        ctx.fill();
+        // corner markers
+        ctx.strokeStyle = '#e879f9';
+        ctx.lineWidth = 4;
+        const cm = 22;
+        const cx1 = PAD + 14,
+          cy1 = y + 14;
+        const cx2 = W - PAD - 14,
+          cy2 = y + qrBoxH - 14;
+        // top-left
+        ctx.beginPath();
+        ctx.moveTo(cx1, cy1 + cm);
+        ctx.lineTo(cx1, cy1);
+        ctx.lineTo(cx1 + cm, cy1);
+        ctx.stroke();
+        // top-right
+        ctx.beginPath();
+        ctx.moveTo(cx2 - cm, cy1);
+        ctx.lineTo(cx2, cy1);
+        ctx.lineTo(cx2, cy1 + cm);
+        ctx.stroke();
+        // bottom-left
+        ctx.beginPath();
+        ctx.moveTo(cx1, cy2 - cm);
+        ctx.lineTo(cx1, cy2);
+        ctx.lineTo(cx1 + cm, cy2);
+        ctx.stroke();
+        // bottom-right
+        ctx.beginPath();
+        ctx.moveTo(cx2 - cm, cy2);
+        ctx.lineTo(cx2, cy2);
+        ctx.lineTo(cx2, cy2 - cm);
+        ctx.stroke();
+
+        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+        y += qrBoxH + GAP;
+
+        // Footer block
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        roundRect(ctx, PAD, y, W - PAD * 2, footerH, 16);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('🔒 SECURE PAYMENT • QRIS', W / 2, y + 34);
+        ctx.fillStyle = '#d1d5db';
+        ctx.font = '13px sans-serif';
+        ctx.fillText('Jhonaley Store • Protected by QRIS', W / 2, y + 56);
+        ctx.fillStyle = '#fde68a';
+        ctx.font = 'bold 14px "Courier New", monospace';
+        ctx.fillText(`REF: ${orderId || '-'}`, W / 2, y + 92);
+
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = url;
@@ -306,6 +396,24 @@ const Upgrade = () => {
       toast.error('Gagal download QRIS: ' + (e?.message || String(e)));
     }
   };
+
+  function roundRect(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+  ) {
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
 
   return (
     <PageTransition>
