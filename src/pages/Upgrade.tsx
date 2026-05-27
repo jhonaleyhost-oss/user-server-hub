@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   CalendarClock,
   RefreshCw,
+  Download,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -505,6 +506,7 @@ const Upgrade = () => {
                         bgColor="#ffffff"
                         fgColor="#0a0a0a"
                         marginSize={0}
+                        id="qris-svg"
                       />
                       <div className="absolute w-12 h-12 rounded-full bg-white border-2 border-fuchsia-400 flex items-center justify-center shadow overflow-hidden">
                         <img src={qrisLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -542,10 +544,16 @@ const Upgrade = () => {
                     REF: {orderId}
                   </div>
 
-                  <Button onClick={handleCopyUrl} variant="outline" className="w-full h-10 gap-2">
-                    <Copy className="w-4 h-4" />
-                    Salin Link Pembayaran
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={handleCopyUrl} variant="outline" className="h-10 gap-2">
+                      <Copy className="w-4 h-4" />
+                      Salin Link
+                    </Button>
+                    <Button onClick={handleDownloadQris} variant="outline" className="h-10 gap-2">
+                      <Download className="w-4 h-4" />
+                      Download QRIS
+                    </Button>
+                  </div>
 
                   {paid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 pt-1 font-semibold">
