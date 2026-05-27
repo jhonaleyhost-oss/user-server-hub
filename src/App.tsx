@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AccentColorProvider } from "@/hooks/useAccentColor";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import PromoPopup from "@/components/PromoPopup";
+import ChatNotifier from "@/components/ChatNotifier";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
             <Sonner />
             <PromoPopup />
             <BrowserRouter>
+              <ChatNotifier />
               <AnimatedRoutes />
             </BrowserRouter>
           </TooltipProvider>
