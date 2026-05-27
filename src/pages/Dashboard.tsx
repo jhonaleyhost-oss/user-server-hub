@@ -17,6 +17,9 @@ import {
   Terminal,
   Globe,
   Send,
+  AlertTriangle,
+  Sparkles as SparklesIcon,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -60,6 +63,13 @@ interface UserProfile {
   panel_creations_count: number;
 }
 
+interface ResellerStatus {
+  is_reseller: boolean;
+  permanent: boolean;
+  expires_at: string | null;
+  days_left: number | null;
+}
+
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const { role, isAdmin, isPremium, loading: roleLoading } = useUserRole();
@@ -72,6 +82,7 @@ const Dashboard = () => {
   const [userServerId, setUserServerId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [resellerStatus, setResellerStatus] = useState<ResellerStatus | null>(null);
 
   // Form state
   const [username, setUsername] = useState('');
@@ -128,6 +139,12 @@ const Dashboard = () => {
       setPanelCount(count || 0);
       if (panelsData && panelsData.length > 0) {
         setUserServerId(panelsData[0].server_id);
+      }
+
+      // Fetch reseller expiry status
+      const { data: statusData } = await (supabase.rpc as any)('get_my_reseller_status');
+      if (statusData && statusData.length > 0) {
+        setResellerStatus(statusData[0] as ResellerStatus);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -291,6 +308,55 @@ const Dashboard = () => {
 
       <div className="w-full max-w-2xl mx-auto relative z-10">
         <ActivityTicker />
+
+        {/* Reseller expiry warning (<=2 days, not permanent) */}
+        {resellerStatus &&
+          resellerStatus.is_reseller &&
+          !resellerStatus.permanent &&
+          resellerStatus.days_left !== null &&
+          resellerStatus.days_left <= 2 && (
+            <Link to="/upgrade" className="block mb-4">
+              <div className="rounded-2xl p-4 bg-gradient-to-r from-destructive/20 via-amber/20 to-destructive/20 border border-destructive/40 flex items-center gap-3 hover:scale-[1.01] transition-transform">
+                <div className="w-10 h-10 rounded-full bg-destructive/30 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-foreground">
+                    Reseller akan expired {resellerStatus.days_left <= 0 ? 'hari ini' : `dalam ${resellerStatus.days_left} hari`}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {resellerStatus.expires_at
+                      ? `Berakhir ${new Date(resellerStatus.expires_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
+                      : ''}{' '}
+                    • Perpanjang sekarang →
+                  </p>
+                </div>
+              </div>
+            </Link>
+          )}
+
+        {/* Free user limit notice — hidden once upgraded */}
+        {role === 'free' && (
+          <Link to="/upgrade" className="block mb-4">
+            <div className="rounded-2xl p-4 bg-gradient-to-br from-primary/15 via-accent/10 to-amber/15 border border-primary/30 flex items-center gap-3 hover:scale-[1.01] transition-transform">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                  Akun Free <SparklesIcon className="w-3.5 h-3.5 text-amber" />
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Maks <b className="text-foreground">1 panel</b> • <b className="text-foreground">1GB RAM</b> • <b className="text-foreground">40% CPU</b>. Upgrade Reseller untuk akses penuh →
+                </p>
+              </div>
+              <Button size="sm" className="bg-gradient-to-r from-amber to-primary text-background font-bold shrink-0">
+                Upgrade
+              </Button>
+            </div>
+          </Link>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <StatCard

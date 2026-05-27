@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.create-qris]
 verify_jwt = false
+
+[functions.check-upgrade]
+verify_jwt = false
