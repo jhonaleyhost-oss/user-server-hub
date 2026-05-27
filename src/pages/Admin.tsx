@@ -670,11 +670,16 @@ const Admin = () => {
         // Process batch in parallel
         const results = await Promise.all(
           batch.map(async (user) => {
-            const { error } = await supabase
-              .from('profiles')
-              .delete()
-              .eq('user_id', user.user_id);
-            return { error };
+            try {
+              const { data, error } = await supabase.functions.invoke('delete-user', {
+                body: { user_id: user.user_id },
+              });
+              if (error) return { error };
+              if (data?.error) return { error: new Error(data.error) };
+              return { error: null };
+            } catch (e: any) {
+              return { error: e };
+            }
           })
         );
 
