@@ -1,0 +1,389 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Send, Trash2, MessageCircle, Circle } from "lucide-react";
+import AppShell from "@/components/AppShell";
+import { PageTransition } from "@/components/PageTransition";
+import GlassCard from "@/components/GlassCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface ChatMessage {
+  id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+}
+
+interface ProfileLite {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+}
+
+interface PresenceState {
+  user_id: string;
+  online_at: string;
+}
+
+const roleStyle = (role: string) => {
+  switch (role) {
+    case "admin":
+      return "bg-amber/15 text-amber border-amber/30";
+    case "reseller":
+      return "bg-primary/15 text-primary border-primary/30";
+    case "premium":
+      return "bg-accent/15 text-accent border-accent/30";
+    default:
+      return "bg-secondary text-muted-foreground border-border";
+  }
+};
+
+const formatTime = (iso: string) => {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+};
+
+const Chat = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { role } = useUserRole();
+  const navigate = useNavigate();
+
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, ProfileLite>>({});
+  const [input, setInput] = useState("");
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
+
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingSentRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!authLoading && !user) navigate("/auth");
+  }, [authLoading, user, navigate]);
+
+  // Load profiles for unknown user_ids in batch
+  const loadProfiles = async (userIds: string[]) => {
+    const missing = userIds.filter((id) => !profiles[id]);
+    if (missing.length === 0) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, email, avatar_url")
+      .in("user_id", missing);
+    if (data) {
+      setProfiles((prev) => {
+        const next = { ...prev };
+        for (const p of data) next[p.user_id] = p as ProfileLite;
+        return next;
+      });
+    }
+  };
+
+  // Fetch initial messages
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (cancelled) return;
+      if (error) {
+        toast.error("Gagal memuat pesan");
+        setLoading(false);
+        return;
+      }
+      const ordered = (data ?? []).slice().reverse() as ChatMessage[];
+      setMessages(ordered);
+      await loadProfiles(Array.from(new Set(ordered.map((m) => m.user_id))));
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Realtime: messages, presence, typing
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase.channel("global-chat", {
+      config: { presence: { key: user.id } },
+    });
+    channelRef.current = channel;
+
+    channel
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        async (payload) => {
+          const m = payload.new as ChatMessage;
+          setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
+          await loadProfiles([m.user_id]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "messages" },
+        (payload) => {
+          const old = payload.old as { id: string };
+          setMessages((prev) => prev.filter((m) => m.id !== old.id));
+        }
+      )
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState() as Record<string, PresenceState[]>;
+        setOnlineUsers(new Set(Object.keys(state)));
+      })
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        const uid = (payload as { user_id: string }).user_id;
+        if (!uid || uid === user.id) return;
+        setTypingUsers((prev) => ({ ...prev, [uid]: Date.now() }));
+      })
+      .subscribe(async (status) => {
+        if (status === "SUBSCRIBED") {
+          await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+        }
+      });
+
+    // Cleanup typing entries every 2s (3s timeout)
+    const interval = setInterval(() => {
+      setTypingUsers((prev) => {
+        const now = Date.now();
+        const next: Record<string, number> = {};
+        for (const [k, v] of Object.entries(prev)) {
+          if (now - v < 3000) next[k] = v;
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+      channelRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // Auto scroll
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages.length, typingUsers]);
+
+  const sendTyping = () => {
+    const now = Date.now();
+    if (!channelRef.current || !user) return;
+    if (now - lastTypingSentRef.current < 1500) return;
+    lastTypingSentRef.current = now;
+    channelRef.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { user_id: user.id },
+    });
+  };
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    const text = input.trim();
+    if (!text || text.length > 2000) return;
+    setSending(true);
+    const { error } = await supabase
+      .from("messages")
+      .insert({ user_id: user.id, content: text });
+    setSending(false);
+    if (error) {
+      toast.error(error.message || "Gagal mengirim pesan");
+      return;
+    }
+    setInput("");
+  };
+
+  const handleDelete = async (id: string) => {
+    const { error } = await supabase.from("messages").delete().eq("id", id);
+    if (error) {
+      toast.error("Gagal menghapus pesan");
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const typingNames = useMemo(() => {
+    return Object.keys(typingUsers)
+      .map((uid) => {
+        const p = profiles[uid];
+        return p?.full_name?.trim() || p?.email?.split("@")[0] || "Seseorang";
+      })
+      .slice(0, 3);
+  }, [typingUsers, profiles]);
+
+  const onlineCount = onlineUsers.size;
+
+  const displayName = (uid: string) => {
+    const p = profiles[uid];
+    return p?.full_name?.trim() || p?.email?.split("@")[0] || "Pengguna";
+  };
+
+  return (
+    <AppShell>
+      <PageTransition>
+        <div className="p-3 sm:p-4 max-w-3xl mx-auto flex flex-col h-[calc(100svh-3.5rem)] md:h-svh">
+          <GlassCard className="!rounded-3xl p-4 mb-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-base font-bold text-foreground truncate">Chat Global</h1>
+                <p className="text-xs text-muted-foreground truncate">
+                  Ngobrol bareng semua pengguna
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/50 shrink-0">
+              <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
+              <span className="text-xs font-semibold text-foreground">{onlineCount} online</span>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="!rounded-3xl flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3">
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                  Memuat pesan...
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-12">
+                  <MessageCircle className="w-12 h-12 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">
+                    Belum ada pesan. Jadilah yang pertama!
+                  </p>
+                </div>
+              ) : (
+                messages.map((m) => {
+                  const mine = m.user_id === user?.id;
+                  const p = profiles[m.user_id];
+                  const name = displayName(m.user_id);
+                  const online = onlineUsers.has(m.user_id);
+                  const initial = name.charAt(0).toUpperCase();
+                  return (
+                    <div
+                      key={m.id}
+                      className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : "flex-row"}`}
+                    >
+                      <div className="relative shrink-0">
+                        {p?.avatar_url ? (
+                          <img
+                            src={p.avatar_url}
+                            alt={name}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-bold">
+                            {initial}
+                          </div>
+                        )}
+                        {online && (
+                          <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                        )}
+                      </div>
+                      <div
+                        className={`group max-w-[78%] flex flex-col ${
+                          mine ? "items-end" : "items-start"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-0.5 px-1">
+                          <span className="text-[11px] font-semibold text-foreground truncate max-w-[120px]">
+                            {mine ? "Kamu" : name}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatTime(m.created_at)}
+                          </span>
+                        </div>
+                        <div
+                          className={`relative px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap border ${
+                            mine
+                              ? "bg-primary/20 text-foreground border-primary/30 rounded-br-md"
+                              : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
+                          }`}
+                        >
+                          {m.content}
+                          {mine && (
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(m.id)}
+                              className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                              aria-label="Hapus pesan"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {typingNames.length > 0 && (
+                <div className="flex items-center gap-2 pl-10 text-xs text-muted-foreground">
+                  <span className="flex gap-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/70 animate-bounce" />
+                  </span>
+                  <span className="truncate">
+                    {typingNames.join(", ")} sedang mengetik...
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <form
+              onSubmit={handleSend}
+              className="border-t border-border/50 p-2.5 flex items-center gap-2 bg-background/40"
+            >
+              <Input
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  sendTyping();
+                }}
+                placeholder="Tulis pesan..."
+                maxLength={2000}
+                className="flex-1 rounded-full h-11 bg-secondary/60 border-border/50"
+                disabled={sending || !user}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={sending || !input.trim()}
+                className="h-11 w-11 rounded-full shrink-0"
+                aria-label="Kirim"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          </GlassCard>
+        </div>
+      </PageTransition>
+    </AppShell>
+  );
+};
+
+export default Chat;
