@@ -644,11 +644,33 @@ const Chat = () => {
                   </button>
                 </div>
               )}
+              {pending.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto px-3 pt-2 pb-1">
+                  {pending.map((p) => (
+                    <div
+                      key={p.id}
+                      className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50 shrink-0 bg-secondary/40"
+                    >
+                      <img src={p.preview} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removePending(p.id)}
+                        disabled={sending}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90"
+                        aria-label="Hapus foto"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleImageSelected}
                 />
@@ -657,15 +679,11 @@ const Chat = () => {
                   size="icon"
                   variant="outline"
                   onClick={handleImagePick}
-                  disabled={uploading || !user}
+                  disabled={sending || !user || pending.length >= MAX_FILES}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label="Kirim foto"
                 >
-                  {uploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="w-4 h-4" />
-                  )}
+                  <ImagePlus className="w-4 h-4" />
                 </Button>
                 <Input
                   ref={inputRef}
@@ -674,7 +692,13 @@ const Chat = () => {
                     setInput(e.target.value);
                     sendTyping();
                   }}
-                  placeholder={replyTo ? "Tulis balasan..." : "Tulis pesan..."}
+                  placeholder={
+                    replyTo
+                      ? "Tulis balasan..."
+                      : pending.length > 0
+                      ? "Tambah caption (opsional)..."
+                      : "Tulis pesan..."
+                  }
                   maxLength={2000}
                   className="flex-1 rounded-full h-11 bg-secondary/60 border-border/50"
                   disabled={sending || !user}
@@ -682,11 +706,11 @@ const Chat = () => {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={sending || !input.trim()}
+                  disabled={sending || (!input.trim() && pending.length === 0)}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label="Kirim"
                 >
-                  <Send className="w-4 h-4" />
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </form>
             </div>
