@@ -294,6 +294,30 @@ async function deleteAllUsers(chatId: number) {
   await send(chatId, `✅ Selesai. Berhasil: <b>${ok}</b>, Gagal: <b>${fail}</b>.`);
 }
 
+async function listPanelsByServer(chatId: number, serverId: string) {
+  const { data: srv } = await admin
+    .from("pterodactyl_servers")
+    .select("name,domain")
+    .eq("id", serverId)
+    .maybeSingle();
+  if (!srv) return sendErr(chatId, "Server tidak ditemukan.");
+  const { data, error } = await admin
+    .from("user_panels")
+    .select("id,username,email,ram,cpu,disk,created_at")
+    .eq("server_id", serverId)
+    .order("created_at", { ascending: false });
+  if (error) return sendErr(chatId, error.message);
+  let text = `🖥️ <b>${esc(srv.name)}</b>\n${esc(srv.domain)}\nPanels: <b>${data?.length || 0}</b>\n\n`;
+  for (const p of data || []) {
+    const ram = p.ram === 0 ? "∞" : p.ram;
+    const cpu = p.cpu === 0 ? "∞" : p.cpu;
+    const disk = p.disk === 0 ? "∞" : p.disk;
+    text += `• <b>${esc(p.username)}</b>\n  ${esc(p.email)}\n  RAM/CPU/Disk: <code>${ram}/${cpu}/${disk}</code>\n  ID: <code>${p.id}</code>\n\n`;
+  }
+  if (!data?.length) text += "<i>Belum ada panel.</i>";
+  await send(chatId, text);
+}
+
 async function sendErr(chatId: number, msg: string) {
   await tg("sendMessage", { chat_id: chatId, text: `❌ ${msg}` });
 }
