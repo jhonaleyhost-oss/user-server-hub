@@ -79,7 +79,7 @@ const Chat = () => {
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [pending, setPending] = useState<Array<{ id: string; file: File; preview: string }>>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -87,6 +87,8 @@ const Chat = () => {
   const lastTypingSentRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const MAX_FILES = 6;
+  const MAX_SIZE = 5 * 1024 * 1024;
   const messagesRef = useRef<ChatMessage[]>([]);
   useEffect(() => {
     messagesRef.current = messages;
@@ -257,59 +259,110 @@ const Chat = () => {
     });
   };
 
+  const handleImagePick = () => fileInputRef.current?.click();
+
+  const handleImageSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length || !user) return;
+
+    setPending((prev) => {
+      const slotsLeft = MAX_FILES - prev.length;
+      if (slotsLeft <= 0) {
+        toast.error(`Maksimal ${MAX_FILES} foto sekaligus`);
+        return prev;
+      }
+      const accepted: typeof prev = [];
+      let rejectedType = 0;
+      let rejectedSize = 0;
+      for (const file of files.slice(0, slotsLeft)) {
+        if (!file.type.startsWith("image/")) { rejectedType++; continue; }
+        if (file.size > MAX_SIZE) { rejectedSize++; continue; }
+        accepted.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          file,
+          preview: URL.createObjectURL(file),
+        });
+      }
+      if (rejectedType) toast.error("Hanya file foto yang diperbolehkan");
+      if (rejectedSize) toast.error("Ukuran foto maksimal 5 MB");
+      if (files.length > slotsLeft) toast.error(`Hanya ${slotsLeft} foto pertama ditambahkan`);
+      return [...prev, ...accepted];
+    });
+  };
+
+  const removePending = (id: string) => {
+    setPending((prev) => {
+      const item = prev.find((x) => x.id === id);
+      if (item) URL.revokeObjectURL(item.preview);
+      return prev.filter((x) => x.id !== id);
+    });
+  };
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      pending.forEach((p) => URL.revokeObjectURL(p.preview));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     const text = input.trim();
-    if (!text || text.length > 2000) return;
+    if (!text && pending.length === 0) return;
+    if (text.length > 2000) return;
     setSending(true);
-    const { error } = await supabase
-      .from("messages")
-      .insert({ user_id: user.id, content: text, reply_to_id: replyTo?.id ?? null });
-    setSending(false);
-    if (error) {
-      toast.error(error.message || "Gagal mengirim pesan");
-      return;
-    }
-    setInput("");
-    setReplyTo(null);
-  };
-
-  const handleImagePick = () => fileInputRef.current?.click();
-
-  const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !user) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Hanya file foto yang diperbolehkan");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran foto maksimal 5 MB");
-      return;
-    }
-    setUploading(true);
     try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("chat-images")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("chat-images").getPublicUrl(path);
-      const { error: insErr } = await supabase.from("messages").insert({
-        user_id: user.id,
-        content: null,
-        image_url: pub.publicUrl,
-        reply_to_id: replyTo?.id ?? null,
-      });
-      if (insErr) throw insErr;
+      // Upload all pending images in parallel
+      const uploads = await Promise.all(
+        pending.map(async ({ file }) => {
+          const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+          const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("chat-images")
+            .upload(path, file, { contentType: file.type, upsert: false });
+          if (upErr) throw upErr;
+          const { data: pub } = supabase.storage.from("chat-images").getPublicUrl(path);
+          return pub.publicUrl;
+        })
+      );
+
+      const replyId = replyTo?.id ?? null;
+      const rows: Array<{
+        user_id: string;
+        content: string | null;
+        image_url: string | null;
+        reply_to_id: string | null;
+      }> = [];
+
+      if (uploads.length === 0) {
+        rows.push({ user_id: user.id, content: text, image_url: null, reply_to_id: replyId });
+      } else {
+        // First image carries the caption (if any), rest are image-only — single batched insert
+        uploads.forEach((url, idx) => {
+          rows.push({
+            user_id: user.id,
+            content: idx === 0 ? (text || null) : null,
+            image_url: url,
+            reply_to_id: idx === 0 ? replyId : null,
+          });
+        });
+      }
+
+      const { error } = await supabase.from("messages").insert(rows);
+      if (error) throw error;
+
+      // Cleanup previews
+      pending.forEach((p) => URL.revokeObjectURL(p.preview));
+      setPending([]);
+      setInput("");
       setReplyTo(null);
     } catch (err: any) {
-      toast.error(err?.message || "Gagal mengunggah foto");
+      toast.error(err?.message || "Gagal mengirim pesan");
     } finally {
-      setUploading(false);
+      setSending(false);
     }
   };
 
@@ -591,11 +644,33 @@ const Chat = () => {
                   </button>
                 </div>
               )}
+              {pending.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto px-3 pt-2 pb-1">
+                  {pending.map((p) => (
+                    <div
+                      key={p.id}
+                      className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50 shrink-0 bg-secondary/40"
+                    >
+                      <img src={p.preview} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removePending(p.id)}
+                        disabled={sending}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90"
+                        aria-label="Hapus foto"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2">
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={handleImageSelected}
                 />
@@ -604,15 +679,11 @@ const Chat = () => {
                   size="icon"
                   variant="outline"
                   onClick={handleImagePick}
-                  disabled={uploading || !user}
+                  disabled={sending || !user || pending.length >= MAX_FILES}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label="Kirim foto"
                 >
-                  {uploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="w-4 h-4" />
-                  )}
+                  <ImagePlus className="w-4 h-4" />
                 </Button>
                 <Input
                   ref={inputRef}
@@ -621,7 +692,13 @@ const Chat = () => {
                     setInput(e.target.value);
                     sendTyping();
                   }}
-                  placeholder={replyTo ? "Tulis balasan..." : "Tulis pesan..."}
+                  placeholder={
+                    replyTo
+                      ? "Tulis balasan..."
+                      : pending.length > 0
+                      ? "Tambah caption (opsional)..."
+                      : "Tulis pesan..."
+                  }
                   maxLength={2000}
                   className="flex-1 rounded-full h-11 bg-secondary/60 border-border/50"
                   disabled={sending || !user}
@@ -629,11 +706,11 @@ const Chat = () => {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={sending || !input.trim()}
+                  disabled={sending || (!input.trim() && pending.length === 0)}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label="Kirim"
                 >
-                  <Send className="w-4 h-4" />
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </form>
             </div>
