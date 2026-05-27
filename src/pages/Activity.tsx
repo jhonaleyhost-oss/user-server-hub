@@ -153,21 +153,7 @@ const Activity = () => {
       .channel("activity-feed")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "user_panels" },
-        () => {
-          load();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "profiles" },
-        () => {
-          load();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "reseller_orders" },
+        { event: "INSERT", schema: "public", table: "activity_events" },
         () => {
           load();
         }

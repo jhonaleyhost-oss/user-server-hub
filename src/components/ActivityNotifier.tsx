@@ -58,14 +58,18 @@ const ActivityNotifier = () => {
       .channel("activity-notifier")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "user_panels" },
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.panel" },
         async (payload) => {
           if (!readyRef.current) return;
-          const row = payload.new as { user_id: string; username?: string | null };
-          if (row.user_id === user.id) return;
-          const name = await nameOf(row.user_id);
+          const row = payload.new as {
+            actor_user_id: string;
+            actor_name: string | null;
+            detail: string | null;
+          };
+          if (row.actor_user_id === user.id) return;
+          const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
           toast(`${name} membuat panel baru`, {
-            description: row.username ? `Username: ${row.username}` : undefined,
+            description: row.detail ? `Username: ${row.detail}` : undefined,
             icon: <Server className="w-4 h-4 text-primary" />,
             duration: 4000,
           });
