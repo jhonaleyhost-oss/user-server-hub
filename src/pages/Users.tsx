@@ -226,7 +226,7 @@ export default function Users() {
         </div>
 
         <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="max-w-sm rounded-3xl">
             <DialogHeader>
               <DialogTitle>Profil Pengguna</DialogTitle>
             </DialogHeader>
