@@ -19,6 +19,7 @@ interface ChatMessage {
   reply_to_id: string | null;
   image_url: string | null;
   deleted?: boolean | null;
+  deleted_by?: string | null;
 }
 
 interface ProfileLite {
@@ -316,7 +317,7 @@ const Chat = () => {
     const target = messagesRef.current.find((m) => m.id === id);
     const { error } = await supabase
       .from("messages")
-      .update({ deleted: true, content: null, image_url: null })
+      .update({ deleted: true, content: null, image_url: null, deleted_by: user?.id ?? null })
       .eq("id", id);
     if (error) {
       toast.error("Gagal menghapus pesan");
@@ -324,7 +325,7 @@ const Chat = () => {
     }
     setMessages((prev) =>
       prev.map((m) =>
-        m.id === id ? { ...m, deleted: true, content: null, image_url: null } : m
+        m.id === id ? { ...m, deleted: true, content: null, image_url: null, deleted_by: user?.id ?? null } : m
       )
     );
     if (lightbox && target?.image_url === lightbox) setLightbox(null);
@@ -469,7 +470,11 @@ const Chat = () => {
                           {m.deleted ? (
                             <div className="italic text-muted-foreground flex items-center gap-1.5">
                               <Trash2 className="w-3 h-3" />
-                              <span>Pesan ini telah dihapus</span>
+                              <span>
+                                {m.deleted_by && m.deleted_by !== m.user_id
+                                  ? "Pesan telah dihapus oleh admin"
+                                  : "Pesan ini telah dihapus"}
+                              </span>
                             </div>
                           ) : (
                           <>
@@ -486,7 +491,9 @@ const Chat = () => {
                               </div>
                               <div className="text-[11px] text-muted-foreground truncate">
                                 {replied.deleted
-                                  ? "Pesan ini telah dihapus"
+                                  ? (replied.deleted_by && replied.deleted_by !== replied.user_id
+                                      ? "Pesan telah dihapus oleh admin"
+                                      : "Pesan ini telah dihapus")
                                   : replied.content || (replied.image_url ? "📷 Foto" : "")}
                               </div>
                             </button>

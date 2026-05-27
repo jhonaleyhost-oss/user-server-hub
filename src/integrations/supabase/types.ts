@@ -43,6 +43,7 @@ export type Database = {
           content: string | null
           created_at: string
           deleted: boolean
+          deleted_by: string | null
           id: string
           image_url: string | null
           reply_to_id: string | null
@@ -52,6 +53,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           deleted?: boolean
+          deleted_by?: string | null
           id?: string
           image_url?: string | null
           reply_to_id?: string | null
@@ -61,6 +63,7 @@ export type Database = {
           content?: string | null
           created_at?: string
           deleted?: boolean
+          deleted_by?: string | null
           id?: string
           image_url?: string | null
           reply_to_id?: string | null
