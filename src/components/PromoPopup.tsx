@@ -47,6 +47,15 @@ const PromoPopup = () => {
     setOpen(false);
   };
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   const renderContent = (text: string) => {
     return text.split('\n').map((line, i) => {
       const trimmed = line.trim();
