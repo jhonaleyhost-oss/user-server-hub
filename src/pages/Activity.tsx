@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -34,9 +34,25 @@ interface SignupActivity {
   created_at: string;
 }
 
+interface UpgradeActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  plan: '1bln' | '2bln' | 'perm';
+  amount: number;
+  duration_days: number | null;
+  paid_at: string | null;
+  expires_at: string | null;
+  permanent: boolean;
+  created_at: string;
+}
+
 type FeedItem =
   | ({ kind: "panel" } & PanelActivity)
-  | ({ kind: "signup" } & SignupActivity);
+  | ({ kind: "signup" } & SignupActivity)
+  | ({ kind: "upgrade" } & UpgradeActivity);
 
 const roleStyle = (role: string) => {
   switch (role) {
@@ -94,27 +110,30 @@ const Activity = () => {
   const navigate = useNavigate();
   const [panels, setPanels] = useState<PanelActivity[]>([]);
   const [signups, setSignups] = useState<SignupActivity[]>([]);
+  const [upgrades, setUpgrades] = useState<UpgradeActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
-  const [tab, setTab] = useState<"panel" | "signup">("panel");
+  const [tab, setTab] = useState<"panel" | "signup" | "upgrade">("panel");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 200 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 200 }),
+      (supabase.rpc as any)("get_upgrade_activity", { _limit: 200 }),
     ]);
-    if (panelRes.error || signupRes.error) {
+    if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
       return;
     }
     setPanels((panelRes.data ?? []) as PanelActivity[]);
     setSignups((signupRes.data ?? []) as SignupActivity[]);
+    setUpgrades((upgradeRes.data ?? []) as UpgradeActivity[]);
   };
 
   useEffect(() => {
@@ -146,6 +165,13 @@ const Activity = () => {
           load();
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "reseller_orders" },
+        () => {
+          load();
+        }
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
@@ -169,8 +195,11 @@ const Activity = () => {
     if (tab === "panel") {
       return panels.map((p) => ({ kind: "panel" as const, ...p }));
     }
+    if (tab === "upgrade") {
+      return upgrades.map((u) => ({ kind: "upgrade" as const, ...u }));
+    }
     return signups.map((s) => ({ kind: "signup" as const, ...s }));
-  }, [tab, panels, signups]);
+  }, [tab, panels, signups, upgrades]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -178,6 +207,7 @@ const Activity = () => {
     return current.filter((a) => {
       const fields: (string | null | undefined)[] = [a.full_name, a.role];
       if (a.kind === "panel") fields.push(a.username, a.server_name, a.server_domain);
+      if (a.kind === "upgrade") fields.push(a.plan, String(a.amount));
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
   }, [current, search]);
