@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.public-server-status]
 verify_jwt = false
+
+[functions.check-tip]
+verify_jwt = false
