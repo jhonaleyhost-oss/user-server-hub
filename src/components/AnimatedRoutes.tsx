@@ -9,6 +9,7 @@ import Profile from '@/pages/Profile';
 import Users from '@/pages/Users';
 import Chat from '@/pages/Chat';
 import Feedback from '@/pages/Feedback';
+import Activity from '@/pages/Activity';
 import NotFound from '@/pages/NotFound';
 
 export const AnimatedRoutes = () => {
@@ -26,6 +27,7 @@ export const AnimatedRoutes = () => {
         <Route path="/users" element={<Users />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/feedback" element={<Feedback />} />
+        <Route path="/activity" element={<Activity />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
