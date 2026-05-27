@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Send, Heart, Upload, QrCode, Loader2, Trash2, Copy } from "lucide-react";
+import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
@@ -20,6 +20,17 @@ interface FeedbackRow {
   role: string;
   rating: number;
   message: string | null;
+  created_at: string;
+}
+
+interface TipRow {
+  id: string;
+  user_id: string;
+  username: string;
+  role: string;
+  amount: number;
+  order_id: string;
+  status: string;
   created_at: string;
 }
 
