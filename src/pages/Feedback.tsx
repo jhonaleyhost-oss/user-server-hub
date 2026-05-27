@@ -177,6 +177,73 @@ const Feedback = () => {
     };
   }, []);
 
+  // Fetch completed tips + realtime
+  useEffect(() => {
+    supabase
+      .from("tips")
+      .select("*")
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(100)
+      .then(({ data }) => {
+        if (data) setTips(data as TipRow[]);
+      });
+
+    const ch = supabase
+      .channel("tips-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tips" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as TipRow;
+          if (!row) return;
+          if ((payload.new as any)?.status === "completed") {
+            setTips((prev) => {
+              const exists = prev.find((t) => t.id === row.id);
+              if (exists) return prev.map((t) => (t.id === row.id ? (payload.new as TipRow) : t));
+              return [payload.new as TipRow, ...prev];
+            });
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  // Poll Pakasir status while waiting for payment
+  useEffect(() => {
+    if (!pollingOid) return;
+    let stopped = false;
+    const startedAt = Date.now();
+    const interval = setInterval(async () => {
+      if (stopped) return;
+      // Stop after 15 minutes
+      if (Date.now() - startedAt > 15 * 60 * 1000) {
+        setPollingOid(null);
+        clearInterval(interval);
+        return;
+      }
+      try {
+        const { data } = await supabase.functions.invoke("check-tip", {
+          body: { order_id: pollingOid, amount: tipAmount },
+        });
+        if (data?.completed) {
+          toast.success("Pembayaran berhasil! Terima kasih banyak 💖");
+          setPollingOid(null);
+          clearInterval(interval);
+        }
+      } catch {
+        // ignore
+      }
+    }, 5000);
+    return () => {
+      stopped = true;
+      clearInterval(interval);
+    };
+  }, [pollingOid, tipAmount]);
+
   const stats = useMemo(() => {
     if (!items.length) return { avg: 0, count: 0, dist: [0, 0, 0, 0, 0] };
     const sum = items.reduce((a, b) => a + b.rating, 0);
