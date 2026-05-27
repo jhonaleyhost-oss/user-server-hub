@@ -8,6 +8,7 @@ import Upgrade from '@/pages/Upgrade';
 import Profile from '@/pages/Profile';
 import Users from '@/pages/Users';
 import Chat from '@/pages/Chat';
+import Feedback from '@/pages/Feedback';
 import NotFound from '@/pages/NotFound';
 
 export const AnimatedRoutes = () => {
@@ -24,6 +25,7 @@ export const AnimatedRoutes = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/users" element={<Users />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/feedback" element={<Feedback />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
