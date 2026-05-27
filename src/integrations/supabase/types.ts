@@ -19,21 +19,32 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          reply_to_id: string | null
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
           id?: string
+          reply_to_id?: string | null
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
           id?: string
+          reply_to_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       popup_settings: {
         Row: {
