@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import qrisLogo from "@/assets/qris-logo.png";
 
 interface FeedbackRow {
   id: string;
@@ -346,6 +347,13 @@ const Feedback = () => {
         img.onerror = () => reject(new Error("load fail"));
         img.src = url;
       });
+      const logoImg = new Image();
+      logoImg.crossOrigin = "anonymous";
+      await new Promise<void>((resolve) => {
+        logoImg.onload = () => resolve();
+        logoImg.onerror = () => resolve();
+        logoImg.src = qrisLogo;
+      });
       const s = 3; // scale factor
       const W = 600 * s;
       const H = 820 * s;
@@ -441,15 +449,15 @@ const Feedback = () => {
       ctx.strokeStyle = "#e879f9";
       ctx.lineWidth = 3 * s;
       ctx.stroke();
-      const lg = ctx.createLinearGradient(cx - cr, cy - cr, cx + cr, cy + cr);
-      lg.addColorStop(0, "#6366f1");
-      lg.addColorStop(1, "#d946ef");
-      ctx.fillStyle = lg;
-      ctx.font = `800 ${20 * s}px sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("JN", cx, cy + 1);
-      ctx.textBaseline = "alphabetic";
+      if (logoImg.complete && logoImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, cr - 3 * s, 0, Math.PI * 2);
+        ctx.clip();
+        const ls = (cr - 3 * s) * 2;
+        ctx.drawImage(logoImg, cx - ls / 2, cy - ls / 2, ls, ls);
+        ctx.restore();
+      }
       y += qrCardH + 14 * s;
 
       // Supported methods header
@@ -731,8 +739,8 @@ const Feedback = () => {
                       marginSize={0}
                     />
                     {/* Center logo */}
-                    <div className="absolute w-12 h-12 rounded-full bg-white border-2 border-fuchsia-400 flex items-center justify-center shadow">
-                      <span className="font-extrabold text-sm bg-gradient-to-br from-indigo-500 to-fuchsia-500 bg-clip-text text-transparent">JN</span>
+                    <div className="absolute w-12 h-12 rounded-full bg-white border-2 border-fuchsia-400 flex items-center justify-center shadow overflow-hidden">
+                      <img src={qrisLogo} alt="Logo" className="w-full h-full object-cover" />
                     </div>
                   </div>
                 </div>
