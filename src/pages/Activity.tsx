@@ -261,7 +261,11 @@ const Activity = () => {
             <GlassCard className="!rounded-3xl p-10 text-center">
               <ActivityIcon className="w-12 h-12 text-muted-foreground/40 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">
-                {merged.length === 0 ? "Belum ada aktivitas." : "Tidak ada yang cocok dengan pencarian."}
+                {current.length === 0
+                  ? tab === "panel"
+                    ? "Belum ada aktivitas pembuatan panel."
+                    : "Belum ada pendaftar baru."
+                  : "Tidak ada yang cocok dengan pencarian."}
               </p>
             </GlassCard>
           ) : (
