@@ -262,6 +262,51 @@ const Upgrade = () => {
     toast.success('Link pembayaran disalin');
   };
 
+  const handleDownloadQris = async () => {
+    try {
+      const svg = document.getElementById('qris-svg') as SVGSVGElement | null;
+      if (!svg) return;
+      const SCALE = 4;
+      const svgRect = svg.getBoundingClientRect();
+      const w = svgRect.width || 232;
+      const h = svgRect.height || 232;
+      const xml = new XMLSerializer().serializeToString(svg);
+      const svg64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const PAD = 24;
+        canvas.width = w * SCALE + PAD * 2;
+        canvas.height = h * SCALE + PAD * 2 + 40;
+        const ctx = canvas.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, PAD, PAD, w * SCALE, h * SCALE);
+        ctx.fillStyle = '#0a0a0a';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          `Rp ${plan.amount.toLocaleString('id-ID')} • ${plan.label}`,
+          canvas.width / 2,
+          canvas.height - 14,
+        );
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `QRIS-${orderId || 'upgrade'}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        toast.success('QRIS berhasil diunduh');
+      };
+      img.onerror = () => toast.error('Gagal generate gambar QRIS');
+      img.src = svg64;
+    } catch (e: any) {
+      toast.error('Gagal download QRIS: ' + (e?.message || String(e)));
+    }
+  };
+
   return (
     <PageTransition>
       <AppShell>
