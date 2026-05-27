@@ -291,15 +291,6 @@ export type Database = {
         }
         Relationships: []
       }
-      public_profiles: {
-        Row: {
-          avatar_url: string | null
-          full_name: string | null
-          role: Database["public"]["Enums"]["app_role"] | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       decrement_panel_count: { Args: { _user_id: string }; Returns: undefined }
