@@ -213,7 +213,7 @@ export default function Users() {
                         </p>
                       </div>
                       <span
-                        className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border shrink-0 ${roleStyle(u.role)}`}
+                        className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border shrink-0 ${roleStyle(u.role)}`}
                       >
                         {roleLabel(u.role)}
                       </span>
@@ -249,7 +249,7 @@ export default function Users() {
                       {selected.full_name?.trim() || "Pengguna"}
                     </p>
                     <span
-                      className={`inline-block mt-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded border ${roleStyle(selected.role)}`}
+                      className={`inline-block mt-1 text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border ${roleStyle(selected.role)}`}
                     >
                       {roleLabel(selected.role)}
                     </span>
