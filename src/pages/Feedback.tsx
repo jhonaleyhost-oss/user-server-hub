@@ -732,6 +732,7 @@ const Feedback = () => {
                     onClick={() => {
                       setShowQris(false);
                       setPollingOid(null);
+                      setQrisPayload("");
                     }}
                     className="h-7 w-7 -mr-1 -mt-1 text-muted-foreground hover:text-destructive"
                     aria-label="Tutup"
@@ -763,7 +764,7 @@ const Feedback = () => {
                   <div className="relative flex items-center justify-center">
                     <QRCodeSVG
                       id="qris-svg"
-                      value={pakasirUrl}
+                      value={qrisPayload || pakasirUrl}
                       size={232}
                       level="M"
                       bgColor="#ffffff"
