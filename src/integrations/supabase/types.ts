@@ -253,10 +253,12 @@ export type Database = {
           is_active: boolean
           location_id: number
           name: string
+          nest_id: number
           plta_key: string
           plta_vault_id: string | null
           pltc_key: string
           pltc_vault_id: string | null
+          python_egg_id: number
           server_type: string
           updated_at: string
         }
@@ -268,10 +270,12 @@ export type Database = {
           is_active?: boolean
           location_id?: number
           name: string
+          nest_id?: number
           plta_key: string
           plta_vault_id?: string | null
           pltc_key: string
           pltc_vault_id?: string | null
+          python_egg_id?: number
           server_type?: string
           updated_at?: string
         }
@@ -283,10 +287,12 @@ export type Database = {
           is_active?: boolean
           location_id?: number
           name?: string
+          nest_id?: number
           plta_key?: string
           plta_vault_id?: string | null
           pltc_key?: string
           pltc_vault_id?: string | null
+          python_egg_id?: number
           server_type?: string
           updated_at?: string
         }
