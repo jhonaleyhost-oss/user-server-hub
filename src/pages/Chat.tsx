@@ -71,6 +71,23 @@ const Chat = () => {
     if (!authLoading && !user) navigate("/auth");
   }, [authLoading, user, navigate]);
 
+  // Hide Tidio chat widget on this page
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.setAttribute("data-hide-tidio", "true");
+    style.innerHTML = `#tidio-chat, #tidio-chat-iframe, iframe[title*="Tidio"] { display: none !important; visibility: hidden !important; }`;
+    document.head.appendChild(style);
+    try {
+      (window as any).tidioChatApi?.hide?.();
+    } catch {}
+    return () => {
+      style.remove();
+      try {
+        (window as any).tidioChatApi?.show?.();
+      } catch {}
+    };
+  }, []);
+
   // Load profiles for unknown user_ids in batch
   const loadProfiles = async (userIds: string[]) => {
     const missing = userIds.filter((id) => !profiles[id]);
