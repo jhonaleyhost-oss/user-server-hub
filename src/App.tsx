@@ -9,6 +9,7 @@ import { AccentColorProvider } from "@/hooks/useAccentColor";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import PromoPopup from "@/components/PromoPopup";
 import ChatNotifier from "@/components/ChatNotifier";
+import ActivityNotifier from "@/components/ActivityNotifier";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
             <PromoPopup />
             <BrowserRouter>
               <ChatNotifier />
+              <ActivityNotifier />
               <AnimatedRoutes />
             </BrowserRouter>
           </TooltipProvider>
