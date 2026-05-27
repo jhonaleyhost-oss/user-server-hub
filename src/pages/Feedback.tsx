@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift } from "lucide-react";
+import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
@@ -326,6 +326,59 @@ const Feedback = () => {
     toast.success("Link pembayaran disalin");
   };
 
+  const handleDownloadQris = async () => {
+    const svg = document.getElementById("qris-svg") as unknown as SVGSVGElement | null;
+    if (!svg) {
+      toast.error("QR belum siap");
+      return;
+    }
+    try {
+      const serializer = new XMLSerializer();
+      const svgStr = serializer.serializeToString(svg);
+      const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(svgBlob);
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("load fail"));
+        img.src = url;
+      });
+      const scale = 4;
+      const size = 232 * scale;
+      const padding = 40 * scale;
+      const canvas = document.createElement("canvas");
+      canvas.width = size + padding * 2;
+      canvas.height = size + padding * 2 + 80 * scale;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, padding, padding, size, size);
+      ctx.fillStyle = "#111111";
+      ctx.font = `bold ${18 * scale}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.fillText(
+        `Rp ${tipAmount.toLocaleString("id-ID")}`,
+        canvas.width / 2,
+        size + padding + 36 * scale
+      );
+      ctx.font = `${10 * scale}px sans-serif`;
+      ctx.fillStyle = "#666666";
+      ctx.fillText("QRIS • Jhonaley Store", canvas.width / 2, size + padding + 60 * scale);
+      URL.revokeObjectURL(url);
+      const pngUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = pngUrl;
+      a.download = `qris-${generatedOrderId}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success("QRIS berhasil didownload");
+    } catch (e: any) {
+      toast.error("Gagal download: " + (e?.message || "Unknown"));
+    }
+  };
+
   const presetAmounts = [2000, 5000, 10000, 25000, 50000, 100000];
 
   return (
@@ -448,6 +501,7 @@ const Feedback = () => {
                   <span className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-fuchsia-400 rounded-br-md" />
                   <div className="relative flex items-center justify-center">
                     <QRCodeSVG
+                      id="qris-svg"
                       value={pakasirUrl}
                       size={232}
                       level="M"
@@ -503,6 +557,14 @@ const Feedback = () => {
                     Salin Link
                   </Button>
                 </div>
+                <Button
+                  onClick={handleDownloadQris}
+                  variant="secondary"
+                  className="w-full h-10 gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Download QRIS
+                </Button>
                 {pollingOid && (
                   <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
                     <Loader2 className="w-3 h-3 animate-spin" />
