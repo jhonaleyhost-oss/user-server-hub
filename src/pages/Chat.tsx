@@ -185,8 +185,9 @@ const Chat = () => {
         "postgres_changes",
         { event: "DELETE", schema: "public", table: "messages" },
         (payload) => {
-          const old = payload.old as { id: string };
+          const old = payload.old as { id: string; image_url?: string | null };
           setMessages((prev) => prev.filter((m) => m.id !== old.id));
+          if (old.image_url && old.image_url === lightbox) setLightbox(null);
         }
       )
       .on("presence", { event: "sync" }, () => {
