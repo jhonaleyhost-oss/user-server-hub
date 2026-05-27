@@ -101,6 +101,8 @@ interface PterodactylServer {
   is_active: boolean;
   location_id: number;
   egg_id: number;
+  python_egg_id?: number;
+  nest_id?: number;
   created_at: string;
 }
 
@@ -193,6 +195,8 @@ const Admin = () => {
     server_type: 'public',
     location_id: 1,
     egg_id: 15,
+    python_egg_id: 16,
+    nest_id: 5,
   });
 
   // Filtered & paginated data
@@ -831,6 +835,8 @@ const Admin = () => {
       server_type: 'public',
       location_id: 1,
       egg_id: 15,
+      python_egg_id: 16,
+      nest_id: 5,
     });
   };
 
@@ -844,6 +850,8 @@ const Admin = () => {
       server_type: server.server_type,
       location_id: server.location_id,
       egg_id: server.egg_id,
+      python_egg_id: server.python_egg_id ?? 16,
+      nest_id: server.nest_id ?? 5,
     });
   };
 
@@ -1235,11 +1243,29 @@ const Admin = () => {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Egg ID</Label>
+                          <Label>Egg ID (Node.js)</Label>
                           <Input
                             type="number"
                             value={serverForm.egg_id}
                             onChange={(e) => setServerForm({ ...serverForm, egg_id: parseInt(e.target.value) })}
+                            className="input-glass"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Egg ID (Python)</Label>
+                          <Input
+                            type="number"
+                            value={serverForm.python_egg_id}
+                            onChange={(e) => setServerForm({ ...serverForm, python_egg_id: parseInt(e.target.value) || 0 })}
+                            className="input-glass"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Nest ID</Label>
+                          <Input
+                            type="number"
+                            value={serverForm.nest_id}
+                            onChange={(e) => setServerForm({ ...serverForm, nest_id: parseInt(e.target.value) || 0 })}
                             className="input-glass"
                           />
                         </div>

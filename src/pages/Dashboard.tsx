@@ -89,6 +89,7 @@ const Dashboard = () => {
   const [selectedServer, setSelectedServer] = useState('');
   const [ram, setRam] = useState('1');
   const [cpu, setCpu] = useState('40');
+  const [panelType, setPanelType] = useState<'nodejs' | 'python'>('nodejs');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -229,6 +230,7 @@ const Dashboard = () => {
             ram: ramMB,
             cpu: cpuPercent,
             disk: diskMB,
+            panelType: panelType,
           }),
         }
       );
@@ -463,6 +465,12 @@ const Dashboard = () => {
                     <SelectItem value="2" disabled={role === 'free'}>2 GB</SelectItem>
                     <SelectItem value="3" disabled={role === 'free'}>3 GB</SelectItem>
                     <SelectItem value="4" disabled={role === 'free'}>4 GB</SelectItem>
+                    <SelectItem value="6" disabled={role === 'free'}>6 GB</SelectItem>
+                    <SelectItem value="8" disabled={role === 'free'}>8 GB</SelectItem>
+                    <SelectItem value="10" disabled={role === 'free'}>10 GB</SelectItem>
+                    <SelectItem value="12" disabled={role === 'free'}>12 GB</SelectItem>
+                    <SelectItem value="16" disabled={role === 'free'}>16 GB</SelectItem>
+                    <SelectItem value="20" disabled={role === 'free'}>20 GB</SelectItem>
                     {isPremium && <SelectItem value="unli">Unlimited</SelectItem>}
                   </SelectContent>
                 </Select>
@@ -481,10 +489,30 @@ const Dashboard = () => {
                     <SelectItem value="40">40%</SelectItem>
                     <SelectItem value="100" disabled={role === 'free'}>100%</SelectItem>
                     <SelectItem value="200" disabled={role === 'free'}>200%</SelectItem>
+                    <SelectItem value="400" disabled={role === 'free'}>400%</SelectItem>
+                    <SelectItem value="600" disabled={role === 'free'}>600%</SelectItem>
+                    <SelectItem value="800" disabled={role === 'free'}>800%</SelectItem>
+                    <SelectItem value="1200" disabled={role === 'free'}>1200%</SelectItem>
+                    <SelectItem value="1600" disabled={role === 'free'}>1600%</SelectItem>
+                    <SelectItem value="2000" disabled={role === 'free'}>2000%</SelectItem>
                     {isPremium && <SelectItem value="unli">Unlimited</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            {/* Panel Type */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-muted-foreground">Tipe Panel</Label>
+              <Select value={panelType} onValueChange={(v) => setPanelType(v as 'nodejs' | 'python')}>
+                <SelectTrigger className="input-glass">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="nodejs">Node.js</SelectItem>
+                  <SelectItem value="python">Python</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Submit */}

@@ -12,6 +12,7 @@ interface CreatePanelRequest {
   ram: number; // in MB
   cpu: number; // percentage
   disk: number; // in MB
+  panelType?: 'nodejs' | 'python';
 }
 
 interface PterodactylServer {
@@ -20,6 +21,8 @@ interface PterodactylServer {
   plta_key: string;
   pltc_key: string;
   egg_id: number;
+  python_egg_id: number;
+  nest_id: number;
   location_id: number;
 }
 
@@ -53,7 +56,8 @@ serve(async (req) => {
     console.log('User authenticated');
 
     // Parse request body
-    const { username, serverId, ram, cpu, disk }: CreatePanelRequest = await req.json();
+    const { username, serverId, ram, cpu, disk, panelType }: CreatePanelRequest = await req.json();
+    const type: 'nodejs' | 'python' = panelType === 'python' ? 'python' : 'nodejs';
     
     console.log('Panel creation request received');
 
@@ -115,7 +119,7 @@ serve(async (req) => {
     // Get Pterodactyl server details
     const { data: serverData, error: serverError } = await supabase
       .from('pterodactyl_servers')
-      .select('id, domain, plta_key, pltc_key, egg_id, location_id')
+      .select('id, domain, plta_key, pltc_key, egg_id, python_egg_id, nest_id, location_id')
       .eq('id', serverId)
       .single();
 
@@ -125,6 +129,33 @@ serve(async (req) => {
     }
 
     const pteroServer: PterodactylServer = serverData;
+
+    // Pick egg + docker + startup + env based on panel type
+    const eggId = type === 'python' ? pteroServer.python_egg_id : pteroServer.egg_id;
+    const dockerImage = type === 'python'
+      ? 'ghcr.io/parkervcp/yolks:python_3.10'
+      : 'ghcr.io/parkervcp/yolks:nodejs_18';
+    const startupCmd = type === 'python'
+      ? 'if [[ -d .git ]] && [[ "{{AUTO_UPDATE}}" == "1" ]]; then git pull; fi; if [[ ! -z "{{PY_PACKAGES}}" ]]; then pip install -U --prefix .local {{PY_PACKAGES}}; fi; if [[ -f /home/container/${REQUIREMENTS_FILE} ]]; then pip install -U --prefix .local -r ${REQUIREMENTS_FILE}; fi; /usr/local/bin/python /home/container/{{PY_FILE}}'
+      : 'npm start';
+    const envVars = type === 'python'
+      ? {
+          GIT_ADDRESS: '',
+          BRANCH: '',
+          AUTO_UPDATE: '0',
+          PY_FILE: 'app.py',
+          PY_PACKAGES: '',
+          USERNAME: '',
+          ACCESS_TOKEN: '',
+          REQUIREMENTS_FILE: 'requirements.txt',
+          USER_UPLOAD: '0',
+        }
+      : {
+          INST: 'npm',
+          USER_UPLOAD: '0',
+          AUTO_UPDATE: '0',
+          CMD_RUN: 'npm start',
+        };
 
     const panelEmail = `${username}@gmail.com`;
     
@@ -220,15 +251,10 @@ serve(async (req) => {
       body: JSON.stringify({
         name: username,
         user: pteroUserId,
-        egg: pteroServer.egg_id,
-        docker_image: 'ghcr.io/parkervcp/yolks:nodejs_18',
-        startup: 'npm start',
-        environment: {
-          INST: 'npm',
-          USER_UPLOAD: '0',
-          AUTO_UPDATE: '0',
-          CMD_RUN: 'npm start',
-        },
+        egg: eggId,
+        docker_image: dockerImage,
+        startup: startupCmd,
+        environment: envVars,
         limits: {
           memory: ram === 0 ? 0 : ram, // 0 = unlimited
           swap: 0,
