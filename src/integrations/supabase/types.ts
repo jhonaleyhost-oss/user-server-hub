@@ -236,6 +236,7 @@ export type Database = {
           id: string
           order_id: string
           proof_url: string | null
+          role: string
           status: string
           user_id: string
           username: string
@@ -246,6 +247,7 @@ export type Database = {
           id?: string
           order_id: string
           proof_url?: string | null
+          role?: string
           status?: string
           user_id: string
           username: string
@@ -256,6 +258,7 @@ export type Database = {
           id?: string
           order_id?: string
           proof_url?: string | null
+          role?: string
           status?: string
           user_id?: string
           username?: string

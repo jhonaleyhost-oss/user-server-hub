@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Send, Heart, Upload, QrCode, Loader2, Trash2, Copy } from "lucide-react";
+import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
@@ -20,6 +20,17 @@ interface FeedbackRow {
   role: string;
   rating: number;
   message: string | null;
+  created_at: string;
+}
+
+interface TipRow {
+  id: string;
+  user_id: string;
+  username: string;
+  role: string;
+  amount: number;
+  order_id: string;
+  status: string;
   created_at: string;
 }
 
@@ -109,9 +120,9 @@ const Feedback = () => {
   // Tip state
   const [amount, setAmount] = useState<string>("5000");
   const [orderId, setOrderId] = useState<string>("");
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [uploadingTip, setUploadingTip] = useState(false);
   const [fullName, setFullName] = useState<string>("");
+  const [pollingOid, setPollingOid] = useState<string | null>(null);
+  const [tips, setTips] = useState<TipRow[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -165,6 +176,74 @@ const Feedback = () => {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Fetch completed tips + realtime
+  useEffect(() => {
+    supabase
+      .from("tips")
+      .select("*")
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(100)
+      .then(({ data }) => {
+        if (data) setTips(data as TipRow[]);
+      });
+
+    const ch = supabase
+      .channel("tips-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tips" },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as TipRow;
+          if (!row) return;
+          if ((payload.new as any)?.status === "completed") {
+            setTips((prev) => {
+              const exists = prev.find((t) => t.id === row.id);
+              if (exists) return prev.map((t) => (t.id === row.id ? (payload.new as TipRow) : t));
+              return [payload.new as TipRow, ...prev];
+            });
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  // Poll Pakasir status while waiting for payment
+  useEffect(() => {
+    if (!pollingOid) return;
+    const amt = Math.max(1000, Math.min(100000, parseInt(amount || "0", 10) || 0));
+    let stopped = false;
+    const startedAt = Date.now();
+    const interval = setInterval(async () => {
+      if (stopped) return;
+      // Stop after 15 minutes
+      if (Date.now() - startedAt > 15 * 60 * 1000) {
+        setPollingOid(null);
+        clearInterval(interval);
+        return;
+      }
+      try {
+        const { data } = await supabase.functions.invoke("check-tip", {
+          body: { order_id: pollingOid, amount: amt },
+        });
+        if (data?.completed) {
+          toast.success("Pembayaran berhasil! Terima kasih banyak 💖");
+          setPollingOid(null);
+          clearInterval(interval);
+        }
+      } catch {
+        // ignore
+      }
+    }, 5000);
+    return () => {
+      stopped = true;
+      clearInterval(interval);
+    };
+  }, [pollingOid, amount]);
 
   const stats = useMemo(() => {
     if (!items.length) return { avg: 0, count: 0, dist: [0, 0, 0, 0, 0] };
@@ -232,61 +311,19 @@ const Feedback = () => {
     await supabase.from("tips").insert({
       user_id: user.id,
       username: fullName || "Anonim",
+      role,
       amount: tipAmount,
       order_id: oid,
       status: "pending",
     });
+    setPollingOid(oid);
     window.open(pakasirUrl, "_blank", "noopener,noreferrer");
-    toast.success("Halaman QRIS dibuka. Setelah bayar, upload bukti di bawah ya!");
+    toast.success("Halaman QRIS dibuka. Status pembayaran akan dicek otomatis.");
   };
 
   const handleCopyUrl = async () => {
     await navigator.clipboard.writeText(pakasirUrl);
     toast.success("Link pembayaran disalin");
-  };
-
-  const handleUploadProof = async () => {
-    if (!user) return;
-    if (!proofFile) {
-      toast.error("Pilih file bukti transfer terlebih dahulu");
-      return;
-    }
-    if (proofFile.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran file maksimal 5MB");
-      return;
-    }
-    if (!validAmount) {
-      toast.error("Nominal harus antara Rp 1.000 - Rp 100.000");
-      return;
-    }
-    setUploadingTip(true);
-    try {
-      const ext = proofFile.name.split(".").pop() || "jpg";
-      const oid = orderId || generatedOrderId;
-      const path = `${user.id}/${oid}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("tip-proofs")
-        .upload(path, proofFile, { upsert: false });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("tip-proofs").getPublicUrl(path);
-
-      const { error: insErr } = await supabase.from("tips").insert({
-        user_id: user.id,
-        username: fullName || "Anonim",
-        amount: tipAmount,
-        order_id: oid,
-        proof_url: pub.publicUrl,
-        status: "submitted",
-      });
-      if (insErr) throw insErr;
-
-      setProofFile(null);
-      toast.success("Bukti tip terkirim. Terima kasih banyak! 💖");
-    } catch (e: any) {
-      toast.error("Gagal upload: " + (e?.message || "Unknown"));
-    } finally {
-      setUploadingTip(false);
-    }
   };
 
   const presetAmounts = [2000, 5000, 10000, 25000, 50000, 100000];
@@ -466,6 +503,12 @@ const Feedback = () => {
                     Salin Link
                   </Button>
                 </div>
+                {pollingOid && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Menunggu konfirmasi pembayaran...
+                  </div>
+                )}
               </div>
             )}
             {!validAmount && (
@@ -474,37 +517,61 @@ const Feedback = () => {
               </p>
             )}
 
-            <div className="mt-5 pt-5 border-t border-border/50">
-              <label className="text-xs text-muted-foreground mb-1 block">
-                Upload Bukti Transfer (maks. 5MB)
-              </label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
-                className="h-11 file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs"
-              />
-              <Button
-                onClick={handleUploadProof}
-                disabled={uploadingTip || !proofFile || !validAmount}
-                className="w-full h-11 mt-2 gap-2"
-                variant="secondary"
-              >
-                {uploadingTip ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4" />
-                )}
-                Kirim Bukti Tip
-              </Button>
-            </div>
-
             <div className="mt-5 p-3 rounded-lg bg-gradient-to-br from-amber/10 via-primary/10 to-accent/10 border border-amber/20 text-center">
               <p className="text-sm font-semibold text-foreground">Terima kasih banyak 💖</p>
               <p className="text-xs text-muted-foreground mt-1">
                 Semoga rezekimu selalu dilancarkan, sehat selalu, dan dimudahkan dalam segala urusan. Aamiin 🤲
               </p>
             </div>
+          </GlassCard>
+
+          {/* Donor list */}
+          <GlassCard className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Gift className="w-5 h-5 text-amber" />
+              <h2 className="text-lg font-bold text-foreground">Donatur Terbaru ({tips.length})</h2>
+            </div>
+            {tips.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                Belum ada donatur. Jadilah yang pertama 💝
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {tips.map((t) => (
+                  <div
+                    key={t.id}
+                    className="p-3 rounded-lg bg-gradient-to-r from-emerald-500/10 via-secondary/30 to-amber/10 border border-emerald-500/20 flex items-center gap-3"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-foreground truncate">
+                          {t.username}
+                        </span>
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle(
+                            t.role
+                          )}`}
+                        >
+                          {roleLabel(t.role)}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {formatWIB(t.created_at)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-extrabold bg-gradient-to-r from-emerald-400 to-amber bg-clip-text text-transparent">
+                        Rp {t.amount.toLocaleString("id-ID")}
+                      </div>
+                      <div className="text-[9px] text-muted-foreground">QRIS</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </GlassCard>
 
           {/* Feedback list */}
