@@ -38,19 +38,6 @@ import AppShell from '@/components/AppShell';
 import GlassCard from '@/components/GlassCard';
 import StatCard from '@/components/StatCard';
 import Logo from '@/components/Logo';
-
-// Hide Tidio chat widget on Admin Panel
-const useHideTidioOnAdmin = () => {
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.setAttribute('data-hide-tidio', 'admin');
-    style.innerHTML = `#tidio-chat, #tidio-chat-iframe, iframe[id^="tidio-chat"] { display: none !important; visibility: hidden !important; }`;
-    document.head.appendChild(style);
-    return () => {
-      style.remove();
-    };
-  }, []);
-};
 import ThemeToggle from '@/components/ThemeToggle';
 import AccentColorPicker from '@/components/AccentColorPicker';
 import { Button } from '@/components/ui/button';
@@ -152,7 +139,6 @@ interface DeviceRecord {
 }
 
 const Admin = () => {
-  useHideTidioOnAdmin();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
