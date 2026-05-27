@@ -224,7 +224,11 @@ const Activity = () => {
               <div className="min-w-0">
                 <h1 className="text-base font-bold text-foreground truncate">Aktivitas Pengguna</h1>
                 <p className="text-xs text-muted-foreground truncate">
-                  {tab === "panel" ? "Log pembuatan panel secara real-time" : "Log pendaftaran user baru secara real-time"}
+                  {tab === "panel"
+                    ? "Log pembuatan panel secara real-time"
+                    : tab === "signup"
+                    ? "Log pendaftaran user baru secara real-time"
+                    : "Log upgrade Reseller secara real-time"}
                 </p>
               </div>
             </div>
@@ -268,13 +272,32 @@ const Activity = () => {
               Pendaftar
               <span className="ml-1 text-[10px] opacity-80">({signups.length})</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setTab("upgrade")}
+              className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors ${
+                tab === "upgrade"
+                  ? "bg-gradient-to-r from-amber to-primary text-white shadow"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Crown className="w-3.5 h-3.5" />
+              Upgrade
+              <span className="ml-1 text-[10px] opacity-80">({upgrades.length})</span>
+            </button>
           </GlassCard>
 
           <GlassCard className="!rounded-3xl p-3 mb-3">
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={tab === "panel" ? "Cari nama, username panel, atau server..." : "Cari nama pendaftar..."}
+              placeholder={
+                tab === "panel"
+                  ? "Cari nama, username panel, atau server..."
+                  : tab === "signup"
+                  ? "Cari nama pendaftar..."
+                  : "Cari nama atau paket..."
+              }
               className="rounded-full h-10 bg-secondary/60 border-border/50"
             />
           </GlassCard>
@@ -294,7 +317,9 @@ const Activity = () => {
                 {current.length === 0
                   ? tab === "panel"
                     ? "Belum ada aktivitas pembuatan panel."
-                    : "Belum ada pendaftar baru."
+                    : tab === "signup"
+                    ? "Belum ada pendaftar baru."
+                    : "Belum ada upgrade Reseller."
                   : "Tidak ada yang cocok dengan pencarian."}
               </p>
             </GlassCard>
@@ -367,7 +392,7 @@ const Activity = () => {
                               </span>
                             </div>
                           </>
-                        ) : (
+                        ) : a.kind === "signup" ? (
                           <div className="flex items-center gap-1.5 text-xs">
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
                               <UserPlus className="w-3 h-3" />
@@ -375,6 +400,46 @@ const Activity = () => {
                             </span>
                             <span className="text-muted-foreground">sebagai pengguna baru</span>
                           </div>
+                        ) : (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Upgrade ke{" "}
+                              <span className="font-semibold text-amber">Reseller</span>
+                              {" • "}
+                              <span className="font-semibold text-foreground">
+                                {a.plan === "perm" ? "Permanen" : a.plan === "2bln" ? "2 Bulan" : "1 Bulan"}
+                              </span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber/10 border border-amber/30 text-amber font-bold">
+                                <Wallet className="w-3 h-3" />
+                                Rp {a.amount.toLocaleString("id-ID")}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                <Calendar className="w-3 h-3 text-primary" />
+                                Beli {formatDateTime(a.paid_at || a.created_at)}
+                              </span>
+                              {a.permanent ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber/20 to-primary/20 border border-amber/40 text-amber font-bold">
+                                  <InfinityIcon className="w-3 h-3" />
+                                  Permanen
+                                </span>
+                              ) : (
+                                <>
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                    <Crown className="w-3 h-3 text-accent" />
+                                    Durasi {a.duration_days} hari
+                                  </span>
+                                  {a.expires_at && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive/10 border border-destructive/30 text-destructive">
+                                      <Calendar className="w-3 h-3" />
+                                      Expired {formatDateTime(a.expires_at)}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
