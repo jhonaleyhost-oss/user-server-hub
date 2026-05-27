@@ -30,6 +30,7 @@ import StatCard from '@/components/StatCard';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccentColorPicker from '@/components/AccentColorPicker';
+import ActivityTicker from '@/components/ActivityTicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -289,6 +290,7 @@ const Dashboard = () => {
 
 
       <div className="w-full max-w-2xl mx-auto relative z-10">
+        <ActivityTicker />
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <StatCard

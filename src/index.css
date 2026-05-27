@@ -387,4 +387,16 @@
       opacity: 0;
     }
   }
+
+  /* Marquee / ticker scroll (right -> left, looping) */
+  @keyframes marquee-ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  .animate-marquee {
+    animation: marquee-ticker var(--marquee-duration, 40s) linear infinite;
+  }
+  .animate-marquee:hover {
+    animation-play-state: paused;
+  }
 }
