@@ -17,7 +17,7 @@ import AccentColorPicker from "@/components/AccentColorPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useResellerStatus, formatResellerRemaining } from "@/hooks/useResellerStatus";
-import { Clock, Infinity as InfinityIcon, Crown } from "lucide-react";
+import { Clock, Infinity as InfinityIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
