@@ -98,6 +98,7 @@ const Activity = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
+  const [tab, setTab] = useState<"panel" | "signup">("panel");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -164,24 +165,22 @@ const Activity = () => {
     setRefreshing(false);
   };
 
-  const merged = useMemo<FeedItem[]>(() => {
-    const all: FeedItem[] = [
-      ...panels.map((p) => ({ kind: "panel" as const, ...p })),
-      ...signups.map((s) => ({ kind: "signup" as const, ...s })),
-    ];
-    all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return all;
-  }, [panels, signups]);
+  const current = useMemo<FeedItem[]>(() => {
+    if (tab === "panel") {
+      return panels.map((p) => ({ kind: "panel" as const, ...p }));
+    }
+    return signups.map((s) => ({ kind: "signup" as const, ...s }));
+  }, [tab, panels, signups]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return merged;
-    return merged.filter((a) => {
+    if (!q) return current;
+    return current.filter((a) => {
       const fields: (string | null | undefined)[] = [a.full_name, a.role];
       if (a.kind === "panel") fields.push(a.username, a.server_name, a.server_domain);
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
-  }, [merged, search]);
+  }, [current, search]);
 
   return (
     <AppShell>
@@ -195,7 +194,7 @@ const Activity = () => {
               <div className="min-w-0">
                 <h1 className="text-base font-bold text-foreground truncate">Aktivitas Pengguna</h1>
                 <p className="text-xs text-muted-foreground truncate">
-                  Log pembuatan panel secara real-time
+                  {tab === "panel" ? "Log pembuatan panel secara real-time" : "Log pendaftaran user baru secara real-time"}
                 </p>
               </div>
             </div>
@@ -212,11 +211,40 @@ const Activity = () => {
             </Button>
           </GlassCard>
 
+          <GlassCard className="!rounded-full p-1 mb-3 flex gap-1">
+            <button
+              type="button"
+              onClick={() => setTab("panel")}
+              className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors ${
+                tab === "panel"
+                  ? "bg-gradient-to-r from-primary to-accent text-white shadow"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Server className="w-3.5 h-3.5" />
+              Panel
+              <span className="ml-1 text-[10px] opacity-80">({panels.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("signup")}
+              className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors ${
+                tab === "signup"
+                  ? "bg-gradient-to-r from-primary to-accent text-white shadow"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              Pendaftar
+              <span className="ml-1 text-[10px] opacity-80">({signups.length})</span>
+            </button>
+          </GlassCard>
+
           <GlassCard className="!rounded-3xl p-3 mb-3">
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari nama, username panel, atau server..."
+              placeholder={tab === "panel" ? "Cari nama, username panel, atau server..." : "Cari nama pendaftar..."}
               className="rounded-full h-10 bg-secondary/60 border-border/50"
             />
           </GlassCard>
