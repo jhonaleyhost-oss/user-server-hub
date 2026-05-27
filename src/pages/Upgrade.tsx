@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   CalendarClock,
   RefreshCw,
+  Download,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -259,6 +260,51 @@ const Upgrade = () => {
   const handleCopyUrl = async () => {
     await navigator.clipboard.writeText(pakasirUrl);
     toast.success('Link pembayaran disalin');
+  };
+
+  const handleDownloadQris = async () => {
+    try {
+      const svg = document.getElementById('qris-svg') as unknown as SVGSVGElement | null;
+      if (!svg) return;
+      const SCALE = 4;
+      const svgRect = svg.getBoundingClientRect();
+      const w = svgRect.width || 232;
+      const h = svgRect.height || 232;
+      const xml = new XMLSerializer().serializeToString(svg);
+      const svg64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const PAD = 24;
+        canvas.width = w * SCALE + PAD * 2;
+        canvas.height = h * SCALE + PAD * 2 + 40;
+        const ctx = canvas.getContext('2d')!;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, PAD, PAD, w * SCALE, h * SCALE);
+        ctx.fillStyle = '#0a0a0a';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(
+          `Rp ${plan.amount.toLocaleString('id-ID')} • ${plan.label}`,
+          canvas.width / 2,
+          canvas.height - 14,
+        );
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `QRIS-${orderId || 'upgrade'}.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        toast.success('QRIS berhasil diunduh');
+      };
+      img.onerror = () => toast.error('Gagal generate gambar QRIS');
+      img.src = svg64;
+    } catch (e: any) {
+      toast.error('Gagal download QRIS: ' + (e?.message || String(e)));
+    }
   };
 
   return (
@@ -505,6 +551,7 @@ const Upgrade = () => {
                         bgColor="#ffffff"
                         fgColor="#0a0a0a"
                         marginSize={0}
+                        id="qris-svg"
                       />
                       <div className="absolute w-12 h-12 rounded-full bg-white border-2 border-fuchsia-400 flex items-center justify-center shadow overflow-hidden">
                         <img src={qrisLogo} alt="Logo" className="w-full h-full object-cover" />
@@ -542,10 +589,16 @@ const Upgrade = () => {
                     REF: {orderId}
                   </div>
 
-                  <Button onClick={handleCopyUrl} variant="outline" className="w-full h-10 gap-2">
-                    <Copy className="w-4 h-4" />
-                    Salin Link Pembayaran
-                  </Button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button onClick={handleCopyUrl} variant="outline" className="h-10 gap-2">
+                      <Copy className="w-4 h-4" />
+                      Salin Link
+                    </Button>
+                    <Button onClick={handleDownloadQris} variant="outline" className="h-10 gap-2">
+                      <Download className="w-4 h-4" />
+                      Download QRIS
+                    </Button>
+                  </div>
 
                   {paid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 pt-1 font-semibold">
