@@ -418,6 +418,10 @@ Deno.serve(async (req) => {
         if (!need(1)) return ok(await send(chatId, "Format: <code>/delpanel panelId</code>"));
         await deletePanelById(chatId, args[0]);
         break;
+      case "/listpanel":
+        if (!need(1)) return ok(await send(chatId, "Format: <code>/listpanel serverId</code>"));
+        await listPanelsByServer(chatId, args[0]);
+        break;
       case "/delallusr":
         await deleteAllUsers(chatId);
         break;
