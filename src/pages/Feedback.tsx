@@ -476,9 +476,41 @@ const Feedback = () => {
               ))}
             </div>
 
+            {!showQris && (
+              <Button
+                onClick={() => {
+                  if (!validAmount) {
+                    toast.error("Masukkan nominal Rp 1.000 - Rp 100.000");
+                    return;
+                  }
+                  setOrderId("");
+                  setShowQris(true);
+                }}
+                className="w-full h-11 mt-4 gap-2"
+              >
+                <QrCode className="w-4 h-4" />
+                Generate QRIS
+              </Button>
+            )}
+
             {/* QRIS Canvas */}
-            {validAmount && (
+            {showQris && validAmount && (
               <div className="mt-4 rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500/30 via-purple-500/30 to-fuchsia-500/30 border border-white/10 p-3 space-y-3">
+                {/* Close */}
+                <div className="flex justify-end">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowQris(false);
+                      setPollingOid(null);
+                    }}
+                    className="h-7 w-7 -mr-1 -mt-1 text-muted-foreground hover:text-destructive"
+                    aria-label="Tutup"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
                 {/* Header */}
                 <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-3 text-center border border-white/10">
                   <div className="text-base font-extrabold tracking-wide bg-gradient-to-r from-primary via-accent to-amber bg-clip-text text-transparent">
@@ -573,11 +605,6 @@ const Feedback = () => {
                   </div>
                 )}
               </div>
-            )}
-            {!validAmount && (
-              <p className="text-xs text-center text-muted-foreground mt-4">
-                Masukkan nominal Rp 1.000 - Rp 100.000 untuk menampilkan QRIS
-              </p>
             )}
 
             <div className="mt-5 p-3 rounded-lg bg-gradient-to-br from-amber/10 via-primary/10 to-accent/10 border border-amber/20 text-center">
