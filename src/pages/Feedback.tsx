@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download } from "lucide-react";
+import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
@@ -123,6 +123,7 @@ const Feedback = () => {
   const [fullName, setFullName] = useState<string>("");
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [tips, setTips] = useState<TipRow[]>([]);
+  const [showQris, setShowQris] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
