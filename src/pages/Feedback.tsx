@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Star, Send, Heart, Upload, QrCode, Loader2, Trash2, Copy } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
