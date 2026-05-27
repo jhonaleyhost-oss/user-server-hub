@@ -18,6 +18,7 @@ interface ChatMessage {
   created_at: string;
   reply_to_id: string | null;
   image_url: string | null;
+  deleted?: boolean | null;
 }
 
 interface ProfileLite {
@@ -190,6 +191,17 @@ const Chat = () => {
           if (old.image_url && old.image_url === lightbox) setLightbox(null);
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        (payload) => {
+          const updated = payload.new as ChatMessage;
+          setMessages((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+          if (updated.deleted && lightbox && payload.old && (payload.old as ChatMessage).image_url === lightbox) {
+            setLightbox(null);
+          }
+        }
+      )
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState() as Record<string, PresenceState[]>;
         setOnlineUsers(new Set(Object.keys(state)));
@@ -302,12 +314,19 @@ const Chat = () => {
 
   const handleDelete = async (id: string) => {
     const target = messagesRef.current.find((m) => m.id === id);
-    const { error } = await supabase.from("messages").delete().eq("id", id);
+    const { error } = await supabase
+      .from("messages")
+      .update({ deleted: true, content: null, image_url: null })
+      .eq("id", id);
     if (error) {
       toast.error("Gagal menghapus pesan");
       return;
     }
-    setMessages((prev) => prev.filter((m) => m.id !== id));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, deleted: true, content: null, image_url: null } : m
+      )
+    );
     if (lightbox && target?.image_url === lightbox) setLightbox(null);
 
     // Cleanup storage object so the photo file is also removed.
@@ -447,6 +466,13 @@ const Chat = () => {
                               : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
                           } ${m.image_url && !m.content ? "!p-1" : ""}`}
                         >
+                          {m.deleted ? (
+                            <div className="italic text-muted-foreground flex items-center gap-1.5">
+                              <Trash2 className="w-3 h-3" />
+                              <span>Pesan ini telah dihapus</span>
+                            </div>
+                          ) : (
+                          <>
                           {replied && (
                             <button
                               type="button"
@@ -459,7 +485,9 @@ const Chat = () => {
                                 {repliedName}
                               </div>
                               <div className="text-[11px] text-muted-foreground truncate">
-                                {replied.content || (replied.image_url ? "📷 Foto" : "")}
+                                {replied.deleted
+                                  ? "Pesan ini telah dihapus"
+                                  : replied.content || (replied.image_url ? "📷 Foto" : "")}
                               </div>
                             </button>
                           )}
@@ -511,6 +539,8 @@ const Chat = () => {
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
+                          )}
+                          </>
                           )}
                         </div>
                       </div>
