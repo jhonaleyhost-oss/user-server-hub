@@ -383,43 +383,43 @@ Deno.serve(async (req) => {
         await showStats(chatId);
         break;
       case "/addreseller":
-        if (!need(2)) return ok(await send(chatId, "Format: <code>/addreseller email,hari</code> (0=permanent)"));
+        if (!need(2)) { await send(chatId, "Format: <code>/addreseller email,hari</code> (0=permanent)"); break; }
         await addReseller(chatId, args[0], parseInt(args[1], 10) || 0);
         break;
       case "/addserver":
-        if (!need(4)) return ok(await send(chatId, "Format: <code>/addserver nama,domain,plta,pltc</code>"));
+        if (!need(4)) { await send(chatId, "Format: <code>/addserver nama,domain,plta,pltc</code>"); break; }
         await addServer(chatId, args[0], args[1], args[2], args[3]);
         break;
       case "/setptla":
-        if (!need(2)) return ok(await send(chatId, "Format: <code>/setptla serverId,plta</code>"));
+        if (!need(2)) { await send(chatId, "Format: <code>/setptla serverId,plta</code>"); break; }
         await updateServerField(chatId, args[0], { plta_key: args[1] }, "PTLA");
         break;
       case "/setptlc":
-        if (!need(2)) return ok(await send(chatId, "Format: <code>/setptlc serverId,pltc</code>"));
+        if (!need(2)) { await send(chatId, "Format: <code>/setptlc serverId,pltc</code>"); break; }
         await updateServerField(chatId, args[0], { pltc_key: args[1] }, "PTLC");
         break;
       case "/seturl":
-        if (!need(2)) return ok(await send(chatId, "Format: <code>/seturl serverId,url</code>"));
+        if (!need(2)) { await send(chatId, "Format: <code>/seturl serverId,url</code>"); break; }
         await updateServerField(chatId, args[0], { domain: args[1].replace(/\/+$/, "") }, "Domain");
         break;
       case "/setpakasir":
-        if (!need(2)) return ok(await send(chatId, "Format: <code>/setpakasir apikey,slug</code>"));
+        if (!need(2)) { await send(chatId, "Format: <code>/setpakasir apikey,slug</code>"); break; }
         await setPakasir(chatId, args[0], args[1]);
         break;
       case "/changepw":
-        if (!need(2)) return ok(await send(chatId, "Format: <code>/changepw email,passwordbaru</code>"));
+        if (!need(2)) { await send(chatId, "Format: <code>/changepw email,passwordbaru</code>"); break; }
         await changeUserPassword(chatId, args[0], args[1]);
         break;
       case "/deluser":
-        if (!need(1)) return ok(await send(chatId, "Format: <code>/deluser email</code>"));
+        if (!need(1)) { await send(chatId, "Format: <code>/deluser email</code>"); break; }
         await deleteUserByEmail(chatId, args[0]);
         break;
       case "/delpanel":
-        if (!need(1)) return ok(await send(chatId, "Format: <code>/delpanel panelId</code>"));
+        if (!need(1)) { await send(chatId, "Format: <code>/delpanel panelId</code>"); break; }
         await deletePanelById(chatId, args[0]);
         break;
       case "/listpanel":
-        if (!need(1)) return ok(await send(chatId, "Format: <code>/listpanel serverId</code>"));
+        if (!need(1)) { await send(chatId, "Format: <code>/listpanel serverId</code>"); break; }
         await listPanelsByServer(chatId, args[0]);
         break;
       case "/delallusr":
