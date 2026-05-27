@@ -317,7 +317,7 @@ const Chat = () => {
     const target = messagesRef.current.find((m) => m.id === id);
     const { error } = await supabase
       .from("messages")
-      .update({ deleted: true, content: null, image_url: null })
+      .update({ deleted: true, content: null, image_url: null, deleted_by: user?.id ?? null })
       .eq("id", id);
     if (error) {
       toast.error("Gagal menghapus pesan");
@@ -325,7 +325,7 @@ const Chat = () => {
     }
     setMessages((prev) =>
       prev.map((m) =>
-        m.id === id ? { ...m, deleted: true, content: null, image_url: null } : m
+        m.id === id ? { ...m, deleted: true, content: null, image_url: null, deleted_by: user?.id ?? null } : m
       )
     );
     if (lightbox && target?.image_url === lightbox) setLightbox(null);
