@@ -542,6 +542,28 @@ const Chat = () => {
                 </div>
               )}
               <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSelected}
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="outline"
+                  onClick={handleImagePick}
+                  disabled={uploading || !user}
+                  className="h-11 w-11 rounded-full shrink-0"
+                  aria-label="Kirim foto"
+                >
+                  {uploading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-4 h-4" />
+                  )}
+                </Button>
                 <Input
                   ref={inputRef}
                   value={input}
@@ -566,6 +588,28 @@ const Chat = () => {
               </form>
             </div>
           </GlassCard>
+
+          {lightbox && (
+            <div
+              onClick={() => setLightbox(null)}
+              className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 animate-in fade-in"
+            >
+              <button
+                type="button"
+                onClick={() => setLightbox(null)}
+                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-secondary/80 hover:bg-secondary flex items-center justify-center"
+                aria-label="Tutup"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <img
+                src={lightbox}
+                alt="foto"
+                className="max-w-full max-h-full object-contain rounded-xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
         </div>
       </PageTransition>
     </AppShell>
