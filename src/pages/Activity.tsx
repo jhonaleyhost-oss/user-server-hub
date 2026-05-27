@@ -196,7 +196,9 @@ const Activity = () => {
           {loading ? (
             <div className="space-y-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <GlassCard key={i} className="!rounded-2xl p-4 animate-pulse h-24" />
+                <GlassCard key={i} className="!rounded-2xl p-4 animate-pulse h-24">
+                  <span />
+                </GlassCard>
               ))}
             </div>
           ) : filtered.length === 0 ? (
