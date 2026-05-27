@@ -428,6 +428,17 @@ export type Database = {
           pltc_key: string
         }[]
       }
+      get_signup_activity: {
+        Args: { _limit?: number }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

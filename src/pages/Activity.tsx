@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -24,6 +24,19 @@ interface PanelActivity {
   server_domain: string | null;
   created_at: string;
 }
+
+interface SignupActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  created_at: string;
+}
+
+type FeedItem =
+  | ({ kind: "panel" } & PanelActivity)
+  | ({ kind: "signup" } & SignupActivity);
 
 const roleStyle = (role: string) => {
   switch (role) {
@@ -79,28 +92,28 @@ const relativeTime = (iso: string) => {
 const Activity = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [items, setItems] = useState<PanelActivity[]>([]);
+  const [panels, setPanels] = useState<PanelActivity[]>([]);
+  const [signups, setSignups] = useState<SignupActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
-  const itemsRef = useRef<PanelActivity[]>([]);
-
-  useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const { data, error } = await (supabase.rpc as any)("get_panel_activity", { _limit: 200 });
-    if (error) {
+    const [panelRes, signupRes] = await Promise.all([
+      (supabase.rpc as any)("get_panel_activity", { _limit: 200 }),
+      (supabase.rpc as any)("get_signup_activity", { _limit: 200 }),
+    ]);
+    if (panelRes.error || signupRes.error) {
       toast.error("Gagal memuat aktivitas");
       return;
     }
-    setItems((data ?? []) as PanelActivity[]);
+    setPanels((panelRes.data ?? []) as PanelActivity[]);
+    setSignups((signupRes.data ?? []) as SignupActivity[]);
   };
 
   useEffect(() => {
@@ -122,7 +135,13 @@ const Activity = () => {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "user_panels" },
         () => {
-          // Easiest: refetch (RPC enriches with profile/role/server data)
+          load();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "profiles" },
+        () => {
           load();
         }
       )
@@ -145,15 +164,24 @@ const Activity = () => {
     setRefreshing(false);
   };
 
+  const merged = useMemo<FeedItem[]>(() => {
+    const all: FeedItem[] = [
+      ...panels.map((p) => ({ kind: "panel" as const, ...p })),
+      ...signups.map((s) => ({ kind: "signup" as const, ...s })),
+    ];
+    all.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return all;
+  }, [panels, signups]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((a) =>
-      [a.full_name, a.username, a.server_name, a.server_domain, a.role]
-        .filter(Boolean)
-        .some((v) => (v as string).toLowerCase().includes(q))
-    );
-  }, [items, search]);
+    if (!q) return merged;
+    return merged.filter((a) => {
+      const fields: (string | null | undefined)[] = [a.full_name, a.role];
+      if (a.kind === "panel") fields.push(a.username, a.server_name, a.server_domain);
+      return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
+    });
+  }, [merged, search]);
 
   return (
     <AppShell>
@@ -205,7 +233,7 @@ const Activity = () => {
             <GlassCard className="!rounded-3xl p-10 text-center">
               <ActivityIcon className="w-12 h-12 text-muted-foreground/40 mx-auto mb-2" />
               <p className="text-sm text-muted-foreground">
-                {items.length === 0 ? "Belum ada aktivitas pembuatan panel." : "Tidak ada yang cocok dengan pencarian."}
+                {merged.length === 0 ? "Belum ada aktivitas." : "Tidak ada yang cocok dengan pencarian."}
               </p>
             </GlassCard>
           ) : (
@@ -215,7 +243,7 @@ const Activity = () => {
                 const initial = name.charAt(0).toUpperCase();
                 return (
                   <GlassCard
-                    key={a.id}
+                    key={`${a.kind}-${a.id}`}
                     className="!rounded-2xl p-3.5 sm:p-4 hover:bg-secondary/30 transition-colors"
                   >
                     <div className="flex items-start gap-3">
@@ -250,31 +278,42 @@ const Activity = () => {
                           </span>
                         </div>
 
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Membuat panel{" "}
-                          <span className="font-semibold text-foreground">{a.username}</span>
-                        </p>
-
-                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
-                            <Server className="w-3 h-3 text-primary" />
-                            <span className="truncate max-w-[140px]">
-                              {a.server_name || a.server_domain || "Unknown"}
+                        {a.kind === "panel" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Membuat panel{" "}
+                              <span className="font-semibold text-foreground">{a.username}</span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                <Server className="w-3 h-3 text-primary" />
+                                <span className="truncate max-w-[140px]">
+                                  {a.server_name || a.server_domain || "Unknown"}
+                                </span>
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                <MemoryStick className="w-3 h-3 text-accent" />
+                                RAM {formatSpec(a.ram)}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                <Cpu className="w-3 h-3 text-amber" />
+                                CPU {formatSpec(a.cpu)}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                <HardDrive className="w-3 h-3 text-emerald-500" />
+                                Disk {formatSpec(a.disk)}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                              <UserPlus className="w-3 h-3" />
+                              Bergabung
                             </span>
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
-                            <MemoryStick className="w-3 h-3 text-accent" />
-                            RAM {formatSpec(a.ram)}
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
-                            <Cpu className="w-3 h-3 text-amber" />
-                            CPU {formatSpec(a.cpu)}
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
-                            <HardDrive className="w-3 h-3 text-emerald-500" />
-                            Disk {formatSpec(a.disk)}
-                          </span>
-                        </div>
+                            <span className="text-muted-foreground">sebagai pengguna baru</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </GlassCard>
