@@ -441,31 +441,6 @@ const Feedback = () => {
               </p>
             )}
 
-            <div className="mt-5 pt-5 border-t border-border/50">
-              <label className="text-xs text-muted-foreground mb-1 block">
-                Upload Bukti Transfer (maks. 5MB)
-              </label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
-                className="h-11 file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs"
-              />
-              <Button
-                onClick={handleUploadProof}
-                disabled={uploadingTip || !proofFile || !validAmount}
-                className="w-full h-11 mt-2 gap-2"
-                variant="secondary"
-              >
-                {uploadingTip ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4" />
-                )}
-                Kirim Bukti Tip
-              </Button>
-            </div>
-
             <div className="mt-5 p-3 rounded-lg bg-gradient-to-br from-amber/10 via-primary/10 to-accent/10 border border-amber/20 text-center">
               <p className="text-sm font-semibold text-foreground">Terima kasih banyak 💖</p>
               <p className="text-xs text-muted-foreground mt-1">
