@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocked_devices: {
+        Row: {
+          archived_at: string
+          device_fingerprint: string | null
+          id: string
+          ip_address: string | null
+          original_user_id: string | null
+        }
+        Insert: {
+          archived_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          original_user_id?: string | null
+        }
+        Update: {
+          archived_at?: string
+          device_fingerprint?: string | null
+          id?: string
+          ip_address?: string | null
+          original_user_id?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string | null
