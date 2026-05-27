@@ -39,6 +39,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Detect deleted/disabled accounts and force sign-out
+  useEffect(() => {
+    if (!session) return;
+
+    const checkUserExists = async () => {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        const msg = (error?.message || '').toLowerCase();
+        const deleted =
+          !!error &&
+          (msg.includes('user_not_found') ||
+            msg.includes('user not found') ||
+            msg.includes('user from sub claim') ||
+            msg.includes('invalid') ||
+            msg.includes('jwt'));
+        if (deleted || (!data?.user && !!error)) {
+          await supabase.auth.signOut().catch(() => {});
+          setUser(null);
+          setSession(null);
+          if (typeof window !== 'undefined') {
+            window.location.href = '/auth';
+          }
+        }
+      } catch {
+        // ignore network errors
+      }
+    };
+
+    // Check immediately, on window focus, and every 30s
+    checkUserExists();
+    const onFocus = () => checkUserExists();
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(checkUserExists, 30000);
+
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
+  }, [session?.user?.id]);
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
