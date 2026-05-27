@@ -21,13 +21,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const forceLogoutInProgress = useRef(false);
 
   useEffect(() => {
-    if (session) {
-      forceLogoutInProgress.current = false;
-    }
-
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (session) {
+          forceLogoutInProgress.current = false;
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -36,6 +35,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        forceLogoutInProgress.current = false;
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
