@@ -16,6 +16,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import AccentColorPicker from "@/components/AccentColorPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useResellerStatus, formatResellerRemaining } from "@/hooks/useResellerStatus";
+import { Clock, Infinity as InfinityIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +27,7 @@ export function AppSidebar() {
   const { signOut, user } = useAuth();
   const { isAdmin } = useUserRole();
   const { role } = useUserRole();
+  const { status: resellerStatus } = useResellerStatus();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState<string | null>(null);
@@ -127,6 +130,18 @@ export function AppSidebar() {
                 >
                   {getRoleLabel()}
                 </span>
+                {resellerStatus?.is_reseller && role !== "admin" && (
+                  <div className="mt-1.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                    {resellerStatus.permanent ? (
+                      <InfinityIcon className="w-3 h-3 text-primary" />
+                    ) : (
+                      <Clock className={`w-3 h-3 ${(resellerStatus.days_left ?? 0) <= 2 ? "text-destructive" : "text-primary"}`} />
+                    )}
+                    <span className={`font-semibold ${(resellerStatus.days_left ?? 99) <= 2 && !resellerStatus.permanent ? "text-destructive" : "text-foreground"}`}>
+                      {formatResellerRemaining(resellerStatus)}
+                    </span>
+                  </div>
+                )}
               </div>
             </button>
           </div>

@@ -20,9 +20,12 @@ import {
   AlertTriangle,
   Sparkles as SparklesIcon,
   Lock,
+  Clock,
+  Infinity as InfinityIcon,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
+import { formatResellerRemaining, formatExpiryDate } from '@/hooks/useResellerStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { PageTransition } from '@/components/PageTransition';
 import AppShell from '@/components/AppShell';
@@ -311,32 +314,36 @@ const Dashboard = () => {
       <div className="w-full max-w-2xl mx-auto relative z-10">
         <ActivityTicker />
 
-        {/* Reseller expiry warning (<=2 days, not permanent) */}
-        {resellerStatus &&
-          resellerStatus.is_reseller &&
-          !resellerStatus.permanent &&
-          resellerStatus.days_left !== null &&
-          resellerStatus.days_left <= 2 && (
-            <Link to="/upgrade" className="block mb-4">
-              <div className="rounded-2xl p-4 bg-gradient-to-r from-destructive/20 via-amber/20 to-destructive/20 border border-destructive/40 flex items-center gap-3 hover:scale-[1.01] transition-transform">
-                <div className="w-10 h-10 rounded-full bg-destructive/30 flex items-center justify-center shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-bold text-foreground">
-                    Reseller akan expired {resellerStatus.days_left <= 0 ? 'hari ini' : `dalam ${resellerStatus.days_left} hari`}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground truncate">
-                    {resellerStatus.expires_at
-                      ? `Berakhir ${new Date(resellerStatus.expires_at).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`
-                      : ''}{' '}
-                    • Perpanjang sekarang →
-                  </p>
-                </div>
+        {/* Reseller active period card (always visible for resellers) */}
+        {resellerStatus && resellerStatus.is_reseller && role !== 'admin' && (
+          <Link to="/upgrade" className="block mb-4">
+            <div className={`rounded-2xl p-4 border flex items-center gap-3 hover:scale-[1.01] transition-transform ${
+              resellerStatus.permanent
+                ? 'bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 border-primary/30'
+                : (resellerStatus.days_left ?? 0) <= 2
+                  ? 'bg-gradient-to-r from-destructive/20 via-amber/20 to-destructive/20 border-destructive/40'
+                  : 'bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/30'
+            }`}>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                {resellerStatus.permanent
+                  ? <InfinityIcon className="w-5 h-5 text-white" />
+                  : <Clock className="w-5 h-5 text-white" />}
               </div>
-            </Link>
-          )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-bold text-foreground">
+                  Masa Aktif Reseller: {formatResellerRemaining(resellerStatus)}
+                </p>
+                <p className="text-[11px] text-muted-foreground truncate">
+                  {resellerStatus.permanent
+                    ? 'Akun reseller permanen — tidak akan expired.'
+                    : `Berakhir ${formatExpiryDate(resellerStatus.expires_at)} • Perpanjang →`}
+                </p>
+              </div>
+            </div>
+          </Link>
+        )}
 
+        {/* Reseller expiry warning (<=2 days, not permanent) */}
         {/* Free user limit notice — hidden once upgraded */}
         {role === 'free' && (
           <Link to="/upgrade" className="block mb-4">
