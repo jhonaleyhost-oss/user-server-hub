@@ -503,6 +503,12 @@ const Feedback = () => {
                     Salin Link
                   </Button>
                 </div>
+                {pollingOid && (
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Menunggu konfirmasi pembayaran...
+                  </div>
+                )}
               </div>
             )}
             {!validAmount && (
