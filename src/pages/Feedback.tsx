@@ -327,7 +327,7 @@ const Feedback = () => {
   };
 
   const handleDownloadQris = async () => {
-    const svg = document.getElementById("qris-svg") as SVGSVGElement | null;
+    const svg = document.getElementById("qris-svg") as unknown as SVGSVGElement | null;
     if (!svg) {
       toast.error("QR belum siap");
       return;
