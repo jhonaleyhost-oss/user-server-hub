@@ -870,14 +870,6 @@ const Admin = () => {
           </div>
         </GlassCard>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <StatCard icon={Users} label="Total User" value={totalUsers} delay={0.1} />
-          <StatCard icon={Server} label="Total Server" value={totalServers} delay={0.15} />
-          <StatCard icon={HardDrive} label="Total Panel" value={totalPanels} delay={0.2} />
-          <StatCard icon={Shield} label="Status" value="Aktif" status="online" delay={0.25} />
-        </div>
-
         {/* Tabs */}
         <GlassCard className="p-6" delay={0.3}>
           {/* Search Bar */}
