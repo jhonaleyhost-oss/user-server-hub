@@ -53,6 +53,7 @@ const HELP_TEXT =
   "/changepw <code>email,passwordbaru</code>\n" +
   "/deluser <code>email</code>\n" +
   "/delpanel <code>panelId</code>\n" +
+  "/listpanel <code>serverId</code> — list panel di server\n" +
   "/delallusr — hapus SEMUA user kecuali admin\n" +
   "/resetdevices — reset semua IP/FP\n\n" +
   "/help — bantuan ini";
