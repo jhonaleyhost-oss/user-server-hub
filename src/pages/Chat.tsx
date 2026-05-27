@@ -323,12 +323,14 @@ const Chat = () => {
                           }`}
                         >
                           {m.content}
-                          {mine && (
+                          {(mine || role === "admin") && (
                             <button
                               type="button"
                               onClick={() => handleDelete(m.id)}
-                              className="absolute -top-2 -left-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
-                              aria-label="Hapus pesan"
+                              className={`absolute -top-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md ${
+                                mine ? "-left-2" : "-right-2"
+                              }`}
+                              aria-label={mine ? "Hapus pesan" : "Hapus pesan pengguna (admin)"}
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
