@@ -14,6 +14,8 @@ import {
   Copy,
   X,
   CheckCircle2,
+  CalendarClock,
+  RefreshCw,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -108,9 +110,27 @@ const Upgrade = () => {
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const [fullName, setFullName] = useState('Pengguna');
+  const [status, setStatus] = useState<{
+    is_reseller: boolean;
+    permanent: boolean;
+    expires_at: string | null;
+    days_left: number | null;
+  } | null>(null);
 
   const plan = useMemo(() => PLANS.find((p) => p.key === selected)!, [selected]);
   const isAlreadyReseller = role === 'reseller' || role === 'admin';
+  const isPermanent = !!status?.permanent || role === 'admin';
+
+  const loadStatus = async () => {
+    if (!user) return;
+    const { data } = await supabase.rpc('get_my_reseller_status');
+    if (data && data.length > 0) setStatus(data[0] as any);
+  };
+
+  useEffect(() => {
+    loadStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, role, paid]);
 
   useEffect(() => {
     if (!user) return;
@@ -189,9 +209,12 @@ const Upgrade = () => {
       toast.error('Silakan login dulu');
       return;
     }
-    if (isAlreadyReseller) {
-      toast.info('Kamu sudah Reseller / Admin');
+    if (isPermanent) {
+      toast.info('Kamu sudah Reseller Permanen, tidak perlu perpanjang.');
       return;
+    }
+    if (plan.key === 'perm' && isAlreadyReseller) {
+      // allowed: upgrade dari berlangganan ke permanen
     }
     const oid = generateRef();
     setOrderId(oid);
@@ -292,8 +315,69 @@ const Upgrade = () => {
             {!showQris && (
               <GlassCard className="p-5 sm:p-6 mb-6" delay={0.1}>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider text-center mb-4">
-                  Pilih Paket Reseller
+                  {isAlreadyReseller && !isPermanent
+                    ? 'Perpanjang Masa Aktif Reseller'
+                    : 'Pilih Paket Reseller'}
                 </p>
+
+                {/* Status Reseller */}
+                {isAlreadyReseller && (
+                  <div className="mb-4 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-primary/5 to-transparent p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 shrink-0">
+                        {isPermanent ? (
+                          <InfinityIcon className="w-5 h-5 text-emerald-400" />
+                        ) : (
+                          <CalendarClock className="w-5 h-5 text-emerald-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground">
+                          Status: {role === 'admin' ? 'Admin' : 'Reseller Aktif'}
+                        </p>
+                        {isPermanent ? (
+                          <p className="text-xs text-emerald-400 mt-0.5">
+                            Berlaku selamanya — tidak perlu perpanjang.
+                          </p>
+                        ) : status?.expires_at ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              Berakhir:{' '}
+                              <span className="text-foreground font-semibold">
+                                {new Date(status.expires_at).toLocaleString('id-ID', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </p>
+                            {typeof status.days_left === 'number' && (
+                              <p
+                                className={`text-[11px] mt-1 font-semibold ${
+                                  status.days_left <= 2
+                                    ? 'text-rose-400'
+                                    : status.days_left <= 7
+                                    ? 'text-amber'
+                                    : 'text-emerald-400'
+                                }`}
+                              >
+                                Sisa {status.days_left} hari
+                                {status.days_left <= 2 ? ' — segera perpanjang!' : ''}
+                              </p>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Pilih paket di bawah untuk memperpanjang.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
                   <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan VPS{' '}
                   <span className="font-semibold">Digital Ocean</span>. Jika ingin yang{' '}
@@ -302,12 +386,16 @@ const Upgrade = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
                   {PLANS.map((p) => {
                     const active = p.key === selected;
+                    const disabled = isPermanent;
                     return (
                       <button
                         key={p.key}
                         type="button"
-                        onClick={() => setSelected(p.key)}
+                        onClick={() => !disabled && setSelected(p.key)}
+                        disabled={disabled}
                         className={`relative text-left rounded-2xl p-4 border-2 transition-all ${
+                          disabled ? 'opacity-50 cursor-not-allowed' : ''
+                        } ${
                           active
                             ? 'border-amber bg-gradient-to-br from-amber/15 via-primary/10 to-accent/10 shadow-lg shadow-amber/10 scale-[1.02]'
                             : 'border-border/60 bg-secondary/30 hover:border-primary/40'
@@ -339,34 +427,30 @@ const Upgrade = () => {
                   })}
                 </div>
 
-                {isAlreadyReseller ? (
-                  <div className="rounded-xl p-4 bg-emerald-500/10 border border-emerald-500/30 text-center">
-                    <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
-                    <p className="text-sm font-semibold text-foreground">
-                      Kamu sudah {role === 'admin' ? 'Admin' : 'Reseller'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Beli paket di atas untuk memperpanjang masa aktif.
-                    </p>
-                  </div>
-                ) : null}
-
                 <Button
                   onClick={handleGenerate}
-                  disabled={qrisLoading}
+                  disabled={qrisLoading || isPermanent}
                   className="w-full h-12 bg-gradient-to-r from-amber to-primary hover:opacity-90 text-background font-bold gap-2"
                 >
                   {qrisLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : isAlreadyReseller && !isPermanent ? (
+                    <RefreshCw className="w-5 h-5" />
                   ) : (
                     <QrCode className="w-5 h-5" />
                   )}
                   {qrisLoading
                     ? 'Generating QRIS...'
+                    : isPermanent
+                    ? 'Sudah Permanen'
+                    : isAlreadyReseller
+                    ? `Perpanjang ${plan.label} • Rp ${plan.amount.toLocaleString('id-ID')}`
                     : `Bayar Rp ${plan.amount.toLocaleString('id-ID')} via QRIS`}
                 </Button>
                 <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  Role Reseller akan aktif otomatis setelah pembayaran terkonfirmasi.
+                  {isAlreadyReseller && !isPermanent
+                    ? 'Masa aktif baru ditambahkan ke sisa hari yang ada.'
+                    : 'Role Reseller akan aktif otomatis setelah pembayaran terkonfirmasi.'}
                 </p>
               </GlassCard>
             )}
