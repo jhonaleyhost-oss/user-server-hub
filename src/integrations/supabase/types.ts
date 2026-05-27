@@ -38,6 +38,36 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          rating: number
+          role: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          rating: number
+          role?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          rating?: number
+          role?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string | null
@@ -196,6 +226,39 @@ export type Database = {
           pltc_vault_id?: string | null
           server_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      tips: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          order_id: string
+          proof_url: string | null
+          status: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          order_id: string
+          proof_url?: string | null
+          status?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          proof_url?: string | null
+          status?: string
+          user_id?: string
+          username?: string
         }
         Relationships: []
       }

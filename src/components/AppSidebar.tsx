@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -55,6 +55,7 @@ export function AppSidebar() {
     { title: "Profil Saya", url: "/profile", icon: UserCog },
     { title: "Pengguna", url: "/users", icon: UsersIcon },
     { title: "Chat", url: "/chat", icon: MessageCircle },
+    { title: "Rating & Feedback", url: "/feedback", icon: Star },
     ...(isAdmin
       ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
