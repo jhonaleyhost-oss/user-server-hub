@@ -346,27 +346,161 @@ const Feedback = () => {
         img.onerror = () => reject(new Error("load fail"));
         img.src = url;
       });
-      const scale = 4;
-      const size = 232 * scale;
-      const padding = 40 * scale;
+      const s = 3; // scale factor
+      const W = 600 * s;
+      const H = 820 * s;
       const canvas = document.createElement("canvas");
-      canvas.width = size + padding * 2;
-      canvas.height = size + padding * 2 + 80 * scale;
+      canvas.width = W;
+      canvas.height = H;
       const ctx = canvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, padding, padding, size, size);
-      ctx.fillStyle = "#111111";
-      ctx.font = `bold ${18 * scale}px sans-serif`;
+
+      // Background gradient (indigo -> purple -> fuchsia)
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, "#6366f1");
+      bg.addColorStop(0.5, "#a855f7");
+      bg.addColorStop(1, "#d946ef");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Helper: rounded rect
+      const rr = (x: number, y: number, w: number, h: number, r: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      };
+
+      const pad = 28 * s;
+      let y = pad;
+
+      // Header card
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      rr(pad, y, W - pad * 2, 70 * s, 16 * s);
+      ctx.fill();
+      ctx.fillStyle = "#6d28d9";
+      ctx.font = `800 ${22 * s}px sans-serif`;
       ctx.textAlign = "center";
-      ctx.fillText(
-        `Rp ${tipAmount.toLocaleString("id-ID")}`,
-        canvas.width / 2,
-        size + padding + 36 * scale
-      );
-      ctx.font = `${10 * scale}px sans-serif`;
-      ctx.fillStyle = "#666666";
-      ctx.fillText("QRIS • Jhonaley Store", canvas.width / 2, size + padding + 60 * scale);
+      ctx.fillText("⚡ ORDER TIP ⚡", W / 2, y + 32 * s);
+      ctx.fillStyle = "#64748b";
+      ctx.font = `${11 * s}px sans-serif`;
+      ctx.fillText("Scan to Pay", W / 2, y + 54 * s);
+      y += 70 * s + 14 * s;
+
+      // Total banner
+      const tg = ctx.createLinearGradient(pad, 0, W - pad, 0);
+      tg.addColorStop(0, "#f43f5e");
+      tg.addColorStop(1, "#d946ef");
+      ctx.fillStyle = tg;
+      rr(pad, y, W - pad * 2, 84 * s, 16 * s);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `700 ${12 * s}px sans-serif`;
+      ctx.fillText("🧾 TOTAL PEMBAYARAN", W / 2, y + 28 * s);
+      ctx.font = `800 ${30 * s}px sans-serif`;
+      ctx.fillText(`Rp ${tipAmount.toLocaleString("id-ID")}`, W / 2, y + 64 * s);
+      y += 84 * s + 14 * s;
+
+      // QR white card
+      const qrCardH = 340 * s;
+      ctx.fillStyle = "#ffffff";
+      rr(pad, y, W - pad * 2, qrCardH, 20 * s);
+      ctx.fill();
+
+      // Corner brackets
+      ctx.strokeStyle = "#e879f9";
+      ctx.lineWidth = 3 * s;
+      const br = 18 * s;
+      const bx = pad + 14 * s;
+      const by = y + 14 * s;
+      const bx2 = pad + (W - pad * 2) - 14 * s;
+      const by2 = y + qrCardH - 14 * s;
+      // TL
+      ctx.beginPath(); ctx.moveTo(bx, by + br); ctx.lineTo(bx, by); ctx.lineTo(bx + br, by); ctx.stroke();
+      // TR
+      ctx.beginPath(); ctx.moveTo(bx2 - br, by); ctx.lineTo(bx2, by); ctx.lineTo(bx2, by + br); ctx.stroke();
+      // BL
+      ctx.beginPath(); ctx.moveTo(bx, by2 - br); ctx.lineTo(bx, by2); ctx.lineTo(bx + br, by2); ctx.stroke();
+      // BR
+      ctx.beginPath(); ctx.moveTo(bx2 - br, by2); ctx.lineTo(bx2, by2); ctx.lineTo(bx2, by2 - br); ctx.stroke();
+
+      // QR image
+      const qrSize = 280 * s;
+      const qrX = (W - qrSize) / 2;
+      const qrY = y + (qrCardH - qrSize) / 2;
+      ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
+
+      // Center logo
+      const cx = W / 2;
+      const cy = qrY + qrSize / 2;
+      const cr = 32 * s;
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#e879f9";
+      ctx.lineWidth = 3 * s;
+      ctx.stroke();
+      const lg = ctx.createLinearGradient(cx - cr, cy - cr, cx + cr, cy + cr);
+      lg.addColorStop(0, "#6366f1");
+      lg.addColorStop(1, "#d946ef");
+      ctx.fillStyle = lg;
+      ctx.font = `800 ${20 * s}px sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("JN", cx, cy + 1);
+      ctx.textBaseline = "alphabetic";
+      y += qrCardH + 14 * s;
+
+      // Supported methods header
+      ctx.fillStyle = "rgba(255,255,255,0.85)";
+      ctx.font = `700 ${11 * s}px sans-serif`;
+      ctx.fillText("▦ SUPPORTED PAYMENT METHODS ▦", W / 2, y + 4 * s);
+      y += 18 * s;
+
+      // Methods grid
+      const methods: Array<[string, string, string]> = [
+        ["DANA", "#0ea5e9", "#2563eb"],
+        ["OVO", "#a855f7", "#4f46e5"],
+        ["GOPAY", "#10b981", "#059669"],
+        ["BANK", "#f43f5e", "#dc2626"],
+      ];
+      const mGap = 10 * s;
+      const mW = (W - pad * 2 - mGap * 3) / 4;
+      const mH = 38 * s;
+      methods.forEach(([label, c1, c2], i) => {
+        const mx = pad + i * (mW + mGap);
+        const mgrad = ctx.createLinearGradient(mx, y, mx, y + mH);
+        mgrad.addColorStop(0, c1);
+        mgrad.addColorStop(1, c2);
+        ctx.fillStyle = mgrad;
+        rr(mx, y, mW, mH, 10 * s);
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `800 ${13 * s}px sans-serif`;
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, mx + mW / 2, y + mH / 2);
+        ctx.textBaseline = "alphabetic";
+      });
+      y += mH + 14 * s;
+
+      // Secure card
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      rr(pad, y, W - pad * 2, 56 * s, 14 * s);
+      ctx.fill();
+      ctx.fillStyle = "#0f172a";
+      ctx.font = `800 ${12 * s}px sans-serif`;
+      ctx.fillText("🔒 SECURE PAYMENT", W / 2, y + 22 * s);
+      ctx.fillStyle = "#64748b";
+      ctx.font = `${10 * s}px sans-serif`;
+      ctx.fillText("Protected by QRIS • Jhonaley Store", W / 2, y + 42 * s);
+      y += 56 * s + 10 * s;
+
+      // Ref
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
+      ctx.font = `${10 * s}px sans-serif`;
+      ctx.fillText(`REF: ${generatedOrderId.slice(-8).toUpperCase()}`, W / 2, y + 10 * s);
+
       URL.revokeObjectURL(url);
       const pngUrl = canvas.toDataURL("image/png");
       const a = document.createElement("a");
