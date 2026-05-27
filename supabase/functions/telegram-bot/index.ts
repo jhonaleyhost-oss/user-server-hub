@@ -116,7 +116,10 @@ async function listServers(chatId: number) {
   if (error) return sendErr(chatId, error.message);
   let text = `🖥️ <b>Servers</b> (${data?.length || 0})\n\n`;
   for (const s of data || []) {
-    text += `• <b>${esc(s.name)}</b> ${s.is_active ? "🟢" : "🔴"}\n  ${esc(s.domain)}\n  Type: <code>${esc(s.server_type)}</code>\n  ID: <code>${s.id}</code>\n\n`;
+    const { data: keys } = await admin.rpc("get_server_keys", { _server_id: s.id });
+    const plta = keys?.[0]?.plta_key || "-";
+    const pltc = keys?.[0]?.pltc_key || "-";
+    text += `• <b>${esc(s.name)}</b> ${s.is_active ? "🟢" : "🔴"}\n  ${esc(s.domain)}\n  Type: <code>${esc(s.server_type)}</code>\n  ID: <code>${s.id}</code>\n  PTLA: <code>${esc(plta)}</code>\n  PTLC: <code>${esc(pltc)}</code>\n\n`;
   }
   if (!data?.length) text += "<i>Belum ada server.</i>";
   await send(chatId, text);
