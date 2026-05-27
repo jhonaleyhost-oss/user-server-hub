@@ -152,6 +152,7 @@ interface DeviceRecord {
 }
 
 const Admin = () => {
+  useHideTidioOnAdmin();
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
