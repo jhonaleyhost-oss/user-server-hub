@@ -250,7 +250,7 @@ const ActivityTicker = () => {
   }, [items]);
 
   // Animation duration based on item count for stable speed
-  const duration = Math.max(25, Math.min(80, looped.length * 5));
+  const duration = Math.max(50, Math.min(140, looped.length * 9));
 
   const renderIcon = (kind: ActivityKind) => {
     switch (kind) {
