@@ -332,10 +332,18 @@ const Chat = () => {
                   const name = displayName(m.user_id);
                   const online = onlineUsers.has(m.user_id);
                   const initial = name.charAt(0).toUpperCase();
+                  const userRole = p?.role ?? "free";
+                  const replied = m.reply_to_id
+                    ? messages.find((x) => x.id === m.reply_to_id)
+                    : null;
+                  const repliedName = replied ? displayName(replied.user_id) : null;
                   return (
                     <div
                       key={m.id}
-                      className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : "flex-row"}`}
+                      id={`msg-${m.id}`}
+                      className={`flex items-end gap-2 transition-colors rounded-2xl -mx-1 px-1 py-0.5 ${
+                        mine ? "flex-row-reverse" : "flex-row"
+                      } ${highlightId === m.id ? "bg-primary/10" : ""}`}
                     >
                       <div className="relative shrink-0">
                         {p?.avatar_url ? (
@@ -358,9 +366,20 @@ const Chat = () => {
                           mine ? "items-end" : "items-start"
                         }`}
                       >
-                        <div className="flex items-center gap-2 mb-0.5 px-1">
+                        <div
+                          className={`flex items-center gap-1.5 mb-0.5 px-1 ${
+                            mine ? "flex-row-reverse" : ""
+                          }`}
+                        >
                           <span className="text-[11px] font-semibold text-foreground truncate max-w-[120px]">
                             {mine ? "Kamu" : name}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${roleStyle(
+                              userRole
+                            )}`}
+                          >
+                            {roleLabel(userRole)}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
                             {formatTime(m.created_at)}
@@ -373,7 +392,39 @@ const Chat = () => {
                               : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
                           }`}
                         >
+                          {replied && (
+                            <button
+                              type="button"
+                              onClick={() => scrollToMessage(replied.id)}
+                              className="block w-full text-left mb-1.5 px-2 py-1 rounded-lg bg-background/40 border-l-2 border-primary/60 hover:bg-background/60 transition-colors"
+                            >
+                              <div className="text-[10px] font-semibold text-primary truncate">
+                                {repliedName}
+                              </div>
+                              <div className="text-[11px] text-muted-foreground truncate">
+                                {replied.content}
+                              </div>
+                            </button>
+                          )}
+                          {!replied && m.reply_to_id && (
+                            <div className="block mb-1.5 px-2 py-1 rounded-lg bg-background/40 border-l-2 border-muted text-[11px] text-muted-foreground italic">
+                              Pesan asli sudah dihapus
+                            </div>
+                          )}
                           {m.content}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyTo(m);
+                              setTimeout(() => inputRef.current?.focus(), 0);
+                            }}
+                            className={`absolute -top-2 w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md ${
+                              mine ? "-left-9" : "-right-9"
+                            }`}
+                            aria-label="Balas pesan"
+                          >
+                            <CornerUpLeft className="w-3 h-3" />
+                          </button>
                           {(mine || role === "admin") && (
                             <button
                               type="button"
@@ -407,31 +458,51 @@ const Chat = () => {
               )}
             </div>
 
-            <form
-              onSubmit={handleSend}
-              className="border-t border-border/50 p-2.5 flex items-center gap-2 bg-background/40"
-            >
-              <Input
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value);
-                  sendTyping();
-                }}
-                placeholder="Tulis pesan..."
-                maxLength={2000}
-                className="flex-1 rounded-full h-11 bg-secondary/60 border-border/50"
-                disabled={sending || !user}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                disabled={sending || !input.trim()}
-                className="h-11 w-11 rounded-full shrink-0"
-                aria-label="Kirim"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </form>
+            <div className="border-t border-border/50 bg-background/40">
+              {replyTo && (
+                <div className="flex items-center gap-2 px-3 pt-2">
+                  <div className="flex-1 min-w-0 px-3 py-1.5 rounded-xl bg-secondary/60 border-l-2 border-primary/60">
+                    <div className="text-[10px] font-semibold text-primary truncate">
+                      Membalas {displayName(replyTo.user_id)}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {replyTo.content}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTo(null)}
+                    className="w-7 h-7 rounded-full bg-secondary/60 hover:bg-secondary flex items-center justify-center shrink-0"
+                    aria-label="Batal balas"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2">
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    sendTyping();
+                  }}
+                  placeholder={replyTo ? "Tulis balasan..." : "Tulis pesan..."}
+                  maxLength={2000}
+                  className="flex-1 rounded-full h-11 bg-secondary/60 border-border/50"
+                  disabled={sending || !user}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={sending || !input.trim()}
+                  className="h-11 w-11 rounded-full shrink-0"
+                  aria-label="Kirim"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </form>
+            </div>
           </GlassCard>
         </div>
       </PageTransition>
