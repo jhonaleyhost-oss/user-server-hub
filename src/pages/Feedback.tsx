@@ -298,9 +298,9 @@ const Feedback = () => {
     [orderId, user?.id]
   );
 
-  const pakasirUrl = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?qris_only=1&order_id=${encodeURIComponent(
-    generatedOrderId
-  )}`;
+  const pakasirUrl = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?${
+    payMethod === "qris" ? "qris_only=1&" : ""
+  }order_id=${encodeURIComponent(generatedOrderId)}`;
 
   const handleOpenQris = async () => {
     if (!user) return;
