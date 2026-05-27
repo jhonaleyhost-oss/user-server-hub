@@ -466,6 +466,25 @@ const Admin = () => {
     }
   };
 
+  const clearAllDeviceInfo = async () => {
+    try {
+      const ids = devices.map((d) => d.id);
+      if (ids.length === 0) return;
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ip_address: null, device_fingerprint: null })
+        .in('id', ids);
+      if (error) throw error;
+      toast({
+        title: 'Berhasil',
+        description: `${ids.length} IP & Fingerprint berhasil direset.`,
+      });
+      fetchDevices();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Gagal', description: err.message });
+    }
+  };
+
   const updateUserRole = async (userId: string, newRole: AppRole) => {
     try {
       const { error } = await supabase
@@ -1497,6 +1516,44 @@ const Admin = () => {
 
             {/* Devices Tab */}
             <TabsContent value="devices">
+              {/* Clear All IP & Fingerprint Button */}
+              <div className="flex justify-end mb-4">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="gap-2"
+                      disabled={devices.length === 0}
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Clear All IP ({devices.length})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-card border border-border rounded-xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                        <AlertTriangle className="w-5 h-5" />
+                        Reset Semua IP & Fingerprint?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tindakan ini akan mereset IP Address & Device Fingerprint dari{' '}
+                        <strong>{devices.length}</strong> pengguna. Mereka akan bisa mendaftar
+                        akun baru lagi. Tindakan ini tidak dapat dibatalkan!
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={clearAllDeviceInfo}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Reset Semua
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
