@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -14,9 +14,10 @@ import { toast } from "sonner";
 interface ChatMessage {
   id: string;
   user_id: string;
-  content: string;
+  content: string | null;
   created_at: string;
   reply_to_id: string | null;
+  image_url: string | null;
 }
 
 interface ProfileLite {
@@ -76,11 +77,14 @@ const Chat = () => {
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastTypingSentRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesRef = useRef<ChatMessage[]>([]);
   useEffect(() => {
     messagesRef.current = messages;
@@ -255,6 +259,44 @@ const Chat = () => {
     }
     setInput("");
     setReplyTo(null);
+  };
+
+  const handleImagePick = () => fileInputRef.current?.click();
+
+  const handleImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file foto yang diperbolehkan");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran foto maksimal 5 MB");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("chat-images")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("chat-images").getPublicUrl(path);
+      const { error: insErr } = await supabase.from("messages").insert({
+        user_id: user.id,
+        content: null,
+        image_url: pub.publicUrl,
+        reply_to_id: replyTo?.id ?? null,
+      });
+      if (insErr) throw insErr;
+      setReplyTo(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mengunggah foto");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
