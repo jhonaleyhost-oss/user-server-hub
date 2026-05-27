@@ -1,0 +1,508 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Star, Send, Heart, Upload, QrCode, Loader2, Trash2, Copy } from "lucide-react";
+import AppShell from "@/components/AppShell";
+import { PageTransition } from "@/components/PageTransition";
+import GlassCard from "@/components/GlassCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+interface FeedbackRow {
+  id: string;
+  user_id: string;
+  username: string;
+  role: string;
+  rating: number;
+  message: string | null;
+  created_at: string;
+}
+
+const PAKASIR_SLUG = "jhonaley-store";
+const PAKASIR_BASE = "https://app.pakasir.com";
+
+const roleStyle = (role: string) => {
+  switch (role) {
+    case "admin":
+      return "bg-amber/15 text-amber border-amber/30";
+    case "reseller":
+      return "bg-primary/15 text-primary border-primary/30";
+    case "premium":
+      return "bg-accent/15 text-accent border-accent/30";
+    default:
+      return "bg-secondary text-muted-foreground border-border";
+  }
+};
+
+const roleLabel = (role: string) =>
+  role === "admin" ? "Admin" : role === "reseller" ? "Reseller" : role === "premium" ? "Premium" : "Free";
+
+const formatWIB = (iso: string) => {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "Asia/Jakarta",
+  });
+  const time = d.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Jakarta",
+    hour12: false,
+  });
+  return `${date} • ${time} WIB`;
+};
+
+const StarRow = ({
+  value,
+  onChange,
+  size = 24,
+  readOnly = false,
+}: {
+  value: number;
+  onChange?: (n: number) => void;
+  size?: number;
+  readOnly?: boolean;
+}) => {
+  const [hover, setHover] = useState(0);
+  const active = hover || value;
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          disabled={readOnly}
+          onMouseEnter={() => !readOnly && setHover(n)}
+          onMouseLeave={() => !readOnly && setHover(0)}
+          onClick={() => !readOnly && onChange?.(n)}
+          className={`transition-transform ${readOnly ? "cursor-default" : "cursor-pointer hover:scale-110"}`}
+          aria-label={`${n} bintang`}
+        >
+          <Star
+            style={{ width: size, height: size }}
+            className={n <= active ? "fill-amber text-amber" : "text-muted-foreground/40"}
+          />
+        </button>
+      ))}
+    </div>
+  );
+};
+
+const Feedback = () => {
+  const { user, loading: authLoading } = useAuth();
+  const { role } = useUserRole();
+  const navigate = useNavigate();
+
+  const [items, setItems] = useState<FeedbackRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [rating, setRating] = useState(0);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Tip state
+  const [amount, setAmount] = useState<string>("5000");
+  const [orderId, setOrderId] = useState<string>("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [uploadingTip, setUploadingTip] = useState(false);
+  const [fullName, setFullName] = useState<string>("");
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      navigate("/auth");
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setFullName(data?.full_name?.trim() || user.email?.split("@")[0] || "Anonim");
+      });
+  }, [user]);
+
+  const fetchFeedback = async () => {
+    const { data, error } = await supabase
+      .from("feedback")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (!error && data) setItems(data as FeedbackRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchFeedback();
+    const channel = supabase
+      .channel("feedback-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "feedback" },
+        (payload) => {
+          setItems((prev) => [payload.new as FeedbackRow, ...prev]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "feedback" },
+        (payload) => {
+          setItems((prev) => prev.filter((f) => f.id !== (payload.old as any).id));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const stats = useMemo(() => {
+    if (!items.length) return { avg: 0, count: 0, dist: [0, 0, 0, 0, 0] };
+    const sum = items.reduce((a, b) => a + b.rating, 0);
+    const dist = [0, 0, 0, 0, 0];
+    items.forEach((i) => {
+      dist[i.rating - 1] += 1;
+    });
+    return { avg: sum / items.length, count: items.length, dist };
+  }, [items]);
+
+  const handleSubmitFeedback = async () => {
+    if (!user) return;
+    if (rating < 1 || rating > 5) {
+      toast.error("Pilih rating 1-5 bintang terlebih dahulu");
+      return;
+    }
+    if (message.trim().length > 500) {
+      toast.error("Pesan maksimal 500 karakter");
+      return;
+    }
+    setSubmitting(true);
+    const { error } = await supabase.from("feedback").insert({
+      user_id: user.id,
+      username: fullName || "Anonim",
+      role,
+      rating,
+      message: message.trim() || null,
+    });
+    setSubmitting(false);
+    if (error) {
+      toast.error("Gagal mengirim: " + error.message);
+      return;
+    }
+    setRating(0);
+    setMessage("");
+    toast.success("Terima kasih atas feedback-nya! 🙏");
+  };
+
+  const handleDeleteFeedback = async (id: string) => {
+    const { error } = await supabase.from("feedback").delete().eq("id", id);
+    if (error) toast.error("Gagal menghapus: " + error.message);
+  };
+
+  const tipAmount = Math.max(1000, Math.min(100000, parseInt(amount || "0", 10) || 0));
+  const validAmount = tipAmount >= 1000 && tipAmount <= 100000;
+
+  const generatedOrderId = useMemo(
+    () => orderId || `TIP-${user?.id?.slice(0, 6) ?? "guest"}-${Date.now()}`,
+    [orderId, user?.id]
+  );
+
+  const pakasirUrl = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?qris_only=1&order_id=${encodeURIComponent(
+    generatedOrderId
+  )}`;
+
+  const handleOpenQris = async () => {
+    if (!user) return;
+    if (!validAmount) {
+      toast.error("Nominal harus antara Rp 1.000 - Rp 100.000");
+      return;
+    }
+    const oid = generatedOrderId;
+    setOrderId(oid);
+    await supabase.from("tips").insert({
+      user_id: user.id,
+      username: fullName || "Anonim",
+      amount: tipAmount,
+      order_id: oid,
+      status: "pending",
+    });
+    window.open(pakasirUrl, "_blank", "noopener,noreferrer");
+    toast.success("Halaman QRIS dibuka. Setelah bayar, upload bukti di bawah ya!");
+  };
+
+  const handleCopyUrl = async () => {
+    await navigator.clipboard.writeText(pakasirUrl);
+    toast.success("Link pembayaran disalin");
+  };
+
+  const handleUploadProof = async () => {
+    if (!user) return;
+    if (!proofFile) {
+      toast.error("Pilih file bukti transfer terlebih dahulu");
+      return;
+    }
+    if (proofFile.size > 5 * 1024 * 1024) {
+      toast.error("Ukuran file maksimal 5MB");
+      return;
+    }
+    if (!validAmount) {
+      toast.error("Nominal harus antara Rp 1.000 - Rp 100.000");
+      return;
+    }
+    setUploadingTip(true);
+    try {
+      const ext = proofFile.name.split(".").pop() || "jpg";
+      const oid = orderId || generatedOrderId;
+      const path = `${user.id}/${oid}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("tip-proofs")
+        .upload(path, proofFile, { upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("tip-proofs").getPublicUrl(path);
+
+      const { error: insErr } = await supabase.from("tips").insert({
+        user_id: user.id,
+        username: fullName || "Anonim",
+        amount: tipAmount,
+        order_id: oid,
+        proof_url: pub.publicUrl,
+        status: "submitted",
+      });
+      if (insErr) throw insErr;
+
+      setProofFile(null);
+      toast.success("Bukti tip terkirim. Terima kasih banyak! 💖");
+    } catch (e: any) {
+      toast.error("Gagal upload: " + (e?.message || "Unknown"));
+    } finally {
+      setUploadingTip(false);
+    }
+  };
+
+  const presetAmounts = [2000, 5000, 10000, 25000, 50000, 100000];
+
+  return (
+    <AppShell>
+      <PageTransition>
+        <div className="container max-w-3xl mx-auto px-4 py-6 space-y-6">
+          {/* Header / Average */}
+          <GlassCard className="p-6 text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-1">Rating & Feedback</h1>
+            <p className="text-sm text-muted-foreground mb-4">
+              Beri tahu kami pengalamanmu menggunakan Jhonaley Store
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              <div className="text-5xl font-extrabold bg-gradient-to-br from-amber to-primary bg-clip-text text-transparent">
+                {stats.avg.toFixed(1)}
+              </div>
+              <div className="text-left">
+                <div className="text-sm text-muted-foreground">/ 5.0</div>
+                <div className="text-xs text-muted-foreground">{stats.count} ulasan</div>
+              </div>
+            </div>
+            <div className="flex justify-center mt-2">
+              <StarRow value={Math.round(stats.avg)} readOnly size={22} />
+            </div>
+          </GlassCard>
+
+          {/* Submit feedback */}
+          <GlassCard className="p-5">
+            <h2 className="text-lg font-bold text-foreground mb-3">Tulis Ulasan</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Rating kamu</label>
+                <StarRow value={rating} onChange={setRating} size={32} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Pesan (opsional)</label>
+                <Textarea
+                  placeholder="Ceritakan pengalamanmu..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  maxLength={500}
+                  className="min-h-[90px]"
+                />
+                <div className="text-[10px] text-right text-muted-foreground mt-1">
+                  {message.length}/500
+                </div>
+              </div>
+              <Button
+                onClick={handleSubmitFeedback}
+                disabled={submitting || rating < 1}
+                className="w-full h-11 gap-2"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Kirim Feedback
+              </Button>
+            </div>
+          </GlassCard>
+
+          {/* Tip jar */}
+          <GlassCard className="p-5">
+            <div className="flex items-center gap-2 mb-1">
+              <Heart className="w-5 h-5 text-rose-400 fill-rose-400" />
+              <h2 className="text-lg font-bold text-foreground">Beri Tip via QRIS</h2>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              Dukung kami untuk terus menghadirkan layanan terbaik 🙏
+            </p>
+
+            <label className="text-xs text-muted-foreground mb-1 block">Nominal (Rp 1.000 - Rp 100.000)</label>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1000}
+              max={100000}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="5000"
+              className="h-11"
+            />
+            <div className="flex flex-wrap gap-2 mt-2">
+              {presetAmounts.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setAmount(String(p))}
+                  className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                    tipAmount === p
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-secondary/40 border-border hover:bg-secondary"
+                  }`}
+                >
+                  Rp {p.toLocaleString("id-ID")}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              <Button onClick={handleOpenQris} disabled={!validAmount} className="h-11 gap-2">
+                <QrCode className="w-4 h-4" />
+                Bayar QRIS
+              </Button>
+              <Button
+                onClick={handleCopyUrl}
+                disabled={!validAmount}
+                variant="outline"
+                className="h-11 gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                Salin Link
+              </Button>
+            </div>
+
+            <div className="mt-5 pt-5 border-t border-border/50">
+              <label className="text-xs text-muted-foreground mb-1 block">
+                Upload Bukti Transfer (maks. 5MB)
+              </label>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setProofFile(e.target.files?.[0] ?? null)}
+                className="h-11 file:mr-3 file:rounded file:border-0 file:bg-secondary file:px-3 file:py-1 file:text-xs"
+              />
+              <Button
+                onClick={handleUploadProof}
+                disabled={uploadingTip || !proofFile || !validAmount}
+                className="w-full h-11 mt-2 gap-2"
+                variant="secondary"
+              >
+                {uploadingTip ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                Kirim Bukti Tip
+              </Button>
+            </div>
+
+            <div className="mt-5 p-3 rounded-lg bg-gradient-to-br from-amber/10 via-primary/10 to-accent/10 border border-amber/20 text-center">
+              <p className="text-sm font-semibold text-foreground">Terima kasih banyak 💖</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Semoga rezekimu selalu dilancarkan, sehat selalu, dan dimudahkan dalam segala urusan. Aamiin 🤲
+              </p>
+            </div>
+          </GlassCard>
+
+          {/* Feedback list */}
+          <GlassCard className="p-5">
+            <h2 className="text-lg font-bold text-foreground mb-3">
+              Ulasan Pengguna ({stats.count})
+            </h2>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : items.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                Belum ada ulasan. Jadilah yang pertama!
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {items.map((f) => {
+                  const canDelete = user?.id === f.user_id || role === "admin";
+                  return (
+                    <div
+                      key={f.id}
+                      className="p-3 rounded-lg bg-secondary/30 border border-border/50"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-sm font-semibold text-foreground truncate">
+                              {f.username}
+                            </span>
+                            <span
+                              className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle(
+                                f.role
+                              )}`}
+                            >
+                              {roleLabel(f.role)}
+                            </span>
+                          </div>
+                          <div className="mt-1">
+                            <StarRow value={f.rating} readOnly size={14} />
+                          </div>
+                        </div>
+                        {canDelete && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                            onClick={() => handleDeleteFeedback(f.id)}
+                            aria-label="Hapus"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        )}
+                      </div>
+                      {f.message && (
+                        <p className="text-sm text-foreground/90 mt-2 whitespace-pre-wrap break-words">
+                          {f.message}
+                        </p>
+                      )}
+                      <p className="text-[10px] text-muted-foreground mt-2">
+                        {formatWIB(f.created_at)}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </GlassCard>
+        </div>
+      </PageTransition>
+    </AppShell>
+  );
+};
+
+export default Feedback;
