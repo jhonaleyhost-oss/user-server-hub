@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import FingerprintJS from '@fingerprintjs/fingerprintjs';
@@ -18,6 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const forceLogoutInProgress = useRef(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -43,24 +44,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (!session) return;
 
+    const forceLogout = async () => {
+      if (forceLogoutInProgress.current) return;
+      forceLogoutInProgress.current = true;
+
+      await supabase.auth.signOut().catch(() => {});
+      setUser(null);
+      setSession(null);
+
+      if (typeof window !== 'undefined' && window.location.pathname !== '/auth') {
+        window.location.replace('/auth');
+      }
+    };
+
     const checkUserExists = async () => {
       try {
-        const { data, error } = await supabase.auth.getUser();
-        const msg = (error?.message || '').toLowerCase();
+        const [{ data: authData, error: authError }, { data: profileData, error: profileError }] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('user_id', session.user.id)
+            .maybeSingle(),
+        ]);
+
+        const msg = (authError?.message || '').toLowerCase();
         const deleted =
-          !!error &&
+          !!authError &&
           (msg.includes('user_not_found') ||
             msg.includes('user not found') ||
             msg.includes('user from sub claim') ||
             msg.includes('invalid') ||
             msg.includes('jwt'));
-        if (deleted || (!data?.user && !!error)) {
-          await supabase.auth.signOut().catch(() => {});
-          setUser(null);
-          setSession(null);
-          if (typeof window !== 'undefined') {
-            window.location.href = '/auth';
-          }
+
+        const missingProfile = !profileError && !profileData;
+        const missingAuthUser = !!authError || !authData?.user;
+
+        if (deleted || missingAuthUser || missingProfile) {
+          await forceLogout();
         }
       } catch {
         // ignore network errors
