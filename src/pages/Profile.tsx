@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Lock, Upload, Save, Loader2, Trash2 } from "lucide-react";
+import { User, Mail, Lock, Upload, Save, Loader2, Trash2, Clock, Infinity as InfinityIcon, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useResellerStatus, formatResellerRemaining, formatExpiryDate } from "@/hooks/useResellerStatus";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +16,8 @@ import { PageTransition } from "@/components/PageTransition";
 
 export default function Profile() {
   const { user } = useAuth();
+  const { role, isAdmin } = useUserRole();
+  const { status: resellerStatus } = useResellerStatus();
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingEmail, setSavingEmail] = useState(false);
@@ -255,6 +260,50 @@ export default function Profile() {
               Simpan Profil
             </Button>
           </GlassCard>
+
+          {/* Masa Aktif / Membership */}
+          {(resellerStatus?.is_reseller || isAdmin) && (
+            <GlassCard className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber" />
+                <h2 className="font-semibold text-foreground">Masa Aktif Membership</h2>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 border border-border/40">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+                  {isAdmin || resellerStatus?.permanent ? (
+                    <InfinityIcon className="w-5 h-5 text-white" />
+                  ) : (
+                    <Clock className="w-5 h-5 text-white" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-foreground capitalize">
+                    {role} —{" "}
+                    <span className={
+                      !isAdmin && !resellerStatus?.permanent && (resellerStatus?.days_left ?? 99) <= 2
+                        ? "text-destructive"
+                        : "text-primary"
+                    }>
+                      {isAdmin ? "Permanen" : formatResellerRemaining(resellerStatus)}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {isAdmin || resellerStatus?.permanent
+                      ? "Akses penuh tanpa batas waktu."
+                      : `Berakhir ${formatExpiryDate(resellerStatus?.expires_at ?? null)}`}
+                  </p>
+                </div>
+              </div>
+              {!isAdmin && !resellerStatus?.permanent && (
+                <Link to="/upgrade">
+                  <Button variant="outline" className="w-full h-11 gap-2">
+                    <Crown className="w-4 h-4" />
+                    Perpanjang Masa Aktif
+                  </Button>
+                </Link>
+              )}
+            </GlassCard>
+          )}
 
           {/* Email */}
           <GlassCard className="p-5 space-y-4">
