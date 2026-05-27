@@ -271,7 +271,7 @@ const Upgrade = () => {
                   <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses Semua Tipe Panel
+                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Type Panel NodeJs dan Python
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Check className="w-4 h-4 text-emerald shrink-0" /> Bisa Hapus Panel Sendiri
@@ -280,7 +280,7 @@ const Upgrade = () => {
                   <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip & Aman 100%
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Private RAM 32 / Core 16
+                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 8 / Core 4
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
                   <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python & Node.js
