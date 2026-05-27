@@ -93,7 +93,12 @@ const Dashboard = () => {
 
     try {
       // Fetch servers via edge function (no API keys exposed)
-      const { data: serverResponse, error: serverFnError } = await supabase.functions.invoke('list-servers');
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data: serverResponse, error: serverFnError } = await supabase.functions.invoke('list-servers', {
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : undefined,
+      });
       
       if (!serverFnError && serverResponse?.success && serverResponse.servers) {
         setServers(serverResponse.servers);
