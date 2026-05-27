@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_events: {
+        Row: {
+          actor_name: string | null
+          actor_role: string | null
+          actor_user_id: string | null
+          amount: number | null
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+        }
+        Insert: {
+          actor_name?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          amount?: number | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind: string
+        }
+        Update: {
+          actor_name?: string | null
+          actor_role?: string | null
+          actor_user_id?: string | null
+          amount?: number | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           created_at: string
@@ -467,6 +500,13 @@ export type Database = {
       }
     }
     Functions: {
+      _actor_snapshot: {
+        Args: { _user_id: string }
+        Returns: {
+          name: string
+          role: string
+        }[]
+      }
       activate_reseller: { Args: { _order_id: string }; Returns: Json }
       decrement_panel_count: { Args: { _user_id: string }; Returns: undefined }
       get_my_reseller_status: {
