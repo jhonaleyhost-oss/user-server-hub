@@ -19,6 +19,7 @@ interface ChatMessage {
   reply_to_id: string | null;
   image_url: string | null;
   deleted?: boolean | null;
+  deleted_by?: string | null;
 }
 
 interface ProfileLite {
