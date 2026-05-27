@@ -52,6 +52,14 @@ function mainMenu() {
         { text: "💳 Set Pakasir Key", callback_data: "wiz:setpakasir" },
       ],
       [
+        { text: "🅰️ Set PTLA", callback_data: "wiz:setptla" },
+        { text: "🅲 Set PTLC", callback_data: "wiz:setptlc" },
+      ],
+      [
+        { text: "🌐 Set URL", callback_data: "wiz:seturl" },
+        { text: "🔐 Change Password", callback_data: "wiz:changepw" },
+      ],
+      [
         { text: "🗑️ Delete Panel", callback_data: "wiz:delpanel" },
         { text: "🗑️ Delete User", callback_data: "wiz:deluser" },
       ],
@@ -276,6 +284,37 @@ async function setServerKey(chatId: number, serverId: string, plta: string, pltc
   });
 }
 
+async function updateServerField(chatId: number, serverId: string, patch: Record<string, string>, label: string) {
+  const { error } = await admin
+    .from("pterodactyl_servers")
+    .update(patch)
+    .eq("id", serverId);
+  if (error) return sendErr(chatId, error.message);
+  await tg("sendMessage", {
+    chat_id: chatId,
+    text: `✅ ${label} untuk server <code>${esc(serverId)}</code> diperbarui.`,
+    parse_mode: "HTML",
+    reply_markup: mainMenu(),
+  });
+}
+
+async function changeUserPassword(chatId: number, email: string, newPw: string) {
+  const { data: prof } = await admin
+    .from("profiles")
+    .select("user_id,email")
+    .ilike("email", email)
+    .maybeSingle();
+  if (!prof) return sendErr(chatId, `User ${email} tidak ditemukan.`);
+  const { error } = await admin.auth.admin.updateUserById(prof.user_id, { password: newPw });
+  if (error) return sendErr(chatId, error.message);
+  await tg("sendMessage", {
+    chat_id: chatId,
+    text: `✅ Password <b>${esc(prof.email)}</b> berhasil diubah.`,
+    parse_mode: "HTML",
+    reply_markup: mainMenu(),
+  });
+}
+
 async function setPakasirKey(chatId: number, key: string) {
   await admin.from("app_settings").upsert(
     { key: "PAKASIR_API_KEY", value: key },
@@ -383,6 +422,42 @@ const WIZARDS: Record<string, { prompts: string[]; finish: (chatId: number, data
     ],
     finish: async (chatId, d) => {
       await setServerKey(chatId, d.step0.trim(), d.step1.trim(), d.step2.trim());
+    },
+  },
+  setptla: {
+    prompts: [
+      "Server ID (UUID):",
+      "API key <b>PTLA</b> baru:",
+    ],
+    finish: async (chatId, d) => {
+      await updateServerField(chatId, d.step0.trim(), { plta_key: d.step1.trim() }, "PTLA");
+    },
+  },
+  setptlc: {
+    prompts: [
+      "Server ID (UUID):",
+      "API key <b>PTLC</b> baru:",
+    ],
+    finish: async (chatId, d) => {
+      await updateServerField(chatId, d.step0.trim(), { pltc_key: d.step1.trim() }, "PTLC");
+    },
+  },
+  seturl: {
+    prompts: [
+      "Server ID (UUID):",
+      "Domain/URL baru (mis. <code>https://panel.example.com</code>):",
+    ],
+    finish: async (chatId, d) => {
+      await updateServerField(chatId, d.step0.trim(), { domain: d.step1.trim().replace(/\/+$/, "") }, "Domain");
+    },
+  },
+  changepw: {
+    prompts: [
+      "Email user yang akan diganti passwordnya:",
+      "Password <b>baru</b>:",
+    ],
+    finish: async (chatId, d) => {
+      await changeUserPassword(chatId, d.step0.trim(), d.step1.trim());
     },
   },
   setpakasir: {
@@ -565,6 +640,27 @@ Deno.serve(async (req) => {
       case "/setkey":
         await startWizard(chatId, "setkey");
         break;
+      case "/setptla":
+        await startWizard(chatId, "setptla");
+        break;
+      case "/setptlc":
+        await startWizard(chatId, "setptlc");
+        break;
+      case "/seturl":
+        await startWizard(chatId, "seturl");
+        break;
+      case "/changepw": {
+        const joined = args.join(" ");
+        const parts = joined.includes(",") ? joined.split(",") : args;
+        const email = (parts[0] || "").trim();
+        const newpw = (parts[1] || "").trim();
+        if (!email || !newpw) {
+          await startWizard(chatId, "changepw");
+        } else {
+          await changeUserPassword(chatId, email, newpw);
+        }
+        break;
+      }
       case "/setpakasir":
         await startWizard(chatId, "setpakasir");
         break;
