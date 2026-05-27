@@ -93,16 +93,16 @@ const PromoPopup = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-3 bg-black/80 backdrop-blur-md"
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-3 bg-black/85"
           onClick={handleClose}
         >
           <motion.div
-            initial={{ y: '100%', opacity: 0 }}
+            initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_60px_-10px_hsl(var(--primary)/0.3)] max-h-[90vh] flex flex-col"
+            exit={{ y: 40, opacity: 0 }}
+            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden border border-primary/20 shadow-[0_0_60px_-10px_hsl(var(--primary)/0.3)] max-h-[90vh] flex flex-col will-change-transform"
             style={{
               background: 'linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--background)) 100%)',
             }}
