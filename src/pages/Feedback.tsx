@@ -120,9 +120,9 @@ const Feedback = () => {
   // Tip state
   const [amount, setAmount] = useState<string>("5000");
   const [orderId, setOrderId] = useState<string>("");
-  const [proofFile, setProofFile] = useState<File | null>(null);
-  const [uploadingTip, setUploadingTip] = useState(false);
   const [fullName, setFullName] = useState<string>("");
+  const [pollingOid, setPollingOid] = useState<string | null>(null);
+  const [tips, setTips] = useState<TipRow[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
