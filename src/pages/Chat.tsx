@@ -466,6 +466,13 @@ const Chat = () => {
                               : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
                           } ${m.image_url && !m.content ? "!p-1" : ""}`}
                         >
+                          {m.deleted ? (
+                            <div className="italic text-muted-foreground flex items-center gap-1.5">
+                              <Trash2 className="w-3 h-3" />
+                              <span>Pesan ini telah dihapus</span>
+                            </div>
+                          ) : (
+                          <>
                           {replied && (
                             <button
                               type="button"
@@ -478,7 +485,9 @@ const Chat = () => {
                                 {repliedName}
                               </div>
                               <div className="text-[11px] text-muted-foreground truncate">
-                                {replied.content || (replied.image_url ? "📷 Foto" : "")}
+                                {replied.deleted
+                                  ? "Pesan ini telah dihapus"
+                                  : replied.content || (replied.image_url ? "📷 Foto" : "")}
                               </div>
                             </button>
                           )}
@@ -530,6 +539,8 @@ const Chat = () => {
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
+                          )}
+                          </>
                           )}
                         </div>
                       </div>
