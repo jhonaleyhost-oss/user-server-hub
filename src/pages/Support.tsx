@@ -197,8 +197,8 @@ const Support = () => {
       toast.error("Gagal upload foto");
       return null;
     }
-    const { data } = supabase.storage.from("support-media").getPublicUrl(path);
-    return data.publicUrl;
+    // Bucket privat — simpan path mentah, render pakai signed URL
+    return path;
   };
 
   const handleSend = async () => {
