@@ -744,6 +744,19 @@ const Upgrade = () => {
                         >
                           Rp {p.amount.toLocaleString('id-ID')}
                         </p>
+                        <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-1.5">
+                          <VerifiedBadge role="reseller" plan={p.key} size={14} />
+                          <span className="text-[10px] text-muted-foreground leading-tight">
+                            Unlock Badge Eksklusif{' '}
+                            <span className="font-semibold text-foreground">
+                              {p.key === '1bln'
+                                ? 'Centang Biru'
+                                : p.key === '2bln'
+                                ? 'Centang Hijau'
+                                : 'Centang Merah'}
+                            </span>
+                          </span>
+                        </div>
                       </button>
                     );
                   })}
