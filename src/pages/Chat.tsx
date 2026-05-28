@@ -667,6 +667,23 @@ const Chat = () => {
             </div>
 
             <div className="border-t border-border/50 bg-background/40">
+              {showJumpBtn && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={jumpToLatest}
+                    className="absolute -top-14 right-3 z-10 flex items-center gap-1.5 px-3 h-10 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all animate-in fade-in slide-in-from-bottom-2"
+                    aria-label="Lompat ke pesan terbaru"
+                  >
+                    <ArrowDown className="w-4 h-4" />
+                    {newMsgCount > 0 && (
+                      <span className="text-xs font-semibold">
+                        {newMsgCount} pesan baru
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
               {replyTo && (
                 <div className="flex items-center gap-2 px-3 pt-2">
                   <div className="flex-1 min-w-0 px-3 py-1.5 rounded-xl bg-secondary/60 border-l-2 border-primary/60">
