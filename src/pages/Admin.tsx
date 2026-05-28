@@ -722,12 +722,12 @@ const Admin = () => {
     }
   };
 
-  const clearAllPanels = async () => {
+  const clearAllPanels = async (targetPanels: UserPanel[] = panels, label = 'panel') => {
     try {
-      if (panels.length === 0) {
+      if (targetPanels.length === 0) {
         toast({
           title: 'Info',
-          description: 'Tidak ada panel untuk dihapus.',
+          description: `Tidak ada ${label} untuk dihapus.`,
         });
         return;
       }
@@ -735,7 +735,7 @@ const Admin = () => {
       // Initialize progress
       setClearingProgress({
         isClearing: true,
-        total: panels.length,
+        total: targetPanels.length,
         current: 0,
         deleted: 0,
         failed: 0,
@@ -749,8 +749,8 @@ const Admin = () => {
       // Delete in parallel batches of 10 for speed
       const BATCH_SIZE = 10;
       
-      for (let i = 0; i < panels.length; i += BATCH_SIZE) {
-        const batch = panels.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < targetPanels.length; i += BATCH_SIZE) {
+        const batch = targetPanels.slice(i, i + BATCH_SIZE);
         
         // Process batch in parallel
         const results = await Promise.all(
@@ -781,7 +781,7 @@ const Admin = () => {
         // Update progress after each batch
         setClearingProgress({
           isClearing: true,
-          total: panels.length,
+          total: targetPanels.length,
           current: processedCount,
           deleted: deletedCount,
           failed: failedCount,
@@ -795,13 +795,13 @@ const Admin = () => {
       if (deletedCount > 0) {
         toast({
           title: 'Berhasil',
-          description: `${deletedCount} panel berhasil dihapus.${failedCount > 0 ? ` ${failedCount} gagal.` : ''}`,
+          description: `${deletedCount} ${label} berhasil dihapus.${failedCount > 0 ? ` ${failedCount} gagal.` : ''}`,
         });
       } else {
         toast({
           variant: 'destructive',
           title: 'Gagal',
-          description: 'Tidak ada panel yang berhasil dihapus.',
+          description: `Tidak ada ${label} yang berhasil dihapus.`,
         });
       }
 
@@ -1446,8 +1446,47 @@ const Admin = () => {
 
             {/* Panels Tab */}
             <TabsContent value="panels">
-              {/* Clear All Panels Button */}
-              <div className="flex justify-end mb-4">
+              {/* Clear Panels Buttons */}
+              <div className="flex flex-wrap justify-end gap-2 mb-4">
+                {(() => {
+                  const freeUserIds = new Set(users.filter((u) => u.role === 'free').map((u) => u.user_id));
+                  const freePanels = panels.filter((p) => freeUserIds.has(p.user_id));
+                  return (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10"
+                          disabled={freePanels.length === 0 || clearingProgress.isClearing}
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                          Clear Free Panels ({freePanels.length})
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card border border-border rounded-xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                            <AlertTriangle className="w-5 h-5" />
+                            Hapus Semua Panel Free?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tindakan ini akan menghapus <strong>{freePanels.length}</strong> panel milik user role <strong>free</strong> dari database dan server Pterodactyl.
+                            Tindakan ini tidak dapat dibatalkan!
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => clearAllPanels(freePanels, 'panel free')}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Hapus Free Panels
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  );
+                })()}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
@@ -1473,7 +1512,7 @@ const Admin = () => {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Batal</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={clearAllPanels}
+                        onClick={() => clearAllPanels()}
                         className="bg-destructive hover:bg-destructive/90"
                       >
                         Hapus Semua
