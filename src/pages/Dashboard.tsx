@@ -444,12 +444,18 @@ const Dashboard = () => {
               </Label>
               <div className="relative">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-                <Select value={selectedServer} onValueChange={setSelectedServer}>
+                <Select
+                  value={selectedServer}
+                  onValueChange={setSelectedServer}
+                  disabled={role === 'free'}
+                >
                   <SelectTrigger className="input-glass pl-10">
                     <SelectValue placeholder="Pilih server" />
                   </SelectTrigger>
                   <SelectContent>
-                    {servers.map((server) => (
+                    {servers
+                      .filter((server) => role !== 'free' || server.server_type === 'public')
+                      .map((server) => (
                       <SelectItem
                         key={server.id}
                         value={server.id}
