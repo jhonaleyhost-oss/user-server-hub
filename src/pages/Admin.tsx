@@ -602,24 +602,16 @@ const Admin = () => {
 
   const deletePanel = async (panelId: string) => {
     try {
-      // Get panel's user_id before deletion to reset their quota
-      const panel = panels.find(p => p.id === panelId);
-      
-      const { error } = await supabase
-        .from('user_panels')
-        .delete()
-        .eq('id', panelId);
-
+      // Use edge function so Pterodactyl server + user are also deleted
+      const { data, error } = await supabase.functions.invoke('delete-panel', {
+        body: { panelId },
+      });
       if (error) throw error;
-
-      // Decrement panel_creations_count so user can create again
-      if (panel?.user_id) {
-        await (supabase.rpc as any)('decrement_panel_count', { _user_id: panel.user_id });
-      }
+      if (!data?.success) throw new Error(data?.error || 'Gagal menghapus panel');
 
       toast({
         title: 'Berhasil',
-        description: 'Panel berhasil dihapus dan limit user dikembalikan.',
+        description: 'Panel berhasil dihapus dari server & database.',
       });
 
       fetchPanels();
