@@ -11,6 +11,13 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Calendar, Server, Shield } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -30,6 +37,8 @@ interface ProfileLite {
   role: string;
   reseller_plan?: string | null;
   reseller_permanent?: boolean | null;
+  panel_count?: number | null;
+  created_at?: string | null;
 }
 
 interface PresenceState {
