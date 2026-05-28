@@ -630,6 +630,24 @@ const Feedback = () => {
             </div>
 
             {!showQris && (
+              <div className="mt-4">
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Pesan / Ucapan (opsional)
+                </label>
+                <Textarea
+                  placeholder="Tulis ucapan atau pesan untukmu sendiri..."
+                  value={tipMessage}
+                  onChange={(e) => setTipMessage(e.target.value)}
+                  maxLength={200}
+                  className="min-h-[70px]"
+                />
+                <div className="text-[10px] text-right text-muted-foreground mt-1">
+                  {tipMessage.length}/200
+                </div>
+              </div>
+            )}
+
+            {!showQris && (
               <>
                 <label className="text-xs text-muted-foreground mb-1 mt-4 block">
                   Metode Pembayaran
