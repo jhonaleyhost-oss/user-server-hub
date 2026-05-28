@@ -343,6 +343,45 @@ export type Database = {
         }
         Relationships: []
       }
+      support_messages: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          read_by_admin: boolean
+          read_by_user: boolean
+          sender_role: string
+          sender_user_id: string | null
+          telegram_message_id: number | null
+          thread_user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          read_by_admin?: boolean
+          read_by_user?: boolean
+          sender_role: string
+          sender_user_id?: string | null
+          telegram_message_id?: number | null
+          thread_user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          read_by_admin?: boolean
+          read_by_user?: boolean
+          sender_role?: string
+          sender_user_id?: string | null
+          telegram_message_id?: number | null
+          thread_user_id?: string
+        }
+        Relationships: []
+      }
       tips: {
         Row: {
           amount: number
@@ -568,6 +607,20 @@ export type Database = {
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
+        }[]
+      }
+      get_support_threads: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          last_message: string
+          last_message_at: string
+          last_sender_role: string
+          role: Database["public"]["Enums"]["app_role"]
+          thread_user_id: string
+          unread_admin: number
         }[]
       }
       get_upgrade_activity: {
