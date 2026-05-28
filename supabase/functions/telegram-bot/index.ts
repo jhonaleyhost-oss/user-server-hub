@@ -54,6 +54,7 @@ const HELP_TEXT =
   "/deluser <code>email</code>\n" +
   "/delpanel <code>panelId</code>\n" +
   "/listpanel <code>serverId</code> — list panel di server\n" +
+  "/delfreepanel — hapus SEMUA panel milik user role free (server Pterodactyl juga)\n" +
   "/delallusr — hapus SEMUA user kecuali admin\n" +
   "/resetdevices — reset semua IP/FP\n\n" +
   "<b>💬 Support</b>\nReply pesan support dari user untuk membalas (text/foto otomatis diteruskan).\n\n" +
@@ -314,6 +315,67 @@ async function deleteAllUsers(chatId: number) {
   await send(chatId, `✅ Selesai. Berhasil: <b>${ok}</b>, Gagal: <b>${fail}</b>.`);
 }
 
+async function deleteAllFreePanels(chatId: number) {
+  // Get all user_ids with role 'free'
+  const { data: freeRoles, error: rolesErr } = await admin
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "free");
+  if (rolesErr) return sendErr(chatId, rolesErr.message);
+  const freeIds = (freeRoles || []).map((r) => r.user_id);
+  if (!freeIds.length) return send(chatId, "Tidak ada user role <b>free</b>.");
+
+  const { data: panels, error: panelsErr } = await admin
+    .from("user_panels")
+    .select("id,server_id,ptero_user_id,ptero_server_id,username")
+    .in("user_id", freeIds);
+  if (panelsErr) return sendErr(chatId, panelsErr.message);
+  if (!panels?.length) return send(chatId, "Tidak ada panel milik user free.");
+
+  await send(chatId, `⏳ Menghapus ${panels.length} panel free...`);
+
+  // Cache server keys/domain per server_id
+  const serverCache = new Map<string, { domain: string; plta: string | null }>();
+  const getServer = async (sid: string) => {
+    if (serverCache.has(sid)) return serverCache.get(sid)!;
+    const { data: srv } = await admin
+      .from("pterodactyl_servers")
+      .select("domain")
+      .eq("id", sid)
+      .maybeSingle();
+    const { data: keys } = await admin.rpc("get_server_keys", { _server_id: sid });
+    const entry = { domain: srv?.domain || "", plta: keys?.[0]?.plta_key || null };
+    serverCache.set(sid, entry);
+    return entry;
+  };
+
+  let ok = 0, fail = 0;
+  for (const p of panels) {
+    try {
+      const { domain, plta } = await getServer(p.server_id);
+      if (plta && domain) {
+        const base = domain.replace(/\/+$/, "");
+        // Delete server first (force), then user
+        if (p.ptero_server_id) {
+          await fetch(`${base}/api/application/servers/${p.ptero_server_id}/force`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${plta}`, Accept: "application/json" },
+          });
+        }
+        if (p.ptero_user_id) {
+          await fetch(`${base}/api/application/users/${p.ptero_user_id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${plta}`, Accept: "application/json" },
+          });
+        }
+      }
+      const { error: delErr } = await admin.from("user_panels").delete().eq("id", p.id);
+      if (delErr) fail++; else ok++;
+    } catch { fail++; }
+  }
+  await send(chatId, `✅ Selesai. Panel free dihapus: <b>${ok}</b>, Gagal: <b>${fail}</b>.`);
+}
+
 async function listPanelsByServer(chatId: number, serverId: string) {
   const { data: srv } = await admin
     .from("pterodactyl_servers")
@@ -504,6 +566,9 @@ Deno.serve(async (req) => {
         break;
       case "/delallusr":
         await deleteAllUsers(chatId);
+        break;
+      case "/delfreepanel":
+        await deleteAllFreePanels(chatId);
         break;
       case "/resetdevices":
         await resetAllDevices(chatId);
