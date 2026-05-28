@@ -468,7 +468,15 @@ const Chat = () => {
                         mine ? "flex-row-reverse" : "flex-row"
                       } ${highlightId === m.id ? "bg-primary/10" : ""}`}
                     >
-                      <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => !mine && p && setSelectedProfile(p)}
+                        disabled={mine || !p}
+                        className={`relative shrink-0 rounded-full ${
+                          !mine && p ? "cursor-pointer hover:opacity-80 transition-opacity" : "cursor-default"
+                        }`}
+                        aria-label={!mine ? `Lihat profil ${name}` : undefined}
+                      >
                         {p?.avatar_url ? (
                           <img
                             src={p.avatar_url}
@@ -483,7 +491,7 @@ const Chat = () => {
                         {online && (
                           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
                         )}
-                      </div>
+                      </button>
                       <div
                         className={`group max-w-[78%] flex flex-col ${
                           mine ? "items-end" : "items-start"
@@ -494,9 +502,20 @@ const Chat = () => {
                             mine ? "flex-row-reverse" : ""
                           }`}
                         >
-                          <span className="text-[11px] font-semibold text-foreground truncate max-w-[120px]">
-                            {mine ? "Kamu" : name}
-                          </span>
+                          {mine ? (
+                            <span className="text-[11px] font-semibold text-foreground truncate max-w-[120px]">
+                              Kamu
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => p && setSelectedProfile(p)}
+                              disabled={!p}
+                              className="text-[11px] font-semibold text-foreground truncate max-w-[120px] hover:text-primary hover:underline transition-colors"
+                            >
+                              {name}
+                            </button>
+                          )}
                           <VerifiedBadge
                             role={userRole}
                             plan={p?.reseller_plan}
