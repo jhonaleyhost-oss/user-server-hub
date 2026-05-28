@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
+import { useResellerStatus } from "@/hooks/useResellerStatus";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 const HamburgerTrigger = () => {
   const { toggleSidebar } = useSidebar();
@@ -27,6 +29,7 @@ const HeaderProfile = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { role } = useUserRole();
+  const { status: resellerStatus } = useResellerStatus();
   const { openMobile, open, isMobile } = useSidebar();
   const sidebarOpen = isMobile ? openMobile : open;
   const [fullName, setFullName] = useState<string | null>(null);
@@ -57,24 +60,6 @@ const HeaderProfile = () => {
   const username = fullName?.trim() || emailPrefix;
   const initial = username.charAt(0).toUpperCase();
 
-  const roleLabel =
-    role === "admin"
-      ? "Admin"
-      : role === "reseller"
-      ? "Reseller"
-      : role === "premium"
-      ? "Premium"
-      : "Free";
-
-  const roleStyle =
-    role === "admin"
-      ? "bg-amber/15 text-amber border-amber/30"
-      : role === "reseller"
-      ? "bg-primary/15 text-primary border-primary/30"
-      : role === "premium"
-      ? "bg-accent/15 text-accent border-accent/30"
-      : "bg-secondary text-muted-foreground border-border";
-
   return (
     <button
       onClick={() => navigate("/profile")}
@@ -88,14 +73,22 @@ const HeaderProfile = () => {
       tabIndex={sidebarOpen ? -1 : 0}
     >
       <div className="flex flex-col items-end gap-0.5 leading-none min-w-0">
-        <span className="text-xs font-semibold text-foreground truncate max-w-[120px]">
-          {username}
-        </span>
-        <span
-          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle}`}
-        >
-          {roleLabel}
-        </span>
+        <div className="flex items-center gap-1 max-w-[140px]">
+          <span className="text-xs font-semibold text-foreground truncate">
+            {username}
+          </span>
+          <VerifiedBadge
+            role={role}
+            permanent={resellerStatus?.permanent}
+            plan={
+              resellerStatus?.permanent
+                ? "perm"
+                : undefined
+            }
+            size={14}
+            showFallbackLabel={false}
+          />
+        </div>
       </div>
       {avatarUrl ? (
         <img

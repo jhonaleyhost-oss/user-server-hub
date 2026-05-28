@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 interface ChatMessage {
   id: string;
@@ -27,38 +28,14 @@ interface ProfileLite {
   full_name: string | null;
   avatar_url: string | null;
   role: string;
+  reseller_plan?: string | null;
+  reseller_permanent?: boolean | null;
 }
 
 interface PresenceState {
   user_id: string;
   online_at: string;
 }
-
-const roleStyle = (role: string) => {
-  switch (role) {
-    case "admin":
-      return "bg-amber/15 text-amber border-amber/30";
-    case "reseller":
-      return "bg-primary/15 text-primary border-primary/30";
-    case "premium":
-      return "bg-accent/15 text-accent border-accent/30";
-    default:
-      return "bg-secondary text-muted-foreground border-border";
-  }
-};
-
-const roleLabel = (role: string) => {
-  switch (role) {
-    case "admin":
-      return "Admin";
-    case "reseller":
-      return "Reseller";
-    case "premium":
-      return "Premium";
-    default:
-      return "Free";
-  }
-};
 
 const formatTime = (iso: string) => {
   const d = new Date(iso);
@@ -126,12 +103,16 @@ const Chat = () => {
         full_name: string | null;
         avatar_url: string | null;
         role: string;
+        reseller_plan?: string | null;
+        reseller_permanent?: boolean | null;
       }>) {
         next[p.user_id] = {
           user_id: p.user_id,
           full_name: p.full_name,
           avatar_url: p.avatar_url,
           role: p.role,
+          reseller_plan: p.reseller_plan ?? null,
+          reseller_permanent: p.reseller_permanent ?? null,
         };
       }
       return next;
@@ -502,13 +483,12 @@ const Chat = () => {
                           <span className="text-[11px] font-semibold text-foreground truncate max-w-[120px]">
                             {mine ? "Kamu" : name}
                           </span>
-                          <span
-                            className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${roleStyle(
-                              userRole
-                            )}`}
-                          >
-                            {roleLabel(userRole)}
-                          </span>
+                          <VerifiedBadge
+                            role={userRole}
+                            plan={p?.reseller_plan}
+                            permanent={p?.reseller_permanent}
+                            size={14}
+                          />
                           <span className="text-[10px] text-muted-foreground">
                             {formatTime(m.created_at)}
                           </span>

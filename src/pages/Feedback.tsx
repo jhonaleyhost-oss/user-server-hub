@@ -13,6 +13,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import qrisLogo from "@/assets/qris-logo.png";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 interface FeedbackRow {
   id: string;
@@ -37,22 +38,6 @@ interface TipRow {
 
 const PAKASIR_SLUG = "jhonaley-store";
 const PAKASIR_BASE = "https://app.pakasir.com";
-
-const roleStyle = (role: string) => {
-  switch (role) {
-    case "admin":
-      return "bg-amber/15 text-amber border-amber/30";
-    case "reseller":
-      return "bg-primary/15 text-primary border-primary/30";
-    case "premium":
-      return "bg-accent/15 text-accent border-accent/30";
-    default:
-      return "bg-secondary text-muted-foreground border-border";
-  }
-};
-
-const roleLabel = (role: string) =>
-  role === "admin" ? "Admin" : role === "reseller" ? "Reseller" : role === "premium" ? "Premium" : "Free";
 
 const formatWIB = (iso: string) => {
   const d = new Date(iso);
@@ -128,6 +113,26 @@ const Feedback = () => {
   const [payMethod, setPayMethod] = useState<"qris" | "all">("qris");
   const [qrisPayload, setQrisPayload] = useState<string>("");
   const [qrisLoading, setQrisLoading] = useState(false);
+  const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.rpc("get_public_users").then(({ data }) => {
+      if (!data) return;
+      const map: Record<string, { plan: string | null; permanent: boolean }> = {};
+      for (const u of data as Array<{
+        user_id: string;
+        reseller_plan: string | null;
+        reseller_permanent: boolean;
+      }>) {
+        map[u.user_id] = {
+          plan: u.reseller_plan ?? null,
+          permanent: !!u.reseller_permanent,
+        };
+      }
+      setPlanMap(map);
+    });
+  }, [user]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -869,13 +874,12 @@ const Feedback = () => {
                         <span className="text-sm font-semibold text-foreground truncate">
                           {t.username}
                         </span>
-                        <span
-                          className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle(
-                            t.role
-                          )}`}
-                        >
-                          {roleLabel(t.role)}
-                        </span>
+                        <VerifiedBadge
+                          role={t.role}
+                          plan={planMap[t.user_id]?.plan}
+                          permanent={planMap[t.user_id]?.permanent}
+                          size={14}
+                        />
                       </div>
                       <p className="text-[10px] text-muted-foreground mt-0.5">
                         {formatWIB(t.created_at)}
@@ -921,13 +925,12 @@ const Feedback = () => {
                             <span className="text-sm font-semibold text-foreground truncate">
                               {f.username}
                             </span>
-                            <span
-                              className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded border ${roleStyle(
-                                f.role
-                              )}`}
-                            >
-                              {roleLabel(f.role)}
-                            </span>
+                            <VerifiedBadge
+                              role={f.role}
+                              plan={planMap[f.user_id]?.plan}
+                              permanent={planMap[f.user_id]?.permanent}
+                              size={14}
+                            />
                           </div>
                           <div className="mt-1">
                             <StarRow value={f.rating} readOnly size={14} />

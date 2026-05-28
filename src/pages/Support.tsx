@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 interface SupportMessage {
   id: string;
@@ -30,23 +31,12 @@ interface Thread {
   last_message_at: string;
   last_sender_role: string;
   unread_admin: number;
+  reseller_plan?: string | null;
+  reseller_permanent?: boolean | null;
 }
 
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-
-const roleStyle = (role: string) => {
-  switch (role) {
-    case "admin":
-      return "bg-amber/15 text-amber border-amber/30";
-    case "reseller":
-      return "bg-primary/15 text-primary border-primary/30";
-    case "premium":
-      return "bg-accent/15 text-accent border-accent/30";
-    default:
-      return "bg-secondary text-muted-foreground border-border";
-  }
-};
 
 const Support = () => {
   const { user, loading: authLoading } = useAuth();
@@ -61,8 +51,28 @@ const Support = () => {
   const [sending, setSending] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    supabase.rpc("get_public_users").then(({ data }) => {
+      if (!data) return;
+      const map: Record<string, { plan: string | null; permanent: boolean }> = {};
+      for (const u of data as Array<{
+        user_id: string;
+        reseller_plan: string | null;
+        reseller_permanent: boolean;
+      }>) {
+        map[u.user_id] = {
+          plan: u.reseller_plan ?? null,
+          permanent: !!u.reseller_permanent,
+        };
+      }
+      setPlanMap(map);
+    });
+  }, [isAdmin]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -315,13 +325,12 @@ const Support = () => {
                             {t.last_message || "—"}
                           </p>
                           <div className="flex items-center gap-1.5 mt-1">
-                            <span
-                              className={`text-[9px] px-1.5 py-0 rounded border font-bold uppercase ${roleStyle(
-                                t.role,
-                              )}`}
-                            >
-                              {t.role}
-                            </span>
+                            <VerifiedBadge
+                              role={t.role}
+                              plan={planMap[t.thread_user_id]?.plan}
+                              permanent={planMap[t.thread_user_id]?.permanent}
+                              size={14}
+                            />
                             <span className="text-[10px] text-muted-foreground">
                               {formatTime(t.last_message_at)}
                             </span>

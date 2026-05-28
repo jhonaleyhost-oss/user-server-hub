@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import VerifiedBadge from "@/components/VerifiedBadge";
 
 interface PanelActivity {
   id: string;
@@ -54,32 +55,6 @@ type FeedItem =
   | ({ kind: "signup" } & SignupActivity)
   | ({ kind: "upgrade" } & UpgradeActivity);
 
-const roleStyle = (role: string) => {
-  switch (role) {
-    case "admin":
-      return "bg-amber/15 text-amber border-amber/30";
-    case "reseller":
-      return "bg-primary/15 text-primary border-primary/30";
-    case "premium":
-      return "bg-accent/15 text-accent border-accent/30";
-    default:
-      return "bg-secondary text-muted-foreground border-border";
-  }
-};
-
-const roleLabel = (role: string) => {
-  switch (role) {
-    case "admin":
-      return "Admin";
-    case "reseller":
-      return "Reseller";
-    case "premium":
-      return "Premium";
-    default:
-      return "Free";
-  }
-};
-
 const formatSpec = (n: number) => (n === 0 ? "Unlimited" : `${n}`);
 
 const formatDateTime = (iso: string) => {
@@ -116,16 +91,18 @@ const Activity = () => {
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
   const [tab, setTab] = useState<"panel" | "signup" | "upgrade">("panel");
+  const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes, upgradeRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes, usersRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 200 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 200 }),
       (supabase.rpc as any)("get_upgrade_activity", { _limit: 200 }),
+      supabase.rpc("get_public_users"),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
@@ -134,6 +111,20 @@ const Activity = () => {
     setPanels((panelRes.data ?? []) as PanelActivity[]);
     setSignups((signupRes.data ?? []) as SignupActivity[]);
     setUpgrades((upgradeRes.data ?? []) as UpgradeActivity[]);
+    if (!usersRes.error && usersRes.data) {
+      const map: Record<string, { plan: string | null; permanent: boolean }> = {};
+      for (const u of usersRes.data as Array<{
+        user_id: string;
+        reseller_plan: string | null;
+        reseller_permanent: boolean;
+      }>) {
+        map[u.user_id] = {
+          plan: u.reseller_plan ?? null,
+          permanent: !!u.reseller_permanent,
+        };
+      }
+      setPlanMap(map);
+    }
   };
 
   useEffect(() => {
@@ -336,13 +327,20 @@ const Activity = () => {
                           <span className="text-sm font-bold text-foreground truncate max-w-[160px]">
                             {name}
                           </span>
-                          <span
-                            className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${roleStyle(
-                              a.role
-                            )}`}
-                          >
-                            {roleLabel(a.role)}
-                          </span>
+                          <VerifiedBadge
+                            role={a.role}
+                            plan={
+                              a.kind === "upgrade"
+                                ? a.plan
+                                : planMap[a.user_id]?.plan
+                            }
+                            permanent={
+                              a.kind === "upgrade"
+                                ? a.permanent
+                                : planMap[a.user_id]?.permanent
+                            }
+                            size={14}
+                          />
                           <span
                             className="text-[10px] text-muted-foreground ml-auto"
                             title={formatDateTime(a.created_at)}
