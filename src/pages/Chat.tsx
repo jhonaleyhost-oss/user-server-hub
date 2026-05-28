@@ -51,6 +51,22 @@ const formatTime = (iso: string) => {
   return d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 };
 
+const formatDayLabel = (iso: string) => {
+  const d = new Date(iso);
+  const today = new Date();
+  const yest = new Date();
+  yest.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (sameDay(d, today)) return "Hari Ini";
+  if (sameDay(d, yest)) return "Kemarin";
+  const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
+  if (diffDays < 7) return d.toLocaleDateString("id-ID", { weekday: "long" });
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+};
+
 const Chat = () => {
   const { user, loading: authLoading } = useAuth();
   const { role } = useUserRole();
@@ -479,7 +495,7 @@ const Chat = () => {
                   </p>
                 </div>
               ) : (
-                messages.map((m) => {
+                messages.map((m, idx) => {
                   const mine = m.user_id === user?.id;
                   const p = profiles[m.user_id];
                   const name = displayName(m.user_id);
@@ -490,9 +506,21 @@ const Chat = () => {
                     ? messages.find((x) => x.id === m.reply_to_id)
                     : null;
                   const repliedName = replied ? displayName(replied.user_id) : null;
+                  const prev = idx > 0 ? messages[idx - 1] : null;
+                  const showDateSep =
+                    !prev ||
+                    new Date(prev.created_at).toDateString() !==
+                      new Date(m.created_at).toDateString();
                   return (
+                    <div key={m.id}>
+                    {showDateSep && (
+                      <div className="flex justify-center my-3">
+                        <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-secondary/70 text-muted-foreground border border-border/40">
+                          {formatDayLabel(m.created_at)}
+                        </span>
+                      </div>
+                    )}
                     <div
-                      key={m.id}
                       id={`msg-${m.id}`}
                       className={`flex items-end gap-2 transition-colors rounded-2xl -mx-1 px-1 py-0.5 ${
                         mine ? "flex-row-reverse" : "flex-row"
@@ -647,6 +675,7 @@ const Chat = () => {
                           )}
                         </div>
                       </div>
+                    </div>
                     </div>
                   );
                 })
