@@ -103,12 +103,16 @@ const Chat = () => {
         full_name: string | null;
         avatar_url: string | null;
         role: string;
+        reseller_plan?: string | null;
+        reseller_permanent?: boolean | null;
       }>) {
         next[p.user_id] = {
           user_id: p.user_id,
           full_name: p.full_name,
           avatar_url: p.avatar_url,
           role: p.role,
+          reseller_plan: p.reseller_plan ?? null,
+          reseller_permanent: p.reseller_permanent ?? null,
         };
       }
       return next;
@@ -479,13 +483,12 @@ const Chat = () => {
                           <span className="text-[11px] font-semibold text-foreground truncate max-w-[120px]">
                             {mine ? "Kamu" : name}
                           </span>
-                          <span
-                            className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${roleStyle(
-                              userRole
-                            )}`}
-                          >
-                            {roleLabel(userRole)}
-                          </span>
+                          <VerifiedBadge
+                            role={userRole}
+                            plan={p?.reseller_plan}
+                            permanent={p?.reseller_permanent}
+                            size={14}
+                          />
                           <span className="text-[10px] text-muted-foreground">
                             {formatTime(m.created_at)}
                           </span>
