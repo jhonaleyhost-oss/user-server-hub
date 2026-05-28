@@ -56,6 +56,7 @@ const HELP_TEXT =
   "/listpanel <code>serverId</code> — list panel di server\n" +
   "/delallusr — hapus SEMUA user kecuali admin\n" +
   "/resetdevices — reset semua IP/FP\n\n" +
+  "<b>💬 Support</b>\nReply pesan support dari user untuk membalas (text/foto otomatis diteruskan).\n\n" +
   "/help — bantuan ini";
 
 // ===== Feature handlers =====
