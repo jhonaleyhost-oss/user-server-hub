@@ -454,19 +454,7 @@ const Support = () => {
                                 : "bg-secondary text-foreground rounded-bl-sm"
                             }`}
                           >
-                            {m.image_url && (
-                              <a
-                                href={m.image_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <img
-                                  src={m.image_url}
-                                  alt="lampiran"
-                                  className="rounded-lg mb-1 max-h-64 object-cover"
-                                />
-                              </a>
-                            )}
+                            {m.image_url && <SupportImage value={m.image_url} />}
                             {m.content && (
                               <p className="text-sm whitespace-pre-wrap break-words">
                                 {m.content}
