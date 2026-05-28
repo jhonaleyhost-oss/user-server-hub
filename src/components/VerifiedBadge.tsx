@@ -188,32 +188,124 @@ const VerifiedBadge = ({
   className,
 }: VerifiedBadgeProps) => {
   const tier = pickTier(role, plan, permanent);
+  const tierKey = pickTierKey(role, plan, permanent);
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const info = tierKey ? TIER_INFO[tierKey] : null;
 
   if (tier) {
     return (
-      <span
-        className={cn("inline-flex items-center", className)}
-        title={tier.label}
-        aria-label={tier.label}
-      >
-        <VerifiedSVG tier={tier} size={size} />
-      </span>
+      <>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          className={cn(
+            "inline-flex items-center rounded-full hover:scale-110 active:scale-95 transition-transform cursor-pointer",
+            className,
+          )}
+          title={tier.label}
+          aria-label={tier.label}
+        >
+          <VerifiedSVG tier={tier} size={size} />
+        </button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-sm rounded-3xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <VerifiedSVG tier={tier} size={22} />
+                <span>{info?.title ?? tier.label}</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex flex-col items-center text-center gap-3 py-3">
+                <div
+                  className="rounded-full p-4"
+                  style={{ background: `radial-gradient(circle, ${tier.glow} 0%, transparent 70%)` }}
+                >
+                  <VerifiedSVG tier={tier} size={64} />
+                </div>
+                <p className="text-sm font-bold text-foreground">{tier.label}</p>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed text-center">
+                {info?.description}
+              </p>
+              {info?.cta && tierKey !== "admin" && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                    navigate("/upgrade");
+                  }}
+                  className="w-full h-11 rounded-full bg-amber hover:bg-amber/90 text-background font-bold gap-2"
+                >
+                  <Crown className="w-4 h-4" />
+                  {info.cta}
+                </Button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
   if (!showFallbackLabel) return null;
 
   const fb = FALLBACK_LABEL[role as string] ?? FALLBACK_LABEL.free;
+  const isFree = role === "free" || !FALLBACK_LABEL[role as string];
   return (
-    <span
-      className={cn(
-        "text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border",
-        fb.cls,
-        className,
-      )}
-    >
-      {fb.text}
-    </span>
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        className={cn(
+          "text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border hover:opacity-80 transition-opacity cursor-pointer",
+          fb.cls,
+          className,
+        )}
+      >
+        {fb.text}
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Belum Punya Badge Eksklusif</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col items-center text-center gap-3 py-3">
+              <div className="w-16 h-16 rounded-full bg-secondary/60 border border-border/50 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-amber" />
+              </div>
+              <p className="text-sm font-bold text-foreground">Akun {fb.text}</p>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed text-center">
+              {isFree
+                ? "Kamu belum memiliki badge verified eksklusif. Upgrade ke Reseller untuk mendapatkan badge biru (1 bulan), hijau (2 bulan), atau merah (permanen) di samping namamu."
+                : "Tingkatkan akunmu ke Reseller untuk mendapatkan badge verified eksklusif berwarna biru, hijau, atau merah sesuai paket yang kamu pilih."}
+            </p>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                navigate("/upgrade");
+              }}
+              className="w-full h-11 rounded-full bg-amber hover:bg-amber/90 text-background font-bold gap-2"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade ke Reseller
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
