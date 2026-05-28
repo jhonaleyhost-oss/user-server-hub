@@ -755,11 +755,16 @@ const Admin = () => {
         // Process batch in parallel
         const results = await Promise.all(
           batch.map(async (panel) => {
-            const { error } = await supabase
-              .from('user_panels')
-              .delete()
-              .eq('id', panel.id);
-            return { error };
+            try {
+              const { data, error } = await supabase.functions.invoke('delete-panel', {
+                body: { panelId: panel.id },
+              });
+              if (error) return { error };
+              if (!data?.success) return { error: new Error(data?.error || 'failed') };
+              return { error: null };
+            } catch (e: any) {
+              return { error: e };
+            }
           })
         );
 
