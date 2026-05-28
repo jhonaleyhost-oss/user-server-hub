@@ -231,6 +231,7 @@ const Upgrade = () => {
         return;
       }
       setQrisPayload(data.qris as string);
+      console.log('[QRIS] payload length:', (data.qris as string)?.length, 'order:', oid);
       const { error: insErr } = await supabase.from('reseller_orders').insert({
         user_id: user.id,
         username: fullName,
