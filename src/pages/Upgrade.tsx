@@ -152,6 +152,73 @@ const Upgrade = () => {
     setPendingOrders((data as any) || []);
   };
 
+  const handleCancelOrder = async (oid: string) => {
+    if (!user) return;
+    if (!confirm('Batalkan pembayaran ini?')) return;
+    setManualChecking(oid);
+    try {
+      const { error } = await supabase
+        .from('reseller_orders')
+        .update({ status: 'cancelled' })
+        .eq('order_id', oid)
+        .eq('user_id', user.id);
+      if (error) {
+        toast.error('Gagal batalkan: ' + error.message);
+        return;
+      }
+      toast.success('Pembayaran dibatalkan');
+      // Jika order yang dibatalkan sedang ditampilkan QRIS-nya, tutup juga
+      if (orderId === oid) {
+        setShowQris(false);
+        setQrisPayload('');
+        setPollingOid(null);
+        localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
+      }
+      await loadPendingOrders();
+    } finally {
+      setManualChecking(null);
+    }
+  };
+
+  const handlePayPending = async (o: PendingOrder) => {
+    if (!user) return;
+    setManualChecking(o.order_id);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-qris', {
+        body: { amount: o.amount, order_id: o.order_id },
+      });
+      if (error || !data?.qris) {
+        toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
+        return;
+      }
+      setSelected(o.plan);
+      setOrderId(o.order_id);
+      setQrisPayload(data.qris as string);
+      setShowQris(true);
+      setPaid(false);
+      setPollingOid(o.order_id);
+      try {
+        localStorage.setItem(
+          QRIS_STORAGE_KEY(user.id),
+          JSON.stringify({
+            orderId: o.order_id,
+            qrisPayload: data.qris,
+            plan: o.plan,
+            amount: o.amount,
+            savedAt: Date.now(),
+          }),
+        );
+      } catch {
+        // ignore
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e: any) {
+      toast.error('Gagal: ' + (e?.message || String(e)));
+    } finally {
+      setManualChecking(null);
+    }
+  };
+
   useEffect(() => {
     loadPendingOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -853,9 +920,9 @@ const Upgrade = () => {
                   {pendingOrders.map((o) => (
                     <div
                       key={o.order_id}
-                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-3 py-2"
+                      className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-2 space-y-2"
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0">
                         <p className="text-xs font-mono text-foreground truncate">{o.order_id}</p>
                         <p className="text-[10px] text-muted-foreground">
                           {o.plan.toUpperCase()} • Rp {o.amount.toLocaleString('id-ID')} •{' '}
@@ -867,20 +934,46 @@ const Upgrade = () => {
                           })}
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={manualChecking === o.order_id}
-                        onClick={() => handleManualCheck(o.order_id, o.amount)}
-                        className="h-8 gap-1.5 border-emerald-500/40 hover:bg-emerald-500/10"
-                      >
-                        {manualChecking === o.order_id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-3 h-3" />
-                        )}
-                        <span className="text-xs">Cek</span>
-                      </Button>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={manualChecking === o.order_id || (orderId === o.order_id && showQris)}
+                          onClick={() => handlePayPending(o)}
+                          className="h-8 gap-1 border-amber/40 hover:bg-amber/10"
+                        >
+                          {manualChecking === o.order_id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <QrCode className="w-3 h-3" />
+                          )}
+                          <span className="text-xs">Bayar</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={manualChecking === o.order_id}
+                          onClick={() => handleManualCheck(o.order_id, o.amount)}
+                          className="h-8 gap-1 border-emerald-500/40 hover:bg-emerald-500/10"
+                        >
+                          {manualChecking === o.order_id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
+                          <span className="text-xs">Cek</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={manualChecking === o.order_id}
+                          onClick={() => handleCancelOrder(o.order_id)}
+                          className="h-8 gap-1 border-destructive/40 hover:bg-destructive/10 text-destructive"
+                        >
+                          <X className="w-3 h-3" />
+                          <span className="text-xs">Batal</span>
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -1,0 +1,1 @@
+CREATE POLICY "Users cancel own pending orders" ON public.reseller_orders FOR UPDATE TO authenticated USING (auth.uid() = user_id AND status = 'pending') WITH CHECK (auth.uid() = user_id AND status IN ('pending','cancelled'));
