@@ -67,6 +67,7 @@ const Chat = () => {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [pending, setPending] = useState<Array<{ id: string; file: File; preview: string }>>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<ProfileLite | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -114,6 +115,8 @@ const Chat = () => {
         role: string;
         reseller_plan?: string | null;
         reseller_permanent?: boolean | null;
+        panel_count?: number | null;
+        created_at?: string | null;
       }>) {
         next[p.user_id] = {
           user_id: p.user_id,
@@ -122,6 +125,8 @@ const Chat = () => {
           role: p.role,
           reseller_plan: p.reseller_plan ?? null,
           reseller_permanent: p.reseller_permanent ?? null,
+          panel_count: Number(p.panel_count ?? 0),
+          created_at: p.created_at ?? null,
         };
       }
       return next;
