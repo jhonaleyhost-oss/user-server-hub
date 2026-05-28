@@ -314,6 +314,7 @@ const Dashboard = () => {
 
       <div className="w-full max-w-2xl mx-auto relative z-10">
         <ActivityTicker />
+        <UpgradeTicker />
 
         {/* Reseller active period card (always visible for resellers) */}
         {resellerStatus && resellerStatus.is_reseller && role !== 'admin' && (
