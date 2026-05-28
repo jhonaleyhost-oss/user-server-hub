@@ -120,7 +120,14 @@ const Dashboard = () => {
       if (!serverFnError && serverResponse?.success && serverResponse.servers) {
         setServers(serverResponse.servers);
         if (serverResponse.servers.length > 0) {
-          setSelectedServer(serverResponse.servers[0].id);
+          const list = serverResponse.servers;
+          const firstPublic = list.find((s: Server) => s.server_type === 'public');
+          // Free users: always auto-select first public server
+          if (role === 'free') {
+            setSelectedServer(firstPublic ? firstPublic.id : list[0].id);
+          } else {
+            setSelectedServer(list[0].id);
+          }
         }
       }
 
