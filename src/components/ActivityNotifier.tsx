@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Server, MessageCircle, Star } from "lucide-react";
+import { Server, MessageCircle, Star, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -120,6 +120,38 @@ const ActivityNotifier = () => {
           toast(`${name} memberi feedback`, {
             description: `${stars}${row.message ? ` — ${row.message.slice(0, 80)}` : ""}`,
             icon: <Star className="w-4 h-4 text-amber-400" />,
+            duration: 5000,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.upgrade" },
+        async (payload) => {
+          if (!readyRef.current) return;
+          const row = payload.new as {
+            actor_user_id: string;
+            actor_name: string | null;
+            detail: string | null;
+            created_at: string;
+          };
+          if (row.actor_user_id === user.id) return;
+          const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          const durasi =
+            row.detail === "perm"
+              ? "Permanen"
+              : row.detail === "1bln"
+              ? "1 Bulan"
+              : row.detail === "2bln"
+              ? "2 Bulan"
+              : row.detail || "Reseller";
+          const waktu = new Date(row.created_at).toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          toast(`${name} upgrade Reseller`, {
+            description: `${durasi} • ${waktu}`,
+            icon: <Crown className="w-4 h-4 text-amber-400" />,
             duration: 5000,
           });
         }
