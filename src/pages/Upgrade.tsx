@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import qrisLogo from '@/assets/qris-logo.png';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface PopupButton {
   label: string;
