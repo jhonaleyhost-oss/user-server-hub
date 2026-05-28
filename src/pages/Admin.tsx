@@ -89,6 +89,8 @@ interface UserWithRole {
   panel_creations_count: number;
   created_at: string;
   role: AppRole;
+  reseller_expires_at?: string | null;
+  reseller_permanent?: boolean;
 }
 
 interface PterodactylServer {
@@ -1036,6 +1038,7 @@ const Admin = () => {
                       <TableHead>Email</TableHead>
                       <TableHead>Nama</TableHead>
                       <TableHead>Role</TableHead>
+                      <TableHead>Masa Aktif</TableHead>
                       <TableHead>Panel</TableHead>
                       <TableHead>Aksi</TableHead>
                     </TableRow>
@@ -1043,7 +1046,7 @@ const Admin = () => {
                   <TableBody>
                     {paginatedUsers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data'}
                         </TableCell>
                       </TableRow>
@@ -1056,6 +1059,52 @@ const Admin = () => {
                             <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(u.role)}`}>
                               {u.role}
                             </span>
+                          </TableCell>
+                          <TableCell>
+                            {u.role === 'admin' ? (
+                              <span className="text-xs text-emerald-400 font-semibold">∞ Admin</span>
+                            ) : u.role !== 'reseller' && u.role !== 'premium' ? (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            ) : u.reseller_permanent ? (
+                              <span className="text-xs text-emerald-400 font-semibold">∞ Permanen</span>
+                            ) : u.reseller_expires_at ? (
+                              (() => {
+                                const exp = new Date(u.reseller_expires_at).getTime();
+                                const daysLeft = Math.max(
+                                  0,
+                                  Math.ceil((exp - Date.now()) / 86400000),
+                                );
+                                const expired = exp < Date.now();
+                                return (
+                                  <div className="flex flex-col">
+                                    <span
+                                      className={`text-xs font-semibold ${
+                                        expired
+                                          ? 'text-destructive'
+                                          : daysLeft <= 2
+                                          ? 'text-rose-400'
+                                          : daysLeft <= 7
+                                          ? 'text-amber'
+                                          : 'text-foreground'
+                                      }`}
+                                    >
+                                      {expired ? 'Expired' : `${daysLeft} hari lagi`}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {new Date(u.reseller_expires_at).toLocaleString('id-ID', {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </span>
+                                  </div>
+                                );
+                              })()
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
                           </TableCell>
                           <TableCell>{u.panel_creations_count}</TableCell>
                           <TableCell>
