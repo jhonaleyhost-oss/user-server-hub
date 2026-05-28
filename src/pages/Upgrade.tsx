@@ -28,6 +28,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import qrisLogo from '@/assets/qris-logo.png';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface PopupButton {
   label: string;
@@ -630,6 +631,42 @@ const Upgrade = () => {
                   <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Tidak ada biaya tambahan lain / Anti PTPT
                 </div>
               </div>
+            </GlassCard>
+
+            {/* Verified Badge Benefit */}
+            <GlassCard className="p-6 mb-6">
+              <div className="text-center mb-4">
+                <h3 className="font-bold text-foreground">Centang Verified Eksklusif</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tampil beda di Chat, Aktivitas, & Pengguna — sesuai paket kamu.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-2xl border border-blue-500/30 bg-blue-500/5 p-4 flex flex-col items-center text-center gap-2">
+                  <VerifiedBadge role="reseller" plan="1bln" size={36} />
+                  <div className="text-sm font-bold text-foreground">Centang Biru</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Paket <span className="font-semibold text-foreground">1 Bulan</span> — tanda Reseller aktif berdurasi 30 hari.
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex flex-col items-center text-center gap-2">
+                  <VerifiedBadge role="reseller" plan="2bln" size={36} />
+                  <div className="text-sm font-bold text-foreground">Centang Hijau</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Paket <span className="font-semibold text-foreground">2 Bulan</span> — Reseller hemat, aktif penuh 60 hari.
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 flex flex-col items-center text-center gap-2">
+                  <VerifiedBadge role="reseller" plan="perm" size={36} />
+                  <div className="text-sm font-bold text-foreground">Centang Merah</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Paket <span className="font-semibold text-foreground">Permanen</span> — status Reseller seumur hidup, tidak expired.
+                  </div>
+                </div>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center mt-3">
+                Centang otomatis terpasang di samping nama kamu setelah pembayaran terkonfirmasi.
+              </p>
             </GlassCard>
 
             {/* Plan picker */}
