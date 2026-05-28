@@ -915,6 +915,11 @@ const Feedback = () => {
                       <div className="text-[9px] text-muted-foreground">QRIS</div>
                     </div>
                   </div>
+                  {t.message && (
+                    <p className="text-xs text-foreground/85 mt-2 whitespace-pre-wrap break-words italic px-2">
+                      “{t.message}”
+                    </p>
+                  )}
                 ))}
               </div>
             )}
