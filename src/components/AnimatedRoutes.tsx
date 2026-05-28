@@ -4,6 +4,7 @@ import Dashboard from '@/pages/Dashboard';
 import Auth from '@/pages/Auth';
 import Panels from '@/pages/Panels';
 import Admin from '@/pages/Admin';
+import AdminRoute from '@/components/AdminRoute';
 import Upgrade from '@/pages/Upgrade';
 import Profile from '@/pages/Profile';
 import Users from '@/pages/Users';
@@ -22,7 +23,14 @@ export const AnimatedRoutes = () => {
         <Route path="/" element={<Dashboard />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/panels" element={<Panels />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <Admin />
+            </AdminRoute>
+          }
+        />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users" element={<Users />} />
