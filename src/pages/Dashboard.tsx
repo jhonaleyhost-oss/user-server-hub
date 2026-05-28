@@ -37,6 +37,7 @@ import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccentColorPicker from '@/components/AccentColorPicker';
 import ActivityTicker from '@/components/ActivityTicker';
+import UpgradeTicker from '@/components/UpgradeTicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
