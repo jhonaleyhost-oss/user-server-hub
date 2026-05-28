@@ -108,6 +108,7 @@ const Feedback = () => {
   const [amount, setAmount] = useState<string>("5000");
   const [orderId, setOrderId] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
+  const [tipMessage, setTipMessage] = useState<string>("");
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [tips, setTips] = useState<TipRow[]>([]);
   const [showQris, setShowQris] = useState(false);
