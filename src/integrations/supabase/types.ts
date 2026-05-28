@@ -387,8 +387,8 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          message: string | null
           order_id: string
-          proof_url: string | null
           role: string
           status: string
           user_id: string
@@ -398,8 +398,8 @@ export type Database = {
           amount: number
           created_at?: string
           id?: string
+          message?: string | null
           order_id: string
-          proof_url?: string | null
           role?: string
           status?: string
           user_id: string
@@ -409,8 +409,8 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          message?: string | null
           order_id?: string
-          proof_url?: string | null
           role?: string
           status?: string
           user_id?: string
