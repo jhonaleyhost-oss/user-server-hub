@@ -231,7 +231,6 @@ const Upgrade = () => {
         return;
       }
       setQrisPayload(data.qris as string);
-      console.log('[QRIS] payload length:', (data.qris as string)?.length, 'order:', oid);
       const { error: insErr } = await supabase.from('reseller_orders').insert({
         user_id: user.id,
         username: fullName,
@@ -650,23 +649,7 @@ const Upgrade = () => {
                     </div>
                   </div>
 
-                  {/* Fallback: tombol buka halaman pembayaran Pakasir kalau QR tidak terlihat */}
-                  <a
-                    href={pakasirUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full text-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold py-3 text-sm shadow-lg hover:opacity-90 transition"
-                  >
-                    🌐 Buka Halaman Pembayaran
-                  </a>
-                  <p className="text-center text-[10px] text-muted-foreground -mt-1">
-                    Klik di atas kalau QR di bawah tidak muncul.
-                  </p>
-
-                  <div
-                    className="relative mx-auto rounded-2xl p-5 w-full max-w-[280px]"
-                    style={{ backgroundColor: '#ffffff' }}
-                  >
+                  <div className="relative mx-auto bg-white rounded-2xl p-5 w-full max-w-[280px]">
                     <span className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-fuchsia-400 rounded-tl-md" />
                     <span className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-fuchsia-400 rounded-tr-md" />
                     <span className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-fuchsia-400 rounded-bl-md" />
@@ -677,7 +660,7 @@ const Upgrade = () => {
                         size={232}
                         level="M"
                         bgColor="#ffffff"
-                        fgColor="#000000"
+                        fgColor="#0a0a0a"
                         marginSize={0}
                         id="qris-svg"
                       />
