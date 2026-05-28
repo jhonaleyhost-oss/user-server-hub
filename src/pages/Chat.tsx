@@ -239,7 +239,12 @@ const Chat = () => {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    // Only auto-scroll if user is already near the bottom (within 120px).
+    // Prevents yanking the view down when scrolling up to read old messages.
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (distanceFromBottom < 120) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [messages.length, typingUsers]);
 
   const sendTyping = () => {
