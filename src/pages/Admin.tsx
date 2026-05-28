@@ -354,7 +354,7 @@ const Admin = () => {
     try {
       const { data, error } = await supabase
         .from('pterodactyl_servers')
-        .select('*')
+        .select('id, name, domain, server_type, is_active, location_id, egg_id, python_egg_id, nest_id, created_at')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -552,22 +552,17 @@ const Admin = () => {
 
   const saveServer = async () => {
     try {
-      if (editingServer) {
-        const { error } = await supabase
-          .from('pterodactyl_servers')
-          .update(serverForm)
-          .eq('id', editingServer.id);
-
-        if (error) throw error;
-        toast({ title: 'Berhasil', description: 'Server berhasil diperbarui.' });
-      } else {
-        const { error } = await supabase
-          .from('pterodactyl_servers')
-          .insert(serverForm);
-
-        if (error) throw error;
-        toast({ title: 'Berhasil', description: 'Server baru berhasil ditambahkan.' });
-      }
+      const { data, error } = await supabase.functions.invoke('manage-server', {
+        body: editingServer
+          ? { action: 'update', id: editingServer.id, ...serverForm }
+          : { action: 'create', ...serverForm },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || 'Gagal menyimpan server');
+      toast({
+        title: 'Berhasil',
+        description: editingServer ? 'Server berhasil diperbarui.' : 'Server baru berhasil ditambahkan.',
+      });
 
       setEditingServer(null);
       setNewServer(false);
@@ -584,12 +579,11 @@ const Admin = () => {
 
   const deleteServer = async (serverId: string) => {
     try {
-      const { error } = await supabase
-        .from('pterodactyl_servers')
-        .delete()
-        .eq('id', serverId);
-
+      const { data, error } = await supabase.functions.invoke('manage-server', {
+        body: { action: 'delete', id: serverId },
+      });
       if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || 'Gagal menghapus server');
 
       toast({
         title: 'Berhasil',
@@ -845,8 +839,8 @@ const Admin = () => {
     setServerForm({
       name: server.name,
       domain: server.domain,
-      plta_key: server.plta_key,
-      pltc_key: server.pltc_key,
+      plta_key: '',
+      pltc_key: '',
       server_type: server.server_type,
       location_id: server.location_id,
       egg_id: server.egg_id,
