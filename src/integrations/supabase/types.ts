@@ -584,9 +584,11 @@ export type Database = {
         Args: never
         Returns: {
           avatar_url: string
-          created_at: string
           full_name: string
           panel_count: number
+          reseller_expires_at: string
+          reseller_permanent: boolean
+          reseller_plan: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]
