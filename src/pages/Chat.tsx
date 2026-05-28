@@ -466,7 +466,6 @@ const Chat = () => {
           </GlassCard>
 
           <GlassCard className="!rounded-3xl flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="relative flex-1 min-h-0 flex flex-col">
             <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3">
               {loading ? (
                 <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
