@@ -12,6 +12,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import Logo from "@/components/Logo";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import ThemeToggle from "@/components/ThemeToggle";
 import AccentColorPicker from "@/components/AccentColorPicker";
 import { useAuth } from "@/hooks/useAuth";
@@ -125,7 +126,16 @@ export function AppSidebar() {
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-foreground truncate">{username}</p>
+                <p className="text-sm font-semibold text-foreground truncate flex items-center gap-1">
+                  <span className="truncate">{username}</span>
+                  <VerifiedBadge
+                    role={role}
+                    plan={resellerStatus?.permanent ? "perm" : (resellerStatus as any)?.plan}
+                    permanent={resellerStatus?.permanent}
+                    size={14}
+                    showFallbackLabel={false}
+                  />
+                </p>
                 <span
                   className={`inline-block mt-0.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide rounded-md border ${getRoleStyle()}`}
                 >
