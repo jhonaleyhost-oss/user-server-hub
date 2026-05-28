@@ -722,12 +722,12 @@ const Admin = () => {
     }
   };
 
-  const clearAllPanels = async () => {
+  const clearAllPanels = async (targetPanels: UserPanel[] = panels, label = 'panel') => {
     try {
-      if (panels.length === 0) {
+      if (targetPanels.length === 0) {
         toast({
           title: 'Info',
-          description: 'Tidak ada panel untuk dihapus.',
+          description: `Tidak ada ${label} untuk dihapus.`,
         });
         return;
       }
@@ -735,7 +735,7 @@ const Admin = () => {
       // Initialize progress
       setClearingProgress({
         isClearing: true,
-        total: panels.length,
+        total: targetPanels.length,
         current: 0,
         deleted: 0,
         failed: 0,
@@ -749,8 +749,8 @@ const Admin = () => {
       // Delete in parallel batches of 10 for speed
       const BATCH_SIZE = 10;
       
-      for (let i = 0; i < panels.length; i += BATCH_SIZE) {
-        const batch = panels.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < targetPanels.length; i += BATCH_SIZE) {
+        const batch = targetPanels.slice(i, i + BATCH_SIZE);
         
         // Process batch in parallel
         const results = await Promise.all(
@@ -781,7 +781,7 @@ const Admin = () => {
         // Update progress after each batch
         setClearingProgress({
           isClearing: true,
-          total: panels.length,
+          total: targetPanels.length,
           current: processedCount,
           deleted: deletedCount,
           failed: failedCount,
@@ -795,13 +795,13 @@ const Admin = () => {
       if (deletedCount > 0) {
         toast({
           title: 'Berhasil',
-          description: `${deletedCount} panel berhasil dihapus.${failedCount > 0 ? ` ${failedCount} gagal.` : ''}`,
+          description: `${deletedCount} ${label} berhasil dihapus.${failedCount > 0 ? ` ${failedCount} gagal.` : ''}`,
         });
       } else {
         toast({
           variant: 'destructive',
           title: 'Gagal',
-          description: 'Tidak ada panel yang berhasil dihapus.',
+          description: `Tidak ada ${label} yang berhasil dihapus.`,
         });
       }
 
