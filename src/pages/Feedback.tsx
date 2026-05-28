@@ -34,6 +34,7 @@ interface TipRow {
   order_id: string;
   status: string;
   created_at: string;
+  message: string | null;
 }
 
 const PAKASIR_SLUG = "jhonaley-store";
@@ -107,6 +108,7 @@ const Feedback = () => {
   const [amount, setAmount] = useState<string>("5000");
   const [orderId, setOrderId] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
+  const [tipMessage, setTipMessage] = useState<string>("");
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [tips, setTips] = useState<TipRow[]>([]);
   const [showQris, setShowQris] = useState(false);
@@ -325,6 +327,7 @@ const Feedback = () => {
       amount: tipAmount,
       order_id: oid,
       status: "pending",
+      message: tipMessage.trim() || null,
     });
     setPollingOid(oid);
     window.open(pakasirUrl, "_blank", "noopener,noreferrer");
@@ -627,6 +630,24 @@ const Feedback = () => {
             </div>
 
             {!showQris && (
+              <div className="mt-4">
+                <label className="text-xs text-muted-foreground mb-1 block">
+                  Pesan / Ucapan (opsional)
+                </label>
+                <Textarea
+                  placeholder="Tulis ucapan atau pesan untukmu sendiri..."
+                  value={tipMessage}
+                  onChange={(e) => setTipMessage(e.target.value)}
+                  maxLength={200}
+                  className="min-h-[70px]"
+                />
+                <div className="text-[10px] text-right text-muted-foreground mt-1">
+                  {tipMessage.length}/200
+                </div>
+              </div>
+            )}
+
+            {!showQris && (
               <>
                 <label className="text-xs text-muted-foreground mb-1 mt-4 block">
                   Metode Pembayaran
@@ -673,6 +694,7 @@ const Feedback = () => {
                         amount: tipAmount,
                         order_id: oid,
                         status: "pending",
+                        message: tipMessage.trim() || null,
                       });
                       setPollingOid(oid);
                       const url = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?order_id=${encodeURIComponent(oid)}`;
@@ -700,6 +722,7 @@ const Feedback = () => {
                             amount: tipAmount,
                             order_id: oid,
                             status: "pending",
+                            message: tipMessage.trim() || null,
                           });
                           setPollingOid(oid);
                           setShowQris(true);
@@ -864,33 +887,40 @@ const Feedback = () => {
                 {tips.map((t) => (
                   <div
                     key={t.id}
-                    className="p-3 rounded-lg bg-gradient-to-r from-emerald-500/10 via-secondary/30 to-amber/10 border border-emerald-500/20 flex items-center gap-3"
+                    className="p-3 rounded-lg bg-gradient-to-r from-emerald-500/10 via-secondary/30 to-amber/10 border border-emerald-500/20"
                   >
-                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-foreground truncate">
-                          {t.username}
-                        </span>
-                        <VerifiedBadge
-                          role={t.role}
-                          plan={planMap[t.user_id]?.plan}
-                          permanent={planMap[t.user_id]?.permanent}
-                          size={14}
-                        />
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {formatWIB(t.created_at)}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-foreground truncate">
+                            {t.username}
+                          </span>
+                          <VerifiedBadge
+                            role={t.role}
+                            plan={planMap[t.user_id]?.plan}
+                            permanent={planMap[t.user_id]?.permanent}
+                            size={14}
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {formatWIB(t.created_at)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-extrabold bg-gradient-to-r from-emerald-400 to-amber bg-clip-text text-transparent">
+                          Rp {t.amount.toLocaleString("id-ID")}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">QRIS</div>
+                      </div>
+                    </div>
+                    {t.message && (
+                      <p className="text-xs text-foreground/85 mt-2 whitespace-pre-wrap break-words italic">
+                        "{t.message}"
                       </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-extrabold bg-gradient-to-r from-emerald-400 to-amber bg-clip-text text-transparent">
-                        Rp {t.amount.toLocaleString("id-ID")}
-                      </div>
-                      <div className="text-[9px] text-muted-foreground">QRIS</div>
-                    </div>
+                    )}
                   </div>
                 ))}
               </div>
