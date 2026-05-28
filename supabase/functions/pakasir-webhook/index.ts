@@ -71,6 +71,26 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Route by order_id prefix: TIP- => tip jar, lainnya => reseller upgrade
+    if (order_id.startsWith("TIP-")) {
+      const { error: tipErr } = await supabase
+        .from("tips")
+        .update({ status: "completed" })
+        .eq("order_id", order_id)
+        .neq("status", "completed");
+      if (tipErr) {
+        console.error("[pakasir-webhook] tip update error", tipErr);
+        return new Response(JSON.stringify({ ok: false, error: tipErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log("[pakasir-webhook] tip completed", order_id);
+      return new Response(JSON.stringify({ ok: true, status, kind: "tip" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: act, error: actErr } = await supabase.rpc("activate_reseller", {
       _order_id: order_id,
     });
@@ -83,7 +103,7 @@ Deno.serve(async (req) => {
     }
 
     console.log("[pakasir-webhook] activated", act);
-    return new Response(JSON.stringify({ ok: true, status, activation: act }), {
+    return new Response(JSON.stringify({ ok: true, status, kind: "upgrade", activation: act }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
