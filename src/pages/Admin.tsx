@@ -97,8 +97,6 @@ interface PterodactylServer {
   id: string;
   name: string;
   domain: string;
-  plta_key: string;
-  pltc_key: string;
   server_type: string;
   is_active: boolean;
   location_id: number;
