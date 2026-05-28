@@ -121,7 +121,7 @@ const Dashboard = () => {
         setServers(serverResponse.servers);
         if (serverResponse.servers.length > 0) {
           const list = serverResponse.servers;
-          const firstPublic = list.find((s: Server) => s.server_type === 'public');
+          const firstPublic = list.find((s: any) => s.server_type === 'public');
           // Free users: always auto-select first public server
           if (role === 'free') {
             setSelectedServer(firstPublic ? firstPublic.id : list[0].id);
