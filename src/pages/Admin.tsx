@@ -1241,21 +1241,23 @@ const Admin = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTA Key</Label>
+                        <Label>PLTA Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
                         <Input
+                          type="password"
                           value={serverForm.plta_key}
                           onChange={(e) => setServerForm({ ...serverForm, plta_key: e.target.value })}
                           className="input-glass"
-                          placeholder="ptla_xxx"
+                          placeholder={editingServer ? '•••••••••••• (tidak ditampilkan)' : 'ptla_xxx'}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTC Key</Label>
+                        <Label>PLTC Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
                         <Input
+                          type="password"
                           value={serverForm.pltc_key}
                           onChange={(e) => setServerForm({ ...serverForm, pltc_key: e.target.value })}
                           className="input-glass"
-                          placeholder="ptlc_xxx"
+                          placeholder={editingServer ? '•••••••••••• (tidak ditampilkan)' : 'ptlc_xxx'}
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
