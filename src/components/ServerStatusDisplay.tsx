@@ -120,9 +120,7 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
               }`}
             >
               <div className="flex items-center gap-2">
-                {locked ? (
-                  <Lock className="w-3 h-3 text-muted-foreground" />
-                ) : server.isOnline ? (
+                {server.isOnline ? (
                   <span className="relative flex h-2 w-2">
                     <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSelected ? 'bg-primary' : 'bg-green-400'}`}></span>
                     <span className={`relative inline-flex rounded-full h-2 w-2 ${isSelected ? 'bg-primary' : 'bg-green-500'}`}></span>
@@ -130,9 +128,12 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
                 ) : (
                   <span className="h-2 w-2 rounded-full bg-red-500"></span>
                 )}
-                <span className={`text-sm font-medium ${isSelected ? 'text-primary' : ''} ${locked ? 'blur-[3px] select-none' : ''}`}>
-                  {locked ? '••••••••' : server.serverName}
+                <span className={`text-sm font-medium ${isSelected ? 'text-primary' : ''}`}>
+                  {server.serverName}
                 </span>
+                {locked && (
+                  <Lock className="w-3 h-3 text-amber-400" />
+                )}
                 {server.isPrivate && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full font-medium">
                     Private
@@ -145,9 +146,7 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
                 )}
               </div>
               
-              {locked ? (
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-              ) : server.isOnline ? (
+              {server.isOnline ? (
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>{server.totalServers} panel</span>
                   <span>{server.totalUsers} user</span>
