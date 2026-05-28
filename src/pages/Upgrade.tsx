@@ -152,6 +152,73 @@ const Upgrade = () => {
     setPendingOrders((data as any) || []);
   };
 
+  const handleCancelOrder = async (oid: string) => {
+    if (!user) return;
+    if (!confirm('Batalkan pembayaran ini?')) return;
+    setManualChecking(oid);
+    try {
+      const { error } = await supabase
+        .from('reseller_orders')
+        .update({ status: 'cancelled' })
+        .eq('order_id', oid)
+        .eq('user_id', user.id);
+      if (error) {
+        toast.error('Gagal batalkan: ' + error.message);
+        return;
+      }
+      toast.success('Pembayaran dibatalkan');
+      // Jika order yang dibatalkan sedang ditampilkan QRIS-nya, tutup juga
+      if (orderId === oid) {
+        setShowQris(false);
+        setQrisPayload('');
+        setPollingOid(null);
+        localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
+      }
+      await loadPendingOrders();
+    } finally {
+      setManualChecking(null);
+    }
+  };
+
+  const handlePayPending = async (o: PendingOrder) => {
+    if (!user) return;
+    setManualChecking(o.order_id);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-qris', {
+        body: { amount: o.amount, order_id: o.order_id },
+      });
+      if (error || !data?.qris) {
+        toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
+        return;
+      }
+      setSelected(o.plan);
+      setOrderId(o.order_id);
+      setQrisPayload(data.qris as string);
+      setShowQris(true);
+      setPaid(false);
+      setPollingOid(o.order_id);
+      try {
+        localStorage.setItem(
+          QRIS_STORAGE_KEY(user.id),
+          JSON.stringify({
+            orderId: o.order_id,
+            qrisPayload: data.qris,
+            plan: o.plan,
+            amount: o.amount,
+            savedAt: Date.now(),
+          }),
+        );
+      } catch {
+        // ignore
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e: any) {
+      toast.error('Gagal: ' + (e?.message || String(e)));
+    } finally {
+      setManualChecking(null);
+    }
+  };
+
   useEffect(() => {
     loadPendingOrders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
