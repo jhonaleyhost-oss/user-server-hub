@@ -54,6 +54,7 @@ const HELP_TEXT =
   "/deluser <code>email</code>\n" +
   "/delpanel <code>panelId</code>\n" +
   "/listpanel <code>serverId</code> — list panel di server\n" +
+  "/delfreepanel — hapus SEMUA panel milik user role free (server Pterodactyl juga)\n" +
   "/delallusr — hapus SEMUA user kecuali admin\n" +
   "/resetdevices — reset semua IP/FP\n\n" +
   "<b>💬 Support</b>\nReply pesan support dari user untuk membalas (text/foto otomatis diteruskan).\n\n" +
