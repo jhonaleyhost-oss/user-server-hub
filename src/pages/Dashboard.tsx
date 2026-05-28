@@ -120,7 +120,14 @@ const Dashboard = () => {
       if (!serverFnError && serverResponse?.success && serverResponse.servers) {
         setServers(serverResponse.servers);
         if (serverResponse.servers.length > 0) {
-          setSelectedServer(serverResponse.servers[0].id);
+          const list = serverResponse.servers;
+          const firstPublic = list.find((s: any) => s.server_type === 'public');
+          // Free users: always auto-select first public server
+          if (role === 'free') {
+            setSelectedServer(firstPublic ? firstPublic.id : list[0].id);
+          } else {
+            setSelectedServer(list[0].id);
+          }
         }
       }
 
@@ -437,12 +444,18 @@ const Dashboard = () => {
               </Label>
               <div className="relative">
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
-                <Select value={selectedServer} onValueChange={setSelectedServer}>
+                <Select
+                  value={selectedServer}
+                  onValueChange={setSelectedServer}
+                  disabled={role === 'free'}
+                >
                   <SelectTrigger className="input-glass pl-10">
                     <SelectValue placeholder="Pilih server" />
                   </SelectTrigger>
                   <SelectContent>
-                    {servers.map((server) => (
+                    {servers
+                      .filter((server) => role !== 'free' || server.server_type === 'public')
+                      .map((server) => (
                       <SelectItem
                         key={server.id}
                         value={server.id}
