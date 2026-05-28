@@ -406,10 +406,8 @@ Deno.serve(async (req) => {
                   upsert: false,
                 });
               if (!upErr) {
-                const { data: pub } = admin.storage
-                  .from("support-media")
-                  .getPublicUrl(objectName);
-                imageUrl = pub.publicUrl;
+                // Bucket privat — simpan path mentah, signed URL dibuat di client
+                imageUrl = objectName;
               }
             }
           } catch (e) {

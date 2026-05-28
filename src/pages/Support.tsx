@@ -38,6 +38,40 @@ interface Thread {
 const formatTime = (iso: string) =>
   new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
+// Convert stored image_url (raw path OR legacy public URL) to a fresh signed URL.
+const extractPath = (val: string): string | null => {
+  if (!val) return null;
+  if (!val.startsWith("http")) return val;
+  const marker = "/support-media/";
+  const i = val.indexOf(marker);
+  if (i === -1) return null;
+  return val.substring(i + marker.length).split("?")[0];
+};
+
+const SupportImage = ({ value }: { value: string }) => {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    const path = extractPath(value);
+    if (!path) return;
+    supabase.storage
+      .from("support-media")
+      .createSignedUrl(path, 3600)
+      .then(({ data }) => {
+        if (active && data?.signedUrl) setUrl(data.signedUrl);
+      });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+  if (!url) return null;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      <img src={url} alt="lampiran" className="rounded-lg mb-1 max-h-64 object-cover" />
+    </a>
+  );
+};
+
 const Support = () => {
   const { user, loading: authLoading } = useAuth();
   const { isAdmin, loading: roleLoading } = useUserRole();
@@ -197,8 +231,8 @@ const Support = () => {
       toast.error("Gagal upload foto");
       return null;
     }
-    const { data } = supabase.storage.from("support-media").getPublicUrl(path);
-    return data.publicUrl;
+    // Bucket privat — simpan path mentah, render pakai signed URL
+    return path;
   };
 
   const handleSend = async () => {
@@ -420,19 +454,7 @@ const Support = () => {
                                 : "bg-secondary text-foreground rounded-bl-sm"
                             }`}
                           >
-                            {m.image_url && (
-                              <a
-                                href={m.image_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <img
-                                  src={m.image_url}
-                                  alt="lampiran"
-                                  className="rounded-lg mb-1 max-h-64 object-cover"
-                                />
-                              </a>
-                            )}
+                            {m.image_url && <SupportImage value={m.image_url} />}
                             {m.content && (
                               <p className="text-sm whitespace-pre-wrap break-words">
                                 {m.content}
