@@ -920,9 +920,9 @@ const Upgrade = () => {
                   {pendingOrders.map((o) => (
                     <div
                       key={o.order_id}
-                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-3 py-2"
+                      className="rounded-lg border border-border/60 bg-secondary/30 px-3 py-2 space-y-2"
                     >
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0">
                         <p className="text-xs font-mono text-foreground truncate">{o.order_id}</p>
                         <p className="text-[10px] text-muted-foreground">
                           {o.plan.toUpperCase()} • Rp {o.amount.toLocaleString('id-ID')} •{' '}
@@ -934,20 +934,46 @@ const Upgrade = () => {
                           })}
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={manualChecking === o.order_id}
-                        onClick={() => handleManualCheck(o.order_id, o.amount)}
-                        className="h-8 gap-1.5 border-emerald-500/40 hover:bg-emerald-500/10"
-                      >
-                        {manualChecking === o.order_id ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <RefreshCw className="w-3 h-3" />
-                        )}
-                        <span className="text-xs">Cek</span>
-                      </Button>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={manualChecking === o.order_id || (orderId === o.order_id && showQris)}
+                          onClick={() => handlePayPending(o)}
+                          className="h-8 gap-1 border-amber/40 hover:bg-amber/10"
+                        >
+                          {manualChecking === o.order_id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <QrCode className="w-3 h-3" />
+                          )}
+                          <span className="text-xs">Bayar</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={manualChecking === o.order_id}
+                          onClick={() => handleManualCheck(o.order_id, o.amount)}
+                          className="h-8 gap-1 border-emerald-500/40 hover:bg-emerald-500/10"
+                        >
+                          {manualChecking === o.order_id ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="w-3 h-3" />
+                          )}
+                          <span className="text-xs">Cek</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={manualChecking === o.order_id}
+                          onClick={() => handleCancelOrder(o.order_id)}
+                          className="h-8 gap-1 border-destructive/40 hover:bg-destructive/10 text-destructive"
+                        >
+                          <X className="w-3 h-3" />
+                          <span className="text-xs">Batal</span>
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
