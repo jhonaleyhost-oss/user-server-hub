@@ -1,4 +1,14 @@
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Crown, Sparkles } from "lucide-react";
 
 /**
  * VerifiedBadge — high-fidelity, social-network style verified checkmark.
@@ -64,15 +74,48 @@ const TIERS: Record<string, Tier> = {
   },
 };
 
-/** Pick the tier key for a given (role, plan, permanent) combo. */
-function pickTier(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null) {
-  if (role === "admin") return TIERS.admin;
+type TierKey = "admin" | "perm" | "2bln" | "1bln";
+
+const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: string }> = {
+  admin: {
+    title: "Badge Admin",
+    description:
+      "Badge eksklusif berwarna oranye khusus untuk Admin & Staff resmi Jhonaley Store. Badge ini menandakan akun terverifikasi dan dipercaya untuk mengelola sistem.",
+  },
+  perm: {
+    title: "Reseller Permanen",
+    description:
+      "Badge eksklusif berwarna merah khusus Reseller Permanen. Dapatkan akses unlimited selamanya beserta badge prestige tertinggi dengan upgrade ke paket Reseller Permanen.",
+    cta: "Upgrade ke Reseller Permanen",
+  },
+  "2bln": {
+    title: "Reseller 2 Bulan",
+    description:
+      "Badge eksklusif berwarna hijau khusus Reseller dengan paket 2 bulan. Nikmati semua fitur reseller selama 2 bulan penuh.",
+    cta: "Upgrade ke Reseller",
+  },
+  "1bln": {
+    title: "Reseller 1 Bulan",
+    description:
+      "Badge eksklusif berwarna biru khusus Reseller. Dapatkan badge ini dengan bergabung menjadi Reseller dan nikmati seluruh fitur premium.",
+    cta: "Upgrade ke Reseller",
+  },
+};
+
+function pickTierKey(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null): TierKey | null {
+  if (role === "admin") return "admin";
   if (role === "reseller") {
-    if (permanent || plan === "perm") return TIERS.perm;
-    if (plan === "2bln") return TIERS["2bln"];
-    return TIERS["1bln"];
+    if (permanent || plan === "perm") return "perm";
+    if (plan === "2bln") return "2bln";
+    return "1bln";
   }
   return null;
+}
+
+/** Pick the tier for a given (role, plan, permanent) combo. */
+function pickTier(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null) {
+  const key = pickTierKey(role, plan, permanent);
+  return key ? TIERS[key] : null;
 }
 
 /**
@@ -145,32 +188,124 @@ const VerifiedBadge = ({
   className,
 }: VerifiedBadgeProps) => {
   const tier = pickTier(role, plan, permanent);
+  const tierKey = pickTierKey(role, plan, permanent);
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const info = tierKey ? TIER_INFO[tierKey] : null;
 
   if (tier) {
     return (
-      <span
-        className={cn("inline-flex items-center", className)}
-        title={tier.label}
-        aria-label={tier.label}
-      >
-        <VerifiedSVG tier={tier} size={size} />
-      </span>
+      <>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          className={cn(
+            "inline-flex items-center rounded-full hover:scale-110 active:scale-95 transition-transform cursor-pointer",
+            className,
+          )}
+          title={tier.label}
+          aria-label={tier.label}
+        >
+          <VerifiedSVG tier={tier} size={size} />
+        </button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-sm rounded-3xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <VerifiedSVG tier={tier} size={22} />
+                <span>{info?.title ?? tier.label}</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex flex-col items-center text-center gap-3 py-3">
+                <div
+                  className="rounded-full p-4"
+                  style={{ background: `radial-gradient(circle, ${tier.glow} 0%, transparent 70%)` }}
+                >
+                  <VerifiedSVG tier={tier} size={64} />
+                </div>
+                <p className="text-sm font-bold text-foreground">{tier.label}</p>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed text-center">
+                {info?.description}
+              </p>
+              {info?.cta && tierKey !== "admin" && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                    navigate("/upgrade");
+                  }}
+                  className="w-full h-11 rounded-full bg-amber hover:bg-amber/90 text-background font-bold gap-2"
+                >
+                  <Crown className="w-4 h-4" />
+                  {info.cta}
+                </Button>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
   if (!showFallbackLabel) return null;
 
   const fb = FALLBACK_LABEL[role as string] ?? FALLBACK_LABEL.free;
+  const isFree = role === "free" || !FALLBACK_LABEL[role as string];
   return (
-    <span
-      className={cn(
-        "text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border",
-        fb.cls,
-        className,
-      )}
-    >
-      {fb.text}
-    </span>
+    <>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        className={cn(
+          "text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border hover:opacity-80 transition-opacity cursor-pointer",
+          fb.cls,
+          className,
+        )}
+      >
+        {fb.text}
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Belum Punya Badge Eksklusif</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="flex flex-col items-center text-center gap-3 py-3">
+              <div className="w-16 h-16 rounded-full bg-secondary/60 border border-border/50 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-amber" />
+              </div>
+              <p className="text-sm font-bold text-foreground">Akun {fb.text}</p>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed text-center">
+              {isFree
+                ? "Kamu belum memiliki badge verified eksklusif. Upgrade ke Reseller untuk mendapatkan badge biru (1 bulan), hijau (2 bulan), atau merah (permanen) di samping namamu."
+                : "Tingkatkan akunmu ke Reseller untuk mendapatkan badge verified eksklusif berwarna biru, hijau, atau merah sesuai paket yang kamu pilih."}
+            </p>
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                navigate("/upgrade");
+              }}
+              className="w-full h-11 rounded-full bg-amber hover:bg-amber/90 text-background font-bold gap-2"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade ke Reseller
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 
