@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import AppShell from "@/components/AppShell";
 import GlassCard from "@/components/GlassCard";
 import { PageTransition } from "@/components/PageTransition";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import {
   Dialog,
   DialogContent,
@@ -29,20 +30,9 @@ interface UserRow {
   role: Role;
   panel_count: number;
   created_at: string | null;
+  reseller_plan?: string | null;
+  reseller_permanent?: boolean | null;
 }
-
-const roleStyle = (role: Role) => {
-  switch (role) {
-    case "admin":
-      return "bg-amber/15 text-amber border-amber/30";
-    case "reseller":
-      return "bg-primary/15 text-primary border-primary/30";
-    case "premium":
-      return "bg-accent/15 text-accent border-accent/30";
-    default:
-      return "bg-secondary text-muted-foreground border-border";
-  }
-};
 
 const roleLabel = (role: Role) =>
   role === "admin" ? "Admin" : role === "reseller" ? "Reseller" : role === "premium" ? "Premium" : "Free";
@@ -82,6 +72,8 @@ export default function Users() {
         role: (p.role ?? "free") as Role,
         panel_count: Number(p.panel_count ?? 0),
         created_at: p.created_at ?? null,
+        reseller_plan: p.reseller_plan ?? null,
+        reseller_permanent: p.reseller_permanent ?? false,
       }));
       setUsers(merged);
       setLoading(false);
@@ -212,11 +204,13 @@ export default function Users() {
                           {u.panel_count} panel
                         </p>
                       </div>
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border shrink-0 ${roleStyle(u.role)}`}
-                      >
-                        {roleLabel(u.role)}
-                      </span>
+                      <VerifiedBadge
+                        role={u.role}
+                        plan={u.reseller_plan}
+                        permanent={u.reseller_permanent}
+                        size={18}
+                        className="shrink-0"
+                      />
                     </GlassCard>
                   </div>
                 );
@@ -248,11 +242,14 @@ export default function Users() {
                     <p className="text-lg font-bold text-foreground">
                       {selected.full_name?.trim() || "Pengguna"}
                     </p>
-                    <span
-                      className={`inline-block mt-1 text-[10px] font-bold uppercase tracking-wide px-2.5 py-0.5 rounded-full border ${roleStyle(selected.role)}`}
-                    >
-                      {roleLabel(selected.role)}
-                    </span>
+                    <div className="mt-1 inline-flex items-center gap-1.5">
+                      <VerifiedBadge
+                        role={selected.role}
+                        plan={selected.reseller_plan}
+                        permanent={selected.reseller_permanent}
+                        size={18}
+                      />
+                    </div>
                   </div>
                 </div>
 
