@@ -34,6 +34,7 @@ interface TipRow {
   order_id: string;
   status: string;
   created_at: string;
+  message: string | null;
 }
 
 const PAKASIR_SLUG = "jhonaley-store";
