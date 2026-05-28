@@ -327,6 +327,7 @@ const Feedback = () => {
       amount: tipAmount,
       order_id: oid,
       status: "pending",
+      message: tipMessage.trim() || null,
     });
     setPollingOid(oid);
     window.open(pakasirUrl, "_blank", "noopener,noreferrer");
@@ -675,6 +676,7 @@ const Feedback = () => {
                         amount: tipAmount,
                         order_id: oid,
                         status: "pending",
+                        message: tipMessage.trim() || null,
                       });
                       setPollingOid(oid);
                       const url = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${tipAmount}?order_id=${encodeURIComponent(oid)}`;
@@ -702,6 +704,7 @@ const Feedback = () => {
                             amount: tipAmount,
                             order_id: oid,
                             status: "pending",
+                            message: tipMessage.trim() || null,
                           });
                           setPollingOid(oid);
                           setShowQris(true);
