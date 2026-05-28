@@ -183,13 +183,19 @@ async function addReseller(chatId: number, email: string, days: number) {
   else if (days === 30) { plan = "1bln"; amount = 5000; }
   else if (days === 60) { plan = "2bln"; amount = 10000; }
   else { plan = `${days}d`; amount = Math.round((days / 30) * 5000); }
-  await admin.from("activity_events").insert({
-    kind: "upgrade",
-    actor_user_id: prof.user_id,
-    actor_name: (prof as any).full_name || prof.email.split("@")[0],
-    actor_role: "reseller",
-    detail: plan,
+  // Record as completed reseller order so it shows in Activity (Upgrade tab)
+  const orderId = `BOT-${plan.toUpperCase()}-${prof.user_id.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+  await admin.from("reseller_orders").insert({
+    user_id: prof.user_id,
+    order_id: orderId,
+    plan,
     amount,
+    duration_days: permanent ? null : days,
+    username: prof.email,
+    status: "completed",
+    paid_at: new Date().toISOString(),
+    expires_at: expiresAt,
+    permanent,
   });
   await send(chatId, `✅ <b>${esc(prof.email)}</b> sekarang reseller${permanent ? " (Permanent)" : ` selama ${days} hari`}.`);
 }
