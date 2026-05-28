@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2 } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -68,6 +68,8 @@ const Chat = () => {
   const [pending, setPending] = useState<Array<{ id: string; file: File; preview: string }>>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<ProfileLite | null>(null);
+  const [newMsgCount, setNewMsgCount] = useState(0);
+  const [showJumpBtn, setShowJumpBtn] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -239,13 +241,36 @@ const Chat = () => {
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    // Only auto-scroll if user is already near the bottom (within 120px).
-    // Prevents yanking the view down when scrolling up to read old messages.
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     if (distanceFromBottom < 120) {
       el.scrollTop = el.scrollHeight;
+      setNewMsgCount(0);
+    } else {
+      // user is scrolled up — count incoming as new
+      setNewMsgCount((c) => c + 1);
     }
   }, [messages.length, typingUsers]);
+
+  // Track scroll position to show/hide jump-to-latest button
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+      const up = distanceFromBottom > 120;
+      setShowJumpBtn(up);
+      if (!up) setNewMsgCount(0);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [loading]);
+
+  const jumpToLatest = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    setNewMsgCount(0);
+  };
 
   const sendTyping = () => {
     const now = Date.now();
@@ -441,6 +466,7 @@ const Chat = () => {
           </GlassCard>
 
           <GlassCard className="!rounded-3xl flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="relative flex-1 min-h-0 flex flex-col">
             <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 space-y-3">
               {loading ? (
                 <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
