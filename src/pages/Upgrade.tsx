@@ -819,6 +819,70 @@ const Upgrade = () => {
                       Menunggu konfirmasi pembayaran...
                     </div>
                   ) : null}
+
+                  {!paid && (
+                    <Button
+                      onClick={() => handleManualCheck(orderId, plan.amount)}
+                      disabled={manualChecking === orderId}
+                      variant="outline"
+                      className="w-full h-10 gap-2 border-emerald-500/40 hover:bg-emerald-500/10"
+                    >
+                      {manualChecking === orderId ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      Cek Status Pembayaran
+                    </Button>
+                  )}
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Pending orders (manual recheck) */}
+            {!showQris && pendingOrders.length > 0 && (
+              <GlassCard className="p-5 mb-6" animate={false}>
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarClock className="w-4 h-4 text-amber" />
+                  <h3 className="text-sm font-bold text-foreground">Pembayaran Belum Selesai</h3>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Sudah bayar tapi role belum aktif? Klik <b>Cek Status</b> di bawah.
+                </p>
+                <div className="space-y-2">
+                  {pendingOrders.map((o) => (
+                    <div
+                      key={o.order_id}
+                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-3 py-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-mono text-foreground truncate">{o.order_id}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {o.plan.toUpperCase()} • Rp {o.amount.toLocaleString('id-ID')} •{' '}
+                          {new Date(o.created_at).toLocaleString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={manualChecking === o.order_id}
+                        onClick={() => handleManualCheck(o.order_id, o.amount)}
+                        className="h-8 gap-1.5 border-emerald-500/40 hover:bg-emerald-500/10"
+                      >
+                        {manualChecking === o.order_id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-3 h-3" />
+                        )}
+                        <span className="text-xs">Cek</span>
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </GlassCard>
             )}
