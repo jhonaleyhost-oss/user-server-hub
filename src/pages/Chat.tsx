@@ -771,10 +771,10 @@ const Chat = () => {
                       </div>
                     )}
                     <div>
-                      <p className="text-lg font-bold text-foreground">
-                        {selectedProfile.full_name?.trim() || "Pengguna"}
-                      </p>
-                      <div className="mt-1 inline-flex items-center gap-1.5">
+                      <div className="inline-flex items-center gap-1.5">
+                        <p className="text-lg font-bold text-foreground">
+                          {selectedProfile.full_name?.trim() || "Pengguna"}
+                        </p>
                         <VerifiedBadge
                           role={selectedProfile.role}
                           plan={selectedProfile.reseller_plan}

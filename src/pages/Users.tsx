@@ -239,10 +239,10 @@ export default function Users() {
                     </div>
                   )}
                   <div>
-                    <p className="text-lg font-bold text-foreground">
-                      {selected.full_name?.trim() || "Pengguna"}
-                    </p>
-                    <div className="mt-1 inline-flex items-center gap-1.5">
+                    <div className="inline-flex items-center gap-1.5">
+                      <p className="text-lg font-bold text-foreground">
+                        {selected.full_name?.trim() || "Pengguna"}
+                      </p>
                       <VerifiedBadge
                         role={selected.role}
                         plan={selected.reseller_plan}
