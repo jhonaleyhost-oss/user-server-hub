@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ExternalLink, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface PopupButton {
   label: string;
@@ -20,6 +22,11 @@ interface PopupData {
 const PromoPopup = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [open, setOpen] = useState(false);
+  const [dontShow, setDontShow] = useState(false);
+  const { isReseller, isAdmin, loading: roleLoading } = useUserRole();
+  const canHide = isReseller || isAdmin;
+
+  const dismissedKey = (id: string) => `promo_popup_dismissed_${id}`;
 
   useEffect(() => {
     const fetchPopup = async () => {
@@ -31,6 +38,9 @@ const PromoPopup = () => {
         .maybeSingle();
 
       if (data) {
+        try {
+          if (localStorage.getItem(dismissedKey(data.id)) === '1') return;
+        } catch {}
         const buttons = Array.isArray(data.buttons)
           ? (data.buttons as unknown as PopupButton[])
           : [];
@@ -39,11 +49,17 @@ const PromoPopup = () => {
       }
     };
 
+    if (roleLoading) return;
     const timer = setTimeout(fetchPopup, 600);
     return () => clearTimeout(timer);
-  }, []);
+  }, [roleLoading]);
 
   const handleClose = () => {
+    if (canHide && dontShow && popup) {
+      try {
+        localStorage.setItem(dismissedKey(popup.id), '1');
+      } catch {}
+    }
     setOpen(false);
   };
 
@@ -173,6 +189,15 @@ const PromoPopup = () => {
 
             {/* Footer */}
             <div className="p-4 pt-2 shrink-0">
+              {canHide && (
+                <label className="flex items-center gap-2 mb-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <Checkbox
+                    checked={dontShow}
+                    onCheckedChange={(v) => setDontShow(v === true)}
+                  />
+                  <span>Jangan tampilkan lagi</span>
+                </label>
+              )}
               <Button
                 onClick={handleClose}
                 className="w-full btn-primary font-semibold shadow-lg shadow-primary/20"
