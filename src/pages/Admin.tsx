@@ -1338,15 +1338,13 @@ const Admin = () => {
                       <TableHead>Domain</TableHead>
                       <TableHead>Tipe</TableHead>
                       <TableHead>Panels</TableHead>
-                      <TableHead>PLTA Key</TableHead>
-                      <TableHead>PLTC Key</TableHead>
                       <TableHead>Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedServers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data'}
                         </TableCell>
                       </TableRow>
