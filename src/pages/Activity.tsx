@@ -327,13 +327,20 @@ const Activity = () => {
                           <span className="text-sm font-bold text-foreground truncate max-w-[160px]">
                             {name}
                           </span>
-                          <span
-                            className={`text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full border ${roleStyle(
-                              a.role
-                            )}`}
-                          >
-                            {roleLabel(a.role)}
-                          </span>
+                          <VerifiedBadge
+                            role={a.role}
+                            plan={
+                              a.kind === "upgrade"
+                                ? a.plan
+                                : planMap[a.user_id]?.plan
+                            }
+                            permanent={
+                              a.kind === "upgrade"
+                                ? a.permanent
+                                : planMap[a.user_id]?.permanent
+                            }
+                            size={14}
+                          />
                           <span
                             className="text-[10px] text-muted-foreground ml-auto"
                             title={formatDateTime(a.created_at)}
