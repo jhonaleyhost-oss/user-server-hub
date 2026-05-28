@@ -63,6 +63,15 @@ const PLANS: Plan[] = [
 const PAKASIR_SLUG = 'jhonaley-store';
 const PAKASIR_BASE = 'https://app.pakasir.com';
 
+const QRIS_STORAGE_KEY = (uid: string) => `upgrade_qris_${uid}`;
+
+interface PendingOrder {
+  order_id: string;
+  plan: PlanKey;
+  amount: number;
+  created_at: string;
+}
+
 const renderContent = (text: string) => {
   return text.split('\n').map((line, i) => {
     const trimmed = line.trim();
@@ -111,6 +120,8 @@ const Upgrade = () => {
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
   const [fullName, setFullName] = useState('Pengguna');
+  const [manualChecking, setManualChecking] = useState<string | null>(null);
+  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
   const [status, setStatus] = useState<{
     is_reseller: boolean;
     permanent: boolean;
@@ -127,6 +138,48 @@ const Upgrade = () => {
     const { data } = await supabase.rpc('get_my_reseller_status');
     if (data && data.length > 0) setStatus(data[0] as any);
   };
+
+  const loadPendingOrders = async () => {
+    if (!user) return;
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from('reseller_orders')
+      .select('order_id, plan, amount, created_at')
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+      .gte('created_at', since)
+      .order('created_at', { ascending: false });
+    setPendingOrders((data as any) || []);
+  };
+
+  useEffect(() => {
+    loadPendingOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, paid]);
+
+  // Restore QRIS from localStorage on mount
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const raw = localStorage.getItem(QRIS_STORAGE_KEY(user.id));
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      // expire after 30 min
+      if (Date.now() - (saved.savedAt || 0) > 30 * 60 * 1000) {
+        localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
+        return;
+      }
+      if (saved.orderId && saved.qrisPayload && saved.plan) {
+        setSelected(saved.plan);
+        setOrderId(saved.orderId);
+        setQrisPayload(saved.qrisPayload);
+        setShowQris(true);
+        setPollingOid(saved.orderId);
+      }
+    } catch {
+      // ignore
+    }
+  }, [user]);
 
   useEffect(() => {
     loadStatus();
@@ -187,6 +240,7 @@ const Upgrade = () => {
           setPollingOid(null);
           setPaid(true);
           await refetch();
+          if (user) localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
           clearInterval(interval);
         }
       } catch {
@@ -197,7 +251,7 @@ const Upgrade = () => {
       stopped = true;
       clearInterval(interval);
     };
-  }, [pollingOid, plan.amount, refetch]);
+  }, [pollingOid, plan.amount, refetch, user]);
 
   const generateRef = () => {
     const stamp = Date.now().toString(36).toUpperCase();
@@ -246,10 +300,53 @@ const Upgrade = () => {
       }
       setShowQris(true);
       setPollingOid(oid);
+      try {
+        localStorage.setItem(
+          QRIS_STORAGE_KEY(user.id),
+          JSON.stringify({
+            orderId: oid,
+            qrisPayload: data.qris,
+            plan: plan.key,
+            amount: plan.amount,
+            savedAt: Date.now(),
+          }),
+        );
+      } catch {
+        // ignore
+      }
+      await loadPendingOrders();
     } catch (e: any) {
       toast.error('Gagal generate QRIS: ' + (e?.message || String(e)));
     } finally {
       setQrisLoading(false);
+    }
+  };
+
+  const handleManualCheck = async (oid: string, amt: number) => {
+    setManualChecking(oid);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-upgrade', {
+        body: { order_id: oid, amount: amt },
+      });
+      if (error) {
+        toast.error('Gagal cek: ' + error.message);
+        return;
+      }
+      if (data?.completed) {
+        toast.success('Pembayaran terkonfirmasi! Role Reseller aktif 🎉');
+        setPaid(true);
+        setPollingOid(null);
+        await refetch();
+        await loadStatus();
+        await loadPendingOrders();
+        if (user) localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
+      } else {
+        toast.info(`Status: ${data?.status || 'pending'} — belum terbayar.`);
+      }
+    } catch (e: any) {
+      toast.error('Gagal cek: ' + (e?.message || String(e)));
+    } finally {
+      setManualChecking(null);
     }
   };
 
@@ -722,6 +819,70 @@ const Upgrade = () => {
                       Menunggu konfirmasi pembayaran...
                     </div>
                   ) : null}
+
+                  {!paid && (
+                    <Button
+                      onClick={() => handleManualCheck(orderId, plan.amount)}
+                      disabled={manualChecking === orderId}
+                      variant="outline"
+                      className="w-full h-10 gap-2 border-emerald-500/40 hover:bg-emerald-500/10"
+                    >
+                      {manualChecking === orderId ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                      Cek Status Pembayaran
+                    </Button>
+                  )}
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Pending orders (manual recheck) */}
+            {!showQris && pendingOrders.length > 0 && (
+              <GlassCard className="p-5 mb-6" animate={false}>
+                <div className="flex items-center gap-2 mb-3">
+                  <CalendarClock className="w-4 h-4 text-amber" />
+                  <h3 className="text-sm font-bold text-foreground">Pembayaran Belum Selesai</h3>
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-3">
+                  Sudah bayar tapi role belum aktif? Klik <b>Cek Status</b> di bawah.
+                </p>
+                <div className="space-y-2">
+                  {pendingOrders.map((o) => (
+                    <div
+                      key={o.order_id}
+                      className="flex items-center gap-2 rounded-lg border border-border/60 bg-secondary/30 px-3 py-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-mono text-foreground truncate">{o.order_id}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {o.plan.toUpperCase()} • Rp {o.amount.toLocaleString('id-ID')} •{' '}
+                          {new Date(o.created_at).toLocaleString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={manualChecking === o.order_id}
+                        onClick={() => handleManualCheck(o.order_id, o.amount)}
+                        className="h-8 gap-1.5 border-emerald-500/40 hover:bg-emerald-500/10"
+                      >
+                        {manualChecking === o.order_id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <RefreshCw className="w-3 h-3" />
+                        )}
+                        <span className="text-xs">Cek</span>
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </GlassCard>
             )}
