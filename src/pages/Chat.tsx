@@ -750,6 +750,86 @@ const Chat = () => {
               />
             </div>
           )}
+
+          <Dialog open={!!selectedProfile} onOpenChange={(o) => !o && setSelectedProfile(null)}>
+            <DialogContent className="max-w-sm rounded-3xl">
+              <DialogHeader>
+                <DialogTitle>Profil Pengguna</DialogTitle>
+              </DialogHeader>
+              {selectedProfile && (
+                <div className="space-y-4">
+                  <div className="flex flex-col items-center text-center gap-3 pt-2">
+                    {selectedProfile.avatar_url ? (
+                      <img
+                        src={selectedProfile.avatar_url}
+                        alt={selectedProfile.full_name ?? "Pengguna"}
+                        className="w-20 h-20 rounded-full object-cover border border-border/50"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-2xl">
+                        {(selectedProfile.full_name?.trim() || "P").charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-lg font-bold text-foreground">
+                        {selectedProfile.full_name?.trim() || "Pengguna"}
+                      </p>
+                      <div className="mt-1 inline-flex items-center gap-1.5">
+                        <VerifiedBadge
+                          role={selectedProfile.role}
+                          plan={selectedProfile.reseller_plan}
+                          permanent={selectedProfile.reseller_permanent}
+                          size={18}
+                        />
+                      </div>
+                      {onlineUsers.has(selectedProfile.user_id) && (
+                        <div className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] text-emerald-500">
+                          <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
+                          <span className="font-semibold">Online sekarang</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Server className="w-4 h-4 text-primary" />
+                        Panel Dibuat
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">
+                        {selectedProfile.panel_count ?? 0}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Shield className="w-4 h-4 text-accent" />
+                        Role
+                      </div>
+                      <span className="text-sm font-semibold text-foreground capitalize">
+                        {selectedProfile.role}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4 text-amber" />
+                        Bergabung
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">
+                        {selectedProfile.created_at
+                          ? new Date(selectedProfile.created_at).toLocaleDateString("id-ID", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </PageTransition>
     </AppShell>
