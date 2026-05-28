@@ -1,4 +1,14 @@
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { Crown, Sparkles } from "lucide-react";
 
 /**
  * VerifiedBadge — high-fidelity, social-network style verified checkmark.
@@ -64,15 +74,48 @@ const TIERS: Record<string, Tier> = {
   },
 };
 
-/** Pick the tier key for a given (role, plan, permanent) combo. */
-function pickTier(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null) {
-  if (role === "admin") return TIERS.admin;
+type TierKey = "admin" | "perm" | "2bln" | "1bln";
+
+const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: string }> = {
+  admin: {
+    title: "Badge Admin",
+    description:
+      "Badge eksklusif berwarna oranye khusus untuk Admin & Staff resmi Jhonaley Store. Badge ini menandakan akun terverifikasi dan dipercaya untuk mengelola sistem.",
+  },
+  perm: {
+    title: "Reseller Permanen",
+    description:
+      "Badge eksklusif berwarna merah khusus Reseller Permanen. Dapatkan akses unlimited selamanya beserta badge prestige tertinggi dengan upgrade ke paket Reseller Permanen.",
+    cta: "Upgrade ke Reseller Permanen",
+  },
+  "2bln": {
+    title: "Reseller 2 Bulan",
+    description:
+      "Badge eksklusif berwarna hijau khusus Reseller dengan paket 2 bulan. Nikmati semua fitur reseller selama 2 bulan penuh.",
+    cta: "Upgrade ke Reseller",
+  },
+  "1bln": {
+    title: "Reseller 1 Bulan",
+    description:
+      "Badge eksklusif berwarna biru khusus Reseller. Dapatkan badge ini dengan bergabung menjadi Reseller dan nikmati seluruh fitur premium.",
+    cta: "Upgrade ke Reseller",
+  },
+};
+
+function pickTierKey(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null): TierKey | null {
+  if (role === "admin") return "admin";
   if (role === "reseller") {
-    if (permanent || plan === "perm") return TIERS.perm;
-    if (plan === "2bln") return TIERS["2bln"];
-    return TIERS["1bln"];
+    if (permanent || plan === "perm") return "perm";
+    if (plan === "2bln") return "2bln";
+    return "1bln";
   }
   return null;
+}
+
+/** Pick the tier for a given (role, plan, permanent) combo. */
+function pickTier(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null) {
+  const key = pickTierKey(role, plan, permanent);
+  return key ? TIERS[key] : null;
 }
 
 /**
