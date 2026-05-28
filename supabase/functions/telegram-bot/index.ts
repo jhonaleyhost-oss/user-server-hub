@@ -156,7 +156,7 @@ async function resetAllDevices(chatId: number) {
 async function addReseller(chatId: number, email: string, days: number) {
   const { data: prof, error } = await admin
     .from("profiles")
-    .select("user_id,email")
+    .select("user_id,email,full_name")
     .ilike("email", email)
     .maybeSingle();
   if (error || !prof) return sendErr(chatId, `User dengan email ${email} tidak ditemukan.`);
@@ -178,6 +178,19 @@ async function addReseller(chatId: number, email: string, days: number) {
   } else {
     await admin.from("user_roles").insert({ user_id: prof.user_id, role: "reseller" });
   }
+  let plan = "manual"; let amount = 0;
+  if (permanent) { plan = "perm"; amount = 15000; }
+  else if (days === 30) { plan = "1bln"; amount = 5000; }
+  else if (days === 60) { plan = "2bln"; amount = 10000; }
+  else { plan = `${days}d`; amount = Math.round((days / 30) * 5000); }
+  await admin.from("activity_events").insert({
+    kind: "upgrade",
+    actor_user_id: prof.user_id,
+    actor_name: (prof as any).full_name || prof.email.split("@")[0],
+    actor_role: "reseller",
+    detail: plan,
+    amount,
+  });
   await send(chatId, `✅ <b>${esc(prof.email)}</b> sekarang reseller${permanent ? " (Permanent)" : ` selama ${days} hari`}.`);
 }
 
