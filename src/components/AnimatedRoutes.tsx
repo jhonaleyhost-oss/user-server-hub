@@ -11,6 +11,7 @@ import Chat from '@/pages/Chat';
 import Feedback from '@/pages/Feedback';
 import Activity from '@/pages/Activity';
 import NotFound from '@/pages/NotFound';
+import Support from '@/pages/Support';
 
 export const AnimatedRoutes = () => {
   const location = useLocation();
@@ -28,6 +29,7 @@ export const AnimatedRoutes = () => {
         <Route path="/chat" element={<Chat />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/activity" element={<Activity />} />
+        <Route path="/support" element={<Support />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

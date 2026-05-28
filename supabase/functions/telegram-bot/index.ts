@@ -56,6 +56,7 @@ const HELP_TEXT =
   "/listpanel <code>serverId</code> — list panel di server\n" +
   "/delallusr — hapus SEMUA user kecuali admin\n" +
   "/resetdevices — reset semua IP/FP\n\n" +
+  "<b>💬 Support</b>\nReply pesan support dari user untuk membalas (text/foto otomatis diteruskan).\n\n" +
   "/help — bantuan ini";
 
 // ===== Feature handlers =====
@@ -350,6 +351,68 @@ Deno.serve(async (req) => {
     if (!isOwner(fromId)) {
       await send(chatId, "🚫 Akses ditolak. Bot ini hanya untuk owner.");
       return new Response("ok");
+    }
+
+    // === Support reply handling ===
+    // If this message is a reply to a forwarded user support message, route it back to that user.
+    if (msg.reply_to_message) {
+      const repliedId = msg.reply_to_message.message_id;
+      const { data: original } = await admin
+        .from("support_messages")
+        .select("thread_user_id")
+        .eq("telegram_message_id", repliedId)
+        .maybeSingle();
+      if (original?.thread_user_id) {
+        const caption: string = (msg.caption || "").trim();
+        const replyText: string = text || caption;
+        let imageUrl: string | null = null;
+
+        // If photo attached, download and upload to storage
+        if (Array.isArray(msg.photo) && msg.photo.length > 0) {
+          try {
+            const largest = msg.photo[msg.photo.length - 1];
+            const fileRes = await tg("getFile", { file_id: largest.file_id });
+            const filePath = fileRes?.result?.file_path;
+            if (filePath) {
+              const fileResp = await fetch(
+                `https://api.telegram.org/file/bot${BOT_TOKEN}/${filePath}`,
+              );
+              const bytes = new Uint8Array(await fileResp.arrayBuffer());
+              const ext = filePath.split(".").pop() || "jpg";
+              const objectName = `${original.thread_user_id}/admin-${Date.now()}.${ext}`;
+              const { error: upErr } = await admin.storage
+                .from("support-media")
+                .upload(objectName, bytes, {
+                  contentType: `image/${ext === "jpg" ? "jpeg" : ext}`,
+                  upsert: false,
+                });
+              if (!upErr) {
+                const { data: pub } = admin.storage
+                  .from("support-media")
+                  .getPublicUrl(objectName);
+                imageUrl = pub.publicUrl;
+              }
+            }
+          } catch (e) {
+            console.error("photo forward error", e);
+          }
+        }
+
+        if (replyText || imageUrl) {
+          await admin.from("support_messages").insert({
+            thread_user_id: original.thread_user_id,
+            sender_user_id: null,
+            sender_role: "admin",
+            content: replyText || null,
+            image_url: imageUrl,
+            read_by_admin: true,
+          });
+          await send(chatId, "✅ Balasan terkirim ke user.");
+        } else {
+          await send(chatId, "⚠️ Pesan kosong, tidak diteruskan.");
+        }
+        return new Response("ok");
+      }
     }
 
     // Parse command + comma-separated args
