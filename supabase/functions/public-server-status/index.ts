@@ -12,6 +12,7 @@ interface ServerStatus {
   isOnline: boolean;
   totalServers: number;
   totalUsers: number;
+  isPrivate: boolean;
 }
 
 serve(async (req) => {
@@ -30,15 +31,14 @@ serve(async (req) => {
     const { data: servers, error: serverError } = await supabase
       .from('pterodactyl_servers')
       .select('id, name, domain, plta_key, server_type')
-      .eq('is_active', true)
-      .eq('server_type', 'public');
+      .eq('is_active', true);
 
     if (serverError) {
       console.error('Server fetch error:', serverError);
       throw new Error('Failed to fetch servers');
     }
 
-    console.log(`Checking status for ${servers?.length || 0} public servers`);
+    console.log(`Checking status for ${servers?.length || 0} servers`);
 
     // Check status for each server in parallel
     const statusPromises = (servers || []).map(async (server): Promise<ServerStatus> => {
@@ -66,6 +66,7 @@ serve(async (req) => {
             isOnline: false,
             totalServers: 0,
             totalUsers: 0,
+            isPrivate: server.server_type !== 'public',
           };
         }
 
@@ -95,6 +96,7 @@ serve(async (req) => {
           isOnline: true,
           totalServers,
           totalUsers,
+          isPrivate: server.server_type !== 'public',
         };
       } catch (error) {
         console.error(`Error checking server ${server.name}:`, error);
@@ -104,6 +106,7 @@ serve(async (req) => {
           isOnline: false,
           totalServers: 0,
           totalUsers: 0,
+          isPrivate: server.server_type !== 'public',
         };
       }
     });

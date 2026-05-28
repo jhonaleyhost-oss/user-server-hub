@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Server, Wifi, WifiOff, RefreshCw, Loader2 } from 'lucide-react';
+import { Server, Wifi, WifiOff, RefreshCw, Loader2, Lock, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useUserRole } from '@/hooks/useUserRole';
+import { Link } from 'react-router-dom';
 
 interface ServerStatus {
   serverId: string;
@@ -9,6 +11,7 @@ interface ServerStatus {
   isOnline: boolean;
   totalServers: number;
   totalUsers: number;
+  isPrivate?: boolean;
 }
 
 interface Props {
@@ -21,6 +24,8 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
   const [statuses, setStatuses] = useState<ServerStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const { role } = useUserRole();
+  const isFree = role === 'free';
 
   const fetchStatuses = async () => {
     try {
@@ -99,6 +104,7 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
       <div className="space-y-2">
         {statuses.map((server, idx) => {
           const isSelected = selectedServerId === server.serverId;
+          const locked = isFree && server.isPrivate;
           return (
             <motion.div
               key={server.serverId}
@@ -114,7 +120,9 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
               }`}
             >
               <div className="flex items-center gap-2">
-                {server.isOnline ? (
+                {locked ? (
+                  <Lock className="w-3 h-3 text-muted-foreground" />
+                ) : server.isOnline ? (
                   <span className="relative flex h-2 w-2">
                     <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isSelected ? 'bg-primary' : 'bg-green-400'}`}></span>
                     <span className={`relative inline-flex rounded-full h-2 w-2 ${isSelected ? 'bg-primary' : 'bg-green-500'}`}></span>
@@ -122,9 +130,14 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
                 ) : (
                   <span className="h-2 w-2 rounded-full bg-red-500"></span>
                 )}
-                <span className={`text-sm font-medium ${isSelected ? 'text-primary' : ''}`}>
-                  {server.serverName}
+                <span className={`text-sm font-medium ${isSelected ? 'text-primary' : ''} ${locked ? 'blur-[3px] select-none' : ''}`}>
+                  {locked ? '••••••••' : server.serverName}
                 </span>
+                {server.isPrivate && (
+                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full font-medium">
+                    Private
+                  </span>
+                )}
                 {isSelected && (
                   <span className="text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded-full font-medium">
                     Anda
@@ -132,7 +145,9 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
                 )}
               </div>
               
-              {server.isOnline ? (
+              {locked ? (
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+              ) : server.isOnline ? (
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>{server.totalServers} panel</span>
                   <span>{server.totalUsers} user</span>
@@ -144,6 +159,17 @@ const ServerStatusDisplay = ({ autoRefresh = true, refreshInterval = 30, selecte
           );
         })}
       </div>
+
+      {/* Upgrade CTA for free users with private servers */}
+      {isFree && statuses.some(s => s.isPrivate) && (
+        <Link
+          to="/upgrade"
+          className="flex items-center justify-center gap-2 w-full p-2.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-primary/20 border border-amber-500/30 hover:from-amber-500/30 hover:to-primary/30 transition-all text-xs font-medium text-amber-200"
+        >
+          <Crown className="w-3.5 h-3.5" />
+          Upgrade ke Reseller untuk akses server private
+        </Link>
+      )}
 
       {/* Last Updated */}
       {lastUpdated && (
