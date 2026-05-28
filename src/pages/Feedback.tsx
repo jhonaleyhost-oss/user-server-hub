@@ -887,39 +887,41 @@ const Feedback = () => {
                 {tips.map((t) => (
                   <div
                     key={t.id}
-                    className="p-3 rounded-lg bg-gradient-to-r from-emerald-500/10 via-secondary/30 to-amber/10 border border-emerald-500/20 flex items-center gap-3"
+                    className="p-3 rounded-lg bg-gradient-to-r from-emerald-500/10 via-secondary/30 to-amber/10 border border-emerald-500/20"
                   >
-                    <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-sm font-semibold text-foreground truncate">
-                          {t.username}
-                        </span>
-                        <VerifiedBadge
-                          role={t.role}
-                          plan={planMap[t.user_id]?.plan}
-                          permanent={planMap[t.user_id]?.permanent}
-                          size={14}
-                        />
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                       </div>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {formatWIB(t.created_at)}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-foreground truncate">
+                            {t.username}
+                          </span>
+                          <VerifiedBadge
+                            role={t.role}
+                            plan={planMap[t.user_id]?.plan}
+                            permanent={planMap[t.user_id]?.permanent}
+                            size={14}
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {formatWIB(t.created_at)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-extrabold bg-gradient-to-r from-emerald-400 to-amber bg-clip-text text-transparent">
+                          Rp {t.amount.toLocaleString("id-ID")}
+                        </div>
+                        <div className="text-[9px] text-muted-foreground">QRIS</div>
+                      </div>
+                    </div>
+                    {t.message && (
+                      <p className="text-xs text-foreground/85 mt-2 whitespace-pre-wrap break-words italic">
+                        "{t.message}"
                       </p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-extrabold bg-gradient-to-r from-emerald-400 to-amber bg-clip-text text-transparent">
-                        Rp {t.amount.toLocaleString("id-ID")}
-                      </div>
-                      <div className="text-[9px] text-muted-foreground">QRIS</div>
-                    </div>
+                    )}
                   </div>
-                  {t.message && (
-                    <p className="text-xs text-foreground/85 mt-2 whitespace-pre-wrap break-words italic px-2">
-                      “{t.message}”
-                    </p>
-                  )}
                 ))}
               </div>
             )}
