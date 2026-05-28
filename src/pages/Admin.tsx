@@ -97,8 +97,6 @@ interface PterodactylServer {
   id: string;
   name: string;
   domain: string;
-  plta_key: string;
-  pltc_key: string;
   server_type: string;
   is_active: boolean;
   location_id: number;
@@ -356,7 +354,7 @@ const Admin = () => {
     try {
       const { data, error } = await supabase
         .from('pterodactyl_servers')
-        .select('*')
+        .select('id, name, domain, server_type, is_active, location_id, egg_id, python_egg_id, nest_id, created_at')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -554,22 +552,17 @@ const Admin = () => {
 
   const saveServer = async () => {
     try {
-      if (editingServer) {
-        const { error } = await supabase
-          .from('pterodactyl_servers')
-          .update(serverForm)
-          .eq('id', editingServer.id);
-
-        if (error) throw error;
-        toast({ title: 'Berhasil', description: 'Server berhasil diperbarui.' });
-      } else {
-        const { error } = await supabase
-          .from('pterodactyl_servers')
-          .insert(serverForm);
-
-        if (error) throw error;
-        toast({ title: 'Berhasil', description: 'Server baru berhasil ditambahkan.' });
-      }
+      const { data, error } = await supabase.functions.invoke('manage-server', {
+        body: editingServer
+          ? { action: 'update', id: editingServer.id, ...serverForm }
+          : { action: 'create', ...serverForm },
+      });
+      if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || 'Gagal menyimpan server');
+      toast({
+        title: 'Berhasil',
+        description: editingServer ? 'Server berhasil diperbarui.' : 'Server baru berhasil ditambahkan.',
+      });
 
       setEditingServer(null);
       setNewServer(false);
@@ -586,12 +579,11 @@ const Admin = () => {
 
   const deleteServer = async (serverId: string) => {
     try {
-      const { error } = await supabase
-        .from('pterodactyl_servers')
-        .delete()
-        .eq('id', serverId);
-
+      const { data, error } = await supabase.functions.invoke('manage-server', {
+        body: { action: 'delete', id: serverId },
+      });
       if (error) throw error;
+      if (data && data.success === false) throw new Error(data.error || 'Gagal menghapus server');
 
       toast({
         title: 'Berhasil',
@@ -847,8 +839,8 @@ const Admin = () => {
     setServerForm({
       name: server.name,
       domain: server.domain,
-      plta_key: server.plta_key,
-      pltc_key: server.pltc_key,
+      plta_key: '',
+      pltc_key: '',
       server_type: server.server_type,
       location_id: server.location_id,
       egg_id: server.egg_id,
@@ -1249,21 +1241,23 @@ const Admin = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTA Key</Label>
+                        <Label>PLTA Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
                         <Input
+                          type="password"
                           value={serverForm.plta_key}
                           onChange={(e) => setServerForm({ ...serverForm, plta_key: e.target.value })}
                           className="input-glass"
-                          placeholder="ptla_xxx"
+                          placeholder={editingServer ? '•••••••••••• (tidak ditampilkan)' : 'ptla_xxx'}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTC Key</Label>
+                        <Label>PLTC Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
                         <Input
+                          type="password"
                           value={serverForm.pltc_key}
                           onChange={(e) => setServerForm({ ...serverForm, pltc_key: e.target.value })}
                           className="input-glass"
-                          placeholder="ptlc_xxx"
+                          placeholder={editingServer ? '•••••••••••• (tidak ditampilkan)' : 'ptlc_xxx'}
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1346,15 +1340,13 @@ const Admin = () => {
                       <TableHead>Domain</TableHead>
                       <TableHead>Tipe</TableHead>
                       <TableHead>Panels</TableHead>
-                      <TableHead>PLTA Key</TableHead>
-                      <TableHead>PLTC Key</TableHead>
                       <TableHead>Aksi</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {paginatedServers.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           {searchQuery ? 'Tidak ada hasil pencarian' : 'Belum ada data'}
                         </TableCell>
                       </TableRow>
@@ -1404,38 +1396,6 @@ const Admin = () => {
                                 <span className="text-muted-foreground text-sm">-</span>
                               )}
                             </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-mono text-xs ${showKeys[`plta-${server.id}`] ? '' : 'blur-sm'}`}>
-                                {server.plta_key.slice(0, 15)}...
-                              </span>
-                              <button
-                                onClick={() => setShowKeys(prev => ({
-                                  ...prev,
-                                  [`plta-${server.id}`]: !prev[`plta-${server.id}`]
-                                }))}
-                                className="text-muted-foreground hover:text-foreground"
-                              >
-                                {showKeys[`plta-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              </button>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-mono text-xs ${showKeys[`pltc-${server.id}`] ? '' : 'blur-sm'}`}>
-                                {server.pltc_key.slice(0, 15)}...
-                              </span>
-                              <button
-                                onClick={() => setShowKeys(prev => ({
-                                  ...prev,
-                                  [`pltc-${server.id}`]: !prev[`pltc-${server.id}`]
-                                }))}
-                                className="text-muted-foreground hover:text-foreground"
-                              >
-                                {showKeys[`pltc-${server.id}`] ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                              </button>
-                            </div>
-                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Button
