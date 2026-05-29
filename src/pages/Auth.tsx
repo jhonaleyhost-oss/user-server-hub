@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Zap } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Zap, KeyRound } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { PageTransition } from '@/components/PageTransition';
 
@@ -13,6 +13,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,10 +30,46 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
   
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Mengirim',
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: 'Email Terkirim',
+          description: 'Silakan cek inbox Anda untuk link reset password.',
+        });
+        setForgotOpen(false);
+        setForgotEmail('');
+      }
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Terjadi kesalahan. Silakan coba lagi.',
+      });
+    } finally {
+      setForgotLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -202,6 +247,22 @@ const Auth = () => {
                 </>
               )}
             </Button>
+
+            {isLogin && (
+              <div className="text-right -mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(email);
+                    setForgotOpen(true);
+                  }}
+                  className="text-xs text-primary hover:text-primary/80 font-medium transition-colors inline-flex items-center gap-1"
+                >
+                  <KeyRound className="w-3 h-3" />
+                  Lupa password?
+                </button>
+              </div>
+            )}
           </form>
 
           {/* Promo Text */}
@@ -255,6 +316,56 @@ const Auth = () => {
           &copy; 2026 Jhonaley Panel. All Rights Reserved.
         </p>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent className="sm:max-w-md bg-background border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5 text-primary" />
+              Reset Password
+            </DialogTitle>
+            <DialogDescription>
+              Masukkan email akun Anda. Kami akan mengirim link untuk mengatur ulang password.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email" className="text-sm font-medium text-muted-foreground">
+                Email
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="nama@email.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                  className="input-glass pl-10"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setForgotOpen(false)}
+                disabled={forgotLoading}
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={forgotLoading}
+                className="btn-primary"
+              >
+                {forgotLoading ? 'Mengirim...' : 'Kirim Link Reset'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
     </PageTransition>
   );
