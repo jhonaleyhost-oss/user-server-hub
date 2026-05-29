@@ -770,9 +770,7 @@ const Chat = () => {
                             <button
                               type="button"
                               onClick={() => startEdit(m)}
-                              className={`absolute -top-2 w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md ${
-                                mine ? "-left-16" : "-right-16"
-                              }`}
+                              className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md"
                               aria-label="Edit pesan"
                             >
                               <Pencil className="w-3 h-3" />
