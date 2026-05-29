@@ -102,6 +102,7 @@ const Chat = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [reads, setReads] = useState<Record<string, string[]>>({});
   const [readersDialogFor, setReadersDialogFor] = useState<string | null>(null);
+  const [readTick, setReadTick] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -330,8 +331,11 @@ const Chat = () => {
     const onScroll = () => {
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       const up = distanceFromBottom > 120;
+      const wasUp = !atBottomRef.current ? false : true; // currently at bottom?
       atBottomRef.current = !up;
       setShowJumpBtn(up);
+      if (!up) setReadTick((t) => t + 1);
+      void wasUp;
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
@@ -341,6 +345,7 @@ const Chat = () => {
   useEffect(() => {
     const onVis = () => {
       pageVisibleRef.current = document.visibilityState === "visible" && document.hasFocus();
+      if (pageVisibleRef.current) setReadTick((t) => t + 1);
     };
     onVis();
     document.addEventListener("visibilitychange", onVis);
@@ -395,7 +400,7 @@ const Chat = () => {
         return next;
       });
     })();
-  }, [unreadIds, user]);
+  }, [unreadIds, user, readTick]);
 
   const jumpToLatest = () => {
     const el = scrollRef.current;
