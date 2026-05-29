@@ -277,6 +277,10 @@ const Feedback = () => {
       toast.error("Pesan maksimal 500 karakter");
       return;
     }
+    if (items.some((f) => f.user_id === user.id)) {
+      toast.error("Kamu sudah pernah mengirim feedback. Hanya 1 feedback per akun.");
+      return;
+    }
     setSubmitting(true);
     const { error } = await supabase.from("feedback").insert({
       user_id: user.id,
@@ -287,7 +291,11 @@ const Feedback = () => {
     });
     setSubmitting(false);
     if (error) {
-      toast.error("Gagal mengirim: " + error.message);
+      const msg =
+        error.code === "23505" || /duplicate|unique/i.test(error.message)
+          ? "Kamu sudah pernah mengirim feedback. Hanya 1 feedback per akun."
+          : "Gagal mengirim: " + error.message;
+      toast.error(msg);
       return;
     }
     setRating(0);
