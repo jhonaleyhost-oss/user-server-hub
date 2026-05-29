@@ -153,6 +153,7 @@ const Chat = () => {
   const refreshProfiles = async () => {
     const { data, error } = await supabase.rpc("get_public_users");
     if (error || !data) return;
+    setTotalMembers((data as any[]).length);
     setProfiles((prev) => {
       const next = { ...prev };
       for (const p of data as Array<{
