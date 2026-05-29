@@ -34,31 +34,28 @@ export const EmailChangeEmail = ({
 }: EmailChangeEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your email change for {siteName}</Preview>
+    <Preview>Konfirmasi perubahan email {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email change</Heading>
+        <div style={brandBar}>{siteName}</div>
+        <Heading style={h1}>Konfirmasi perubahan email</Heading>
         <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
-          <Link href={`mailto:${oldEmail}`} style={link}>
-            {oldEmail}
-          </Link>{' '}
-          to{' '}
-          <Link href={`mailto:${newEmail}`} style={link}>
-            {newEmail}
-          </Link>
-          .
+          Kamu meminta perubahan alamat email akun {siteName} dari{' '}
+          <Link href={`mailto:${oldEmail}`} style={link}>{oldEmail}</Link>{' '}
+          ke{' '}
+          <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
         </Text>
         <Text style={text}>
-          Click the button below to confirm this change:
+          Klik tombol di bawah untuk mengonfirmasi perubahan ini:
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
+          Konfirmasi Email Baru
         </Button>
         <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
+          Jika kamu tidak meminta perubahan ini, segera amankan akun kamu
+          dengan mengganti password.
         </Text>
+        <Text style={brandFooter}>© {siteName} • Jhonaley Store</Text>
       </Container>
     </Body>
   </Html>
@@ -66,27 +63,31 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
+const main = { backgroundColor: '#ffffff', fontFamily: '"Plus Jakarta Sans", -apple-system, Segoe UI, Roboto, Arial, sans-serif' }
+const container = { padding: '24px 28px', maxWidth: '560px' }
+const brandBar = {
+  display: 'inline-block',
+  background: 'linear-gradient(135deg, #e11d48, #9333ea)',
+  color: '#ffffff',
+  fontSize: '13px',
+  fontWeight: 700,
+  letterSpacing: '0.5px',
+  padding: '6px 14px',
+  borderRadius: '999px',
+  marginBottom: '24px',
 }
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
+const h1 = { fontSize: '24px', fontWeight: 700 as const, color: '#0f172a', margin: '0 0 16px' }
+const text = { fontSize: '14px', color: '#475569', lineHeight: '1.6', margin: '0 0 20px' }
+const link = { color: '#e11d48', textDecoration: 'underline', fontWeight: 600 }
 const button = {
-  backgroundColor: '#000000',
+  background: 'linear-gradient(135deg, #e11d48, #9333ea)',
   color: '#ffffff',
   fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
+  fontWeight: 600,
+  borderRadius: '12px',
+  padding: '14px 26px',
   textDecoration: 'none',
+  display: 'inline-block',
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const footer = { fontSize: '12px', color: '#94a3b8', margin: '28px 0 0', lineHeight: '1.5' }
+const brandFooter = { fontSize: '11px', color: '#cbd5e1', margin: '24px 0 0', textAlign: 'center' as const }
