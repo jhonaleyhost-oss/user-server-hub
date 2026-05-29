@@ -472,6 +472,15 @@ const Chat = () => {
     const text = input.trim();
     if (!text && pending.length === 0) return;
     if (text.length > 2000) return;
+    if (role !== "admin") {
+      const now = Date.now();
+      const elapsed = now - lastSentAtRef.current;
+      if (elapsed < 5000) {
+        const left = Math.ceil((5000 - elapsed) / 1000);
+        toast.error(`Tunggu ${left}d sebelum kirim pesan lagi`);
+        return;
+      }
+    }
     setSending(true);
     try {
       // Upload all pending images in parallel
@@ -513,6 +522,10 @@ const Chat = () => {
       const { error } = await supabase.from("messages").insert(rows);
       if (error) throw error;
 
+      lastSentAtRef.current = Date.now();
+      if (role !== "admin") {
+        setCooldownLeft(5);
+      }
       // Cleanup previews
       pending.forEach((p) => URL.revokeObjectURL(p.preview));
       setPending([]);
