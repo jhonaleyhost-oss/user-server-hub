@@ -789,7 +789,7 @@ const Chat = () => {
                           )}
                           {mine && !m.deleted && (() => {
                             const readers = (reads[m.id] || []).filter((uid) => uid !== user?.id);
-                            const totalOthers = Math.max(0, Object.keys(profiles).length - 1);
+                            const totalOthers = Math.max(0, totalMembers - 1);
                             const allRead = totalOthers > 0 && readers.length >= totalOthers;
                             const someRead = readers.length > 0;
                             return (
