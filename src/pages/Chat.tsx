@@ -1083,11 +1083,17 @@ const Chat = () => {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={sending || (!input.trim() && pending.length === 0)}
+                  disabled={sending || cooldownLeft > 0 || (!input.trim() && pending.length === 0)}
                   className="h-11 w-11 rounded-full shrink-0"
-                  aria-label="Kirim"
+                  aria-label={cooldownLeft > 0 ? `Tunggu ${cooldownLeft}d` : "Kirim"}
                 >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : cooldownLeft > 0 ? (
+                    <span className="text-xs font-semibold tabular-nums">{cooldownLeft}</span>
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </Button>
               </form>
             </div>
