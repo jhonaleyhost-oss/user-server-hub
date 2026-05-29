@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -18,12 +19,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRecovery, setIsRecovery] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('pwd_recovery') === '1';
+  });
   const forceLogoutInProgress = useRef(false);
 
   useEffect(() => {
+    // If a previous recovery flow was started but never completed
+    // (e.g. user closed the tab), force sign-out on app load unless
+    // we're back on the reset page to finish it.
+    const pending = localStorage.getItem('pwd_recovery') === '1';
+    if (pending && window.location.pathname !== '/reset-password') {
+      localStorage.removeItem('pwd_recovery');
+      supabase.auth.signOut().catch(() => {});
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          localStorage.setItem('pwd_recovery', '1');
+          setIsRecovery(true);
+          if (typeof window !== 'undefined' && window.location.pathname !== '/reset-password') {
+            window.location.replace('/reset-password');
+          }
+        }
         if (session) {
           forceLogoutInProgress.current = false;
         }
@@ -48,7 +69,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Detect deleted/disabled accounts and force sign-out
   useEffect(() => {
-    if (!session) return;
+    if (!session || isRecovery) return;
 
     const forceLogout = async () => {
       if (forceLogoutInProgress.current) return;
@@ -104,7 +125,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       window.removeEventListener('focus', onFocus);
       clearInterval(interval);
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, isRecovery]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -154,6 +175,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signOut = async () => {
     // Always clear local state regardless of server response
     forceLogoutInProgress.current = false;
+    localStorage.removeItem('pwd_recovery');
+    setIsRecovery(false);
     setUser(null);
     setSession(null);
     try {
@@ -165,7 +188,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{
+      user: isRecovery ? null : user,
+      session: isRecovery ? null : session,
+      loading,
+      isRecovery,
+      signIn,
+      signUp,
+      signOut,
+    }}>
       {children}
     </AuthContext.Provider>
   );
