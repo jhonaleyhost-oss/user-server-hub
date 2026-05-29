@@ -191,6 +191,21 @@ const Chat = () => {
       const ordered = (data ?? []).slice().reverse() as ChatMessage[];
       setMessages(ordered);
       await refreshProfiles();
+      // Load existing reads for these messages
+      const ids = ordered.map((m) => m.id);
+      if (ids.length) {
+        const { data: rd } = await supabase
+          .from("message_reads")
+          .select("message_id, user_id")
+          .in("message_id", ids);
+        if (rd) {
+          const map: Record<string, string[]> = {};
+          for (const r of rd as Array<{ message_id: string; user_id: string }>) {
+            (map[r.message_id] ||= []).push(r.user_id);
+          }
+          setReads(map);
+        }
+      }
       setLoading(false);
     })();
     return () => {
