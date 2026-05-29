@@ -331,11 +331,9 @@ const Chat = () => {
     const onScroll = () => {
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       const up = distanceFromBottom > 120;
-      const wasUp = !atBottomRef.current ? false : true; // currently at bottom?
       atBottomRef.current = !up;
       setShowJumpBtn(up);
       if (!up) setReadTick((t) => t + 1);
-      void wasUp;
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
