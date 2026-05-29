@@ -270,13 +270,23 @@ const Chat = () => {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "message_reads" },
-        (payload) => {
+        async (payload) => {
           const r = payload.new as { message_id: string; user_id: string };
           setReads((prev) => {
             const arr = prev[r.message_id] || [];
             if (arr.includes(r.user_id)) return prev;
             return { ...prev, [r.message_id]: [...arr, r.user_id] };
           });
+          if (!profiles[r.user_id]) {
+            await refreshProfiles();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "profiles" },
+        async () => {
+          await refreshProfiles();
         }
       )
       .on("broadcast", { event: "typing" }, ({ payload }) => {
