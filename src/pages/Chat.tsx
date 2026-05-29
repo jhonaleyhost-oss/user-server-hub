@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check, CheckCheck } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -101,12 +101,17 @@ const Chat = () => {
   const [editingText, setEditingText] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [reads, setReads] = useState<Record<string, string[]>>({});
+  const [readersDialogFor, setReadersDialogFor] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastTypingSentRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const atBottomRef = useRef<boolean>(true);
+  const pageVisibleRef = useRef<boolean>(true);
+  const markingRef = useRef<Set<string>>(new Set());
   const MAX_FILES = 6;
   const MAX_SIZE = 5 * 1024 * 1024;
   const messagesRef = useRef<ChatMessage[]>([]);
