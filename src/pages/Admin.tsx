@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
 import AdminPopupManager from '@/components/AdminPopupManager';
+import AdminActivityLogs from '@/components/AdminActivityLogs';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -907,7 +908,7 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5 bg-secondary/50 mb-6">
+            <TabsList className="grid w-full grid-cols-6 bg-secondary/50 mb-6">
               <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Users className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Pengguna</span> ({filteredUsers.length})
@@ -927,6 +928,10 @@ const Admin = () => {
               <TabsTrigger value="popup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Megaphone className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Popup</span>
+              </TabsTrigger>
+              <TabsTrigger value="logs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Shield className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Log</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1774,6 +1779,11 @@ const Admin = () => {
             {/* Popup Tab */}
             <TabsContent value="popup">
               <AdminPopupManager />
+            </TabsContent>
+
+            {/* Activity Logs Tab */}
+            <TabsContent value="logs">
+              <AdminActivityLogs />
             </TabsContent>
           </Tabs>
         </GlassCard>
