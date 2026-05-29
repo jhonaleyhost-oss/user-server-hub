@@ -104,6 +104,7 @@ const Chat = () => {
   const [readersDialogFor, setReadersDialogFor] = useState<string | null>(null);
   const [readTick, setReadTick] = useState(0);
   const [cooldownLeft, setCooldownLeft] = useState(0);
+  const [totalMembers, setTotalMembers] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
