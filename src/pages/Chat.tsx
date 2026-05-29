@@ -970,6 +970,29 @@ const Chat = () => {
             </div>
           )}
 
+          <AlertDialog open={!!deleteTargetId} onOpenChange={(o) => !o && setDeleteTargetId(null)}>
+            <AlertDialogContent className="rounded-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Yakin hapus pesan ini?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Pesan yang sudah dihapus tidak bisa dikembalikan.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (deleteTargetId) handleDelete(deleteTargetId);
+                    setDeleteTargetId(null);
+                  }}
+                >
+                  Hapus
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <Dialog open={!!selectedProfile} onOpenChange={(o) => !o && setSelectedProfile(null)}>
             <DialogContent className="max-w-sm rounded-3xl">
               <DialogHeader>
