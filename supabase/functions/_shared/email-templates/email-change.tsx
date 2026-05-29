@@ -9,6 +9,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Text,
@@ -37,6 +38,7 @@ export const EmailChangeEmail = ({
     <Preview>Konfirmasi perubahan email {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
+        <Img src="https://qjkaoghqatkminsufqfn.supabase.co/storage/v1/object/public/email-assets/logo.png" width="72" height="72" alt={siteName} style={logo} />
         <div style={brandBar}>{siteName}</div>
         <Heading style={h1}>Konfirmasi perubahan email</Heading>
         <Text style={text}>
@@ -65,6 +67,7 @@ export default EmailChangeEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: '"Plus Jakarta Sans", -apple-system, Segoe UI, Roboto, Arial, sans-serif' }
 const container = { padding: '24px 28px', maxWidth: '560px' }
+const logo = { display: 'block', margin: '0 auto 16px', borderRadius: '50%' }
 const brandBar = {
   display: 'inline-block',
   background: 'linear-gradient(135deg, #e11d48, #9333ea)',
