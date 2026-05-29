@@ -8,6 +8,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Preview,
   Text,
 } from 'npm:@react-email/components@0.0.22'
@@ -22,6 +23,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
     <Preview>Kode verifikasi kamu</Preview>
     <Body style={main}>
       <Container style={container}>
+        <Img src="https://qjkaoghqatkminsufqfn.supabase.co/storage/v1/object/public/email-assets/logo.png" width="72" height="72" alt="Jhonaley Store" style={logo} />
         <div style={brandBar}>Jhonaley Store</div>
         <Heading style={h1}>Konfirmasi identitas kamu</Heading>
         <Text style={text}>Gunakan kode di bawah untuk mengonfirmasi identitas kamu:</Text>
@@ -40,6 +42,7 @@ export default ReauthenticationEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: '"Plus Jakarta Sans", -apple-system, Segoe UI, Roboto, Arial, sans-serif' }
 const container = { padding: '24px 28px', maxWidth: '560px' }
+const logo = { display: 'block', margin: '0 auto 16px', borderRadius: '50%' }
 const brandBar = { display: 'inline-block', background: 'linear-gradient(135deg, #e11d48, #9333ea)', color: '#ffffff', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', padding: '6px 14px', borderRadius: '999px', marginBottom: '24px' }
 const h1 = { fontSize: '24px', fontWeight: 700 as const, color: '#0f172a', margin: '0 0 16px' }
 const text = { fontSize: '14px', color: '#475569', lineHeight: '1.6', margin: '0 0 20px' }
