@@ -95,7 +95,6 @@ const Chat = () => {
   const [pending, setPending] = useState<Array<{ id: string; file: File; preview: string }>>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<ProfileLite | null>(null);
-  const [newMsgCount, setNewMsgCount] = useState(0);
   const [showJumpBtn, setShowJumpBtn] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
@@ -402,7 +401,6 @@ const Chat = () => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-    setNewMsgCount(0);
   };
 
   const sendTyping = () => {
@@ -937,9 +935,9 @@ const Chat = () => {
                     aria-label="Lompat ke pesan terbaru"
                   >
                     <ArrowDown className="w-4 h-4" />
-                    {newMsgCount > 0 && (
+                    {unreadCount > 0 && (
                       <span className="text-xs font-semibold">
-                        {newMsgCount} pesan baru
+                        {unreadCount} pesan baru
                       </span>
                     )}
                   </button>
