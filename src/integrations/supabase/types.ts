@@ -131,6 +131,7 @@ export type Database = {
           created_at: string
           deleted: boolean
           deleted_by: string | null
+          edited_at: string | null
           id: string
           image_url: string | null
           reply_to_id: string | null
@@ -141,6 +142,7 @@ export type Database = {
           created_at?: string
           deleted?: boolean
           deleted_by?: string | null
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           reply_to_id?: string | null
@@ -151,6 +153,7 @@ export type Database = {
           created_at?: string
           deleted?: boolean
           deleted_by?: string | null
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           reply_to_id?: string | null
