@@ -103,6 +103,7 @@ const Chat = () => {
   const [reads, setReads] = useState<Record<string, string[]>>({});
   const [readersDialogFor, setReadersDialogFor] = useState<string | null>(null);
   const [readTick, setReadTick] = useState(0);
+  const [cooldownLeft, setCooldownLeft] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -112,6 +113,7 @@ const Chat = () => {
   const atBottomRef = useRef<boolean>(true);
   const pageVisibleRef = useRef<boolean>(true);
   const markingRef = useRef<Set<string>>(new Set());
+  const lastSentAtRef = useRef<number>(0);
   const MAX_FILES = 6;
   const MAX_SIZE = 5 * 1024 * 1024;
   const messagesRef = useRef<ChatMessage[]>([]);
