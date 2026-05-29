@@ -9,6 +9,14 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import GlassCard from "@/components/GlassCard";
@@ -30,6 +38,8 @@ export default function Profile() {
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [emailConfirmOpen, setEmailConfirmOpen] = useState(false);
+  const [emailConfirmPassword, setEmailConfirmPassword] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -147,29 +157,54 @@ export default function Profile() {
     }
   };
 
-  const handleSaveEmail = async () => {
+  const handleSaveEmail = () => {
     if (!email.trim() || email === user?.email) {
       toast.error("Masukkan email baru yang berbeda");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      toast.error("Format email tidak valid");
+      return;
+    }
+    setEmailConfirmPassword("");
+    setEmailConfirmOpen(true);
+  };
+
+  const confirmEmailChange = async () => {
+    if (!user?.email) return;
+    if (!emailConfirmPassword) {
+      toast.error("Masukkan password kamu");
+      return;
+    }
     setSavingEmail(true);
-    const oldEmail = user?.email ?? "";
+    const oldEmail = user.email;
+    // Verify password by re-authenticating
+    const { error: signInErr } = await supabase.auth.signInWithPassword({
+      email: oldEmail,
+      password: emailConfirmPassword,
+    });
+    if (signInErr) {
+      setSavingEmail(false);
+      toast.error("Password salah");
+      return;
+    }
     const { error } = await supabase.auth.updateUser({ email: email.trim() });
     setSavingEmail(false);
-    if (error) toast.error("Gagal: " + error.message);
-    else {
-      toast.success("Cek email baru kamu untuk konfirmasi");
-      if (user) {
-        const { error: logErr } = await supabase.from("user_activity_logs").insert({
-          user_id: user.id,
-          action: "update_email",
-          detail: "Meminta perubahan email",
-          old_value: oldEmail,
-          new_value: email.trim(),
-        });
-        if (logErr) console.error("log email err:", logErr);
-      }
+    if (error) {
+      toast.error("Gagal: " + error.message);
+      return;
     }
+    setEmailConfirmOpen(false);
+    setEmailConfirmPassword("");
+    toast.success("Cek email baru kamu untuk konfirmasi");
+    const { error: logErr } = await supabase.from("user_activity_logs").insert({
+      user_id: user.id,
+      action: "update_email",
+      detail: "Meminta perubahan email",
+      old_value: oldEmail,
+      new_value: email.trim(),
+    });
+    if (logErr) console.error("log email err:", logErr);
   };
 
   const handleSavePassword = async () => {
