@@ -751,6 +751,40 @@ const Chat = () => {
                               diedit
                             </span>
                           )}
+                          {mine && !m.deleted && (() => {
+                            const readers = (reads[m.id] || []).filter((uid) => uid !== user?.id);
+                            const totalOthers = Math.max(0, Object.keys(profiles).length - 1);
+                            const allRead = totalOthers > 0 && readers.length >= totalOthers;
+                            const someRead = readers.length > 0;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => readers.length > 0 && setReadersDialogFor(m.id)}
+                                disabled={readers.length === 0}
+                                className={`inline-flex items-center ${readers.length > 0 ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+                                aria-label={
+                                  allRead
+                                    ? "Dibaca semua"
+                                    : someRead
+                                      ? `Dibaca ${readers.length} orang`
+                                      : "Belum dibaca"
+                                }
+                                title={
+                                  allRead
+                                    ? "Dibaca semua"
+                                    : someRead
+                                      ? `Dibaca ${readers.length} orang`
+                                      : "Terkirim"
+                                }
+                              >
+                                {someRead ? (
+                                  <CheckCheck className={`w-3.5 h-3.5 ${allRead ? "text-sky-500" : "text-muted-foreground"}`} />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5 text-muted-foreground" />
+                                )}
+                              </button>
+                            );
+                          })()}
                         </div>
                         <div
                           className={`relative min-w-0 max-w-full px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap border ${
