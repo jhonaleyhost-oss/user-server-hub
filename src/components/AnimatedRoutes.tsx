@@ -2,6 +2,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Dashboard from '@/pages/Dashboard';
 import Auth from '@/pages/Auth';
+import ResetPassword from '@/pages/ResetPassword';
 import Panels from '@/pages/Panels';
 import Admin from '@/pages/Admin';
 import AdminRoute from '@/components/AdminRoute';
@@ -22,6 +23,7 @@ export const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/panels" element={<Panels />} />
         <Route
           path="/admin"
