@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check, CheckCheck } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -95,18 +95,23 @@ const Chat = () => {
   const [pending, setPending] = useState<Array<{ id: string; file: File; preview: string }>>([]);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<ProfileLite | null>(null);
-  const [newMsgCount, setNewMsgCount] = useState(0);
   const [showJumpBtn, setShowJumpBtn] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [reads, setReads] = useState<Record<string, string[]>>({});
+  const [readersDialogFor, setReadersDialogFor] = useState<string | null>(null);
+  const [readTick, setReadTick] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastTypingSentRef = useRef<number>(0);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const atBottomRef = useRef<boolean>(true);
+  const pageVisibleRef = useRef<boolean>(true);
+  const markingRef = useRef<Set<string>>(new Set());
   const MAX_FILES = 6;
   const MAX_SIZE = 5 * 1024 * 1024;
   const messagesRef = useRef<ChatMessage[]>([]);
@@ -186,6 +191,21 @@ const Chat = () => {
       const ordered = (data ?? []).slice().reverse() as ChatMessage[];
       setMessages(ordered);
       await refreshProfiles();
+      // Load existing reads for these messages
+      const ids = ordered.map((m) => m.id);
+      if (ids.length) {
+        const { data: rd } = await supabase
+          .from("message_reads")
+          .select("message_id, user_id")
+          .in("message_id", ids);
+        if (rd) {
+          const map: Record<string, string[]> = {};
+          for (const r of rd as Array<{ message_id: string; user_id: string }>) {
+            (map[r.message_id] ||= []).push(r.user_id);
+          }
+          setReads(map);
+        }
+      }
       setLoading(false);
     })();
     return () => {
@@ -237,6 +257,18 @@ const Chat = () => {
         const state = channel.presenceState() as Record<string, PresenceState[]>;
         setOnlineUsers(new Set(Object.keys(state)));
       })
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "message_reads" },
+        (payload) => {
+          const r = payload.new as { message_id: string; user_id: string };
+          setReads((prev) => {
+            const arr = prev[r.message_id] || [];
+            if (arr.includes(r.user_id)) return prev;
+            return { ...prev, [r.message_id]: [...arr, r.user_id] };
+          });
+        }
+      )
       .on("broadcast", { event: "typing" }, ({ payload }) => {
         const uid = (payload as { user_id: string }).user_id;
         if (!uid || uid === user.id) return;
@@ -268,17 +300,13 @@ const Chat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Auto scroll
+  // Auto-scroll when at bottom; otherwise leave position alone
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     if (distanceFromBottom < 120) {
       el.scrollTop = el.scrollHeight;
-      setNewMsgCount(0);
-    } else {
-      // user is scrolled up — count incoming as new
-      setNewMsgCount((c) => c + 1);
     }
   }, [messages.length, typingUsers]);
 
@@ -290,7 +318,6 @@ const Chat = () => {
     if (!el) return;
     const jump = () => {
       el.scrollTop = el.scrollHeight;
-      setNewMsgCount(0);
     };
     requestAnimationFrame(jump);
     const t = setTimeout(jump, 350);
@@ -304,18 +331,79 @@ const Chat = () => {
     const onScroll = () => {
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       const up = distanceFromBottom > 120;
+      atBottomRef.current = !up;
       setShowJumpBtn(up);
-      if (!up) setNewMsgCount(0);
+      if (!up) setReadTick((t) => t + 1);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [loading]);
 
+  // Track page visibility
+  useEffect(() => {
+    const onVis = () => {
+      pageVisibleRef.current = document.visibilityState === "visible" && document.hasFocus();
+      if (pageVisibleRef.current) setReadTick((t) => t + 1);
+    };
+    onVis();
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    window.addEventListener("blur", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+      window.removeEventListener("blur", onVis);
+    };
+  }, []);
+
+  // Compute unread messages (not mine, not yet read by me)
+  const unreadIds = useMemo(() => {
+    if (!user) return [] as string[];
+    return messages
+      .filter(
+        (m) =>
+          m.user_id !== user.id &&
+          !m.deleted &&
+          !(reads[m.id] || []).includes(user.id),
+      )
+      .map((m) => m.id);
+  }, [messages, reads, user]);
+
+  const unreadCount = unreadIds.length;
+
+  // Auto-mark as read when at bottom + tab visible
+  useEffect(() => {
+    if (!user || unreadIds.length === 0) return;
+    if (!atBottomRef.current || !pageVisibleRef.current) return;
+
+    const toMark = unreadIds.filter((id) => !markingRef.current.has(id));
+    if (toMark.length === 0) return;
+    toMark.forEach((id) => markingRef.current.add(id));
+
+    (async () => {
+      const rows = toMark.map((id) => ({ message_id: id, user_id: user.id }));
+      const { error } = await supabase
+        .from("message_reads")
+        .upsert(rows, { onConflict: "message_id,user_id", ignoreDuplicates: true });
+      if (error) {
+        toMark.forEach((id) => markingRef.current.delete(id));
+        return;
+      }
+      setReads((prev) => {
+        const next = { ...prev };
+        for (const id of toMark) {
+          const arr = next[id] || [];
+          if (!arr.includes(user.id)) next[id] = [...arr, user.id];
+        }
+        return next;
+      });
+    })();
+  }, [unreadIds, user, readTick]);
+
   const jumpToLatest = () => {
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-    setNewMsgCount(0);
   };
 
   const sendTyping = () => {
@@ -666,6 +754,40 @@ const Chat = () => {
                               diedit
                             </span>
                           )}
+                          {mine && !m.deleted && (() => {
+                            const readers = (reads[m.id] || []).filter((uid) => uid !== user?.id);
+                            const totalOthers = Math.max(0, Object.keys(profiles).length - 1);
+                            const allRead = totalOthers > 0 && readers.length >= totalOthers;
+                            const someRead = readers.length > 0;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => readers.length > 0 && setReadersDialogFor(m.id)}
+                                disabled={readers.length === 0}
+                                className={`inline-flex items-center ${readers.length > 0 ? "cursor-pointer hover:opacity-80" : "cursor-default"}`}
+                                aria-label={
+                                  allRead
+                                    ? "Dibaca semua"
+                                    : someRead
+                                      ? `Dibaca ${readers.length} orang`
+                                      : "Belum dibaca"
+                                }
+                                title={
+                                  allRead
+                                    ? "Dibaca semua"
+                                    : someRead
+                                      ? `Dibaca ${readers.length} orang`
+                                      : "Terkirim"
+                                }
+                              >
+                                {someRead ? (
+                                  <CheckCheck className={`w-3.5 h-3.5 ${allRead ? "text-sky-500" : "text-muted-foreground"}`} />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5 text-muted-foreground" />
+                                )}
+                              </button>
+                            );
+                          })()}
                         </div>
                         <div
                           className={`relative min-w-0 max-w-full px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap border ${
@@ -850,9 +972,9 @@ const Chat = () => {
                     aria-label="Lompat ke pesan terbaru"
                   >
                     <ArrowDown className="w-4 h-4" />
-                    {newMsgCount > 0 && (
+                    {unreadCount > 0 && (
                       <span className="text-xs font-semibold">
-                        {newMsgCount} pesan baru
+                        {unreadCount} pesan baru
                       </span>
                     )}
                   </button>
@@ -994,6 +1116,76 @@ const Chat = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          <Dialog open={!!readersDialogFor} onOpenChange={(o) => !o && setReadersDialogFor(null)}>
+            <DialogContent className="max-w-sm rounded-3xl">
+              <DialogHeader>
+                <DialogTitle>Dibaca oleh</DialogTitle>
+              </DialogHeader>
+              {readersDialogFor && (() => {
+                const readers = (reads[readersDialogFor] || []).filter((uid) => uid !== user?.id);
+                if (readers.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Belum ada yang membaca pesan ini.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-1">
+                    {readers.map((uid) => {
+                      const rp = profiles[uid];
+                      const rname = rp?.full_name?.trim() || "Pengguna";
+                      const rinitial = rname.charAt(0).toUpperCase();
+                      return (
+                        <button
+                          key={uid}
+                          type="button"
+                          onClick={() => {
+                            if (rp) {
+                              setReadersDialogFor(null);
+                              setSelectedProfile(rp);
+                            }
+                          }}
+                          disabled={!rp}
+                          className="w-full flex items-center gap-3 p-2 rounded-2xl bg-secondary/40 hover:bg-secondary/70 transition-colors text-left"
+                        >
+                          {rp?.avatar_url ? (
+                            <img
+                              src={rp.avatar_url}
+                              alt={rname}
+                              className="w-9 h-9 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {rinitial}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-semibold text-foreground truncate">
+                                {rname}
+                              </span>
+                              <VerifiedBadge
+                                role={rp?.role ?? "free"}
+                                plan={rp?.reseller_plan}
+                                permanent={rp?.reseller_permanent}
+                                size={12}
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground capitalize">
+                              {rp?.role ?? "free"}
+                            </p>
+                          </div>
+                          <CheckCheck className="w-4 h-4 text-sky-500 shrink-0" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </DialogContent>
+          </Dialog>
 
           <Dialog open={!!selectedProfile} onOpenChange={(o) => !o && setSelectedProfile(null)}>
             <DialogContent className="max-w-sm rounded-3xl">
