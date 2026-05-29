@@ -1,34 +1,27 @@
 project_id = "qjkaoghqatkminsufqfn"
 
-[functions.create-panel]
-verify_jwt = false
-
-[functions.delete-panel]
-verify_jwt = false
-
-[functions.check-server-status]
-verify_jwt = false
-
-[functions.public-server-status]
-verify_jwt = false
-
-[functions.check-tip]
-verify_jwt = false
-
-[functions.create-qris]
-verify_jwt = false
-
-[functions.check-upgrade]
-verify_jwt = false
-
-[functions.telegram-bot]
-verify_jwt = false
-
-[functions.pakasir-webhook]
-verify_jwt = false
-
-[functions.manage-server]
-verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = true
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.check-server-status]
+    verify_jwt = false
+  [functions.check-tip]
+    verify_jwt = false
+  [functions.check-upgrade]
+    verify_jwt = false
+  [functions.create-panel]
+    verify_jwt = false
+  [functions.create-qris]
+    verify_jwt = false
+  [functions.delete-panel]
+    verify_jwt = false
+  [functions.manage-server]
+    verify_jwt = false
+  [functions.pakasir-webhook]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.public-server-status]
+    verify_jwt = false
+  [functions.telegram-bot]
+    verify_jwt = false
