@@ -424,6 +424,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          detail: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          detail?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_panels: {
         Row: {
           cpu: number
@@ -645,6 +675,22 @@ export type Database = {
           paid_at: string
           permanent: boolean
           plan: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
+      get_user_activity_logs: {
+        Args: { _limit?: number }
+        Returns: {
+          action: string
+          avatar_url: string
+          created_at: string
+          detail: string
+          email: string
+          full_name: string
+          id: string
+          new_value: string
+          old_value: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }[]
