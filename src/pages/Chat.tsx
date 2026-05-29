@@ -1114,6 +1114,76 @@ const Chat = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          <Dialog open={!!readersDialogFor} onOpenChange={(o) => !o && setReadersDialogFor(null)}>
+            <DialogContent className="max-w-sm rounded-3xl">
+              <DialogHeader>
+                <DialogTitle>Dibaca oleh</DialogTitle>
+              </DialogHeader>
+              {readersDialogFor && (() => {
+                const readers = (reads[readersDialogFor] || []).filter((uid) => uid !== user?.id);
+                if (readers.length === 0) {
+                  return (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Belum ada yang membaca pesan ini.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="max-h-[60vh] overflow-y-auto space-y-2 pr-1">
+                    {readers.map((uid) => {
+                      const rp = profiles[uid];
+                      const rname = rp?.full_name?.trim() || "Pengguna";
+                      const rinitial = rname.charAt(0).toUpperCase();
+                      return (
+                        <button
+                          key={uid}
+                          type="button"
+                          onClick={() => {
+                            if (rp) {
+                              setReadersDialogFor(null);
+                              setSelectedProfile(rp);
+                            }
+                          }}
+                          disabled={!rp}
+                          className="w-full flex items-center gap-3 p-2 rounded-2xl bg-secondary/40 hover:bg-secondary/70 transition-colors text-left"
+                        >
+                          {rp?.avatar_url ? (
+                            <img
+                              src={rp.avatar_url}
+                              alt={rname}
+                              className="w-9 h-9 rounded-full object-cover shrink-0"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xs font-bold shrink-0">
+                              {rinitial}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-sm font-semibold text-foreground truncate">
+                                {rname}
+                              </span>
+                              <VerifiedBadge
+                                role={rp?.role ?? "free"}
+                                plan={rp?.reseller_plan}
+                                permanent={rp?.reseller_permanent}
+                                size={12}
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground capitalize">
+                              {rp?.role ?? "free"}
+                            </p>
+                          </div>
+                          <CheckCheck className="w-4 h-4 text-sky-500 shrink-0" />
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={!!selectedProfile} onOpenChange={(o) => !o && setSelectedProfile(null)}>
             <DialogContent className="max-w-sm rounded-3xl">
               <DialogHeader>
