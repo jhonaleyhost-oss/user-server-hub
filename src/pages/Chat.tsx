@@ -671,7 +671,9 @@ const Chat = () => {
                           className={`relative min-w-0 max-w-full px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap border ${
                             mine
                               ? "bg-primary/20 text-foreground border-primary/30 rounded-br-md"
-                              : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
+                              : userRole === "admin"
+                                ? "bg-gradient-to-br from-amber-500/15 via-secondary/70 to-amber-500/10 text-foreground border-amber-400/50 rounded-bl-md shadow-[0_0_0_1px_rgba(251,191,36,0.25),0_4px_24px_-8px_rgba(251,191,36,0.45)] ring-1 ring-amber-400/20"
+                                : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
                           } ${m.image_url && !m.content ? "!p-1" : ""}`}
                         >
                           {m.deleted ? (
