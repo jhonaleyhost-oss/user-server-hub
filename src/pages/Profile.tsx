@@ -67,13 +67,14 @@ export default function Profile() {
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Profil berhasil diperbarui");
       if (oldName !== fullName.trim()) {
-        supabase.from("user_activity_logs").insert({
+        const { error: logErr } = await supabase.from("user_activity_logs").insert({
           user_id: user.id,
           action: "update_username",
           detail: "Mengubah username",
           old_value: oldName,
           new_value: fullName.trim(),
         });
+        if (logErr) console.error("log username err:", logErr);
       }
     }
   };
@@ -109,12 +110,13 @@ export default function Profile() {
       setAvatarUrl(publicUrl);
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Foto profil berhasil diunggah");
-      await supabase.from("user_activity_logs").insert({
+      const { error: logErr } = await supabase.from("user_activity_logs").insert({
         user_id: user.id,
         action: "update_avatar",
         detail: "Mengubah foto profil",
         new_value: publicUrl,
       });
+      if (logErr) console.error("log avatar err:", logErr);
     } catch (err: any) {
       toast.error("Gagal upload: " + (err.message || "unknown"));
     } finally {
@@ -136,11 +138,12 @@ export default function Profile() {
       setAvatarUrl("");
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Foto profil dihapus");
-      await supabase.from("user_activity_logs").insert({
+      const { error: logErr } = await supabase.from("user_activity_logs").insert({
         user_id: user.id,
         action: "remove_avatar",
         detail: "Menghapus foto profil",
       });
+      if (logErr) console.error("log remove avatar err:", logErr);
     }
   };
 
@@ -157,13 +160,14 @@ export default function Profile() {
     else {
       toast.success("Cek email baru kamu untuk konfirmasi");
       if (user) {
-        supabase.from("user_activity_logs").insert({
+        const { error: logErr } = await supabase.from("user_activity_logs").insert({
           user_id: user.id,
           action: "update_email",
           detail: "Meminta perubahan email",
           old_value: oldEmail,
           new_value: email.trim(),
         });
+        if (logErr) console.error("log email err:", logErr);
       }
     }
   };
@@ -186,11 +190,12 @@ export default function Profile() {
       setNewPassword("");
       setConfirmPassword("");
       if (user) {
-        supabase.from("user_activity_logs").insert({
+        const { error: logErr } = await supabase.from("user_activity_logs").insert({
           user_id: user.id,
           action: "update_password",
           detail: "Mengubah password",
         });
+        if (logErr) console.error("log password err:", logErr);
       }
     }
   };
