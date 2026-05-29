@@ -271,6 +271,21 @@ const Chat = () => {
     }
   }, [messages.length, typingUsers]);
 
+  // After initial load, force scroll to bottom (twice — once immediately,
+  // again after images settle so layout shifts don't leave us at the top).
+  useEffect(() => {
+    if (loading) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const jump = () => {
+      el.scrollTop = el.scrollHeight;
+      setNewMsgCount(0);
+    };
+    requestAnimationFrame(jump);
+    const t = setTimeout(jump, 350);
+    return () => clearTimeout(t);
+  }, [loading]);
+
   // Track scroll position to show/hide jump-to-latest button
   useEffect(() => {
     const el = scrollRef.current;
