@@ -35,6 +35,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       supabase.auth.signOut().catch(() => {});
     }
 
+    // Detect auth verification links (email change / signup / magic link / invite).
+    // These links carry tokens in the URL hash and would otherwise silently
+    // sign the visitor in. We let Supabase process the hash so the action
+    // is confirmed, then immediately sign out and force re-login.
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    const hashType = hash.match(/[#&]type=([^&]+)/)?.[1];
+    const isVerifyLink =
+      !!hashType &&
+      hashType !== 'recovery' &&
+      ['email_change', 'signup', 'magiclink', 'invite', 'email'].includes(hashType);
+    if (isVerifyLink) {
+      sessionStorage.setItem('verify_link_type', hashType);
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -45,6 +59,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             window.location.replace('/reset-password');
           }
         }
+
+        // Verification link landed: sign out after Supabase confirms the action.
+        const pendingVerify = sessionStorage.getItem('verify_link_type');
+        if (pendingVerify && (event === 'SIGNED_IN' || event === 'USER_UPDATED') && session) {
+          sessionStorage.removeItem('verify_link_type');
+          // Cleanup hash so a refresh doesn't replay
+          if (typeof window !== 'undefined') {
+            window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          }
+          setTimeout(() => {
+            supabase.auth.signOut().catch(() => {});
+            if (typeof window !== 'undefined') {
+              const msg = pendingVerify === 'email_change'
+                ? 'Email berhasil diubah. Silakan login dengan email baru.'
+                : 'Verifikasi berhasil. Silakan login.';
+              try { sessionStorage.setItem('post_verify_msg', msg); } catch {}
+              window.location.replace('/auth');
+            }
+          }, 50);
+          return;
+        }
+
         if (session) {
           forceLogoutInProgress.current = false;
         }
