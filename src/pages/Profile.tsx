@@ -53,6 +53,7 @@ export default function Profile() {
       return;
     }
     setSavingProfile(true);
+    const oldName = (await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle()).data?.full_name ?? "";
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -65,6 +66,15 @@ export default function Profile() {
     else {
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Profil berhasil diperbarui");
+      if (oldName !== fullName.trim()) {
+        supabase.from("user_activity_logs").insert({
+          user_id: user.id,
+          action: "update_username",
+          detail: "Mengubah username",
+          old_value: oldName,
+          new_value: fullName.trim(),
+        });
+      }
     }
   };
 
@@ -99,6 +109,12 @@ export default function Profile() {
       setAvatarUrl(publicUrl);
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Foto profil berhasil diunggah");
+      await supabase.from("user_activity_logs").insert({
+        user_id: user.id,
+        action: "update_avatar",
+        detail: "Mengubah foto profil",
+        new_value: publicUrl,
+      });
     } catch (err: any) {
       toast.error("Gagal upload: " + (err.message || "unknown"));
     } finally {
@@ -120,6 +136,11 @@ export default function Profile() {
       setAvatarUrl("");
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Foto profil dihapus");
+      await supabase.from("user_activity_logs").insert({
+        user_id: user.id,
+        action: "remove_avatar",
+        detail: "Menghapus foto profil",
+      });
     }
   };
 
@@ -129,10 +150,22 @@ export default function Profile() {
       return;
     }
     setSavingEmail(true);
+    const oldEmail = user?.email ?? "";
     const { error } = await supabase.auth.updateUser({ email: email.trim() });
     setSavingEmail(false);
     if (error) toast.error("Gagal: " + error.message);
-    else toast.success("Cek email baru kamu untuk konfirmasi");
+    else {
+      toast.success("Cek email baru kamu untuk konfirmasi");
+      if (user) {
+        supabase.from("user_activity_logs").insert({
+          user_id: user.id,
+          action: "update_email",
+          detail: "Meminta perubahan email",
+          old_value: oldEmail,
+          new_value: email.trim(),
+        });
+      }
+    }
   };
 
   const handleSavePassword = async () => {
@@ -152,6 +185,13 @@ export default function Profile() {
       toast.success("Password berhasil diubah");
       setNewPassword("");
       setConfirmPassword("");
+      if (user) {
+        supabase.from("user_activity_logs").insert({
+          user_id: user.id,
+          action: "update_password",
+          detail: "Mengubah password",
+        });
+      }
     }
   };
 
