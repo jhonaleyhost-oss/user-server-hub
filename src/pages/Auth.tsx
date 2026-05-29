@@ -88,6 +88,16 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  useEffect(() => {
+    try {
+      const msg = sessionStorage.getItem('post_verify_msg');
+      if (msg) {
+        sessionStorage.removeItem('post_verify_msg');
+        toast({ title: 'Verifikasi Berhasil', description: msg });
+      }
+    } catch {}
+  }, [toast]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
