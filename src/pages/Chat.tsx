@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -28,6 +28,7 @@ interface ChatMessage {
   image_url: string | null;
   deleted?: boolean | null;
   deleted_by?: string | null;
+  edited_at?: string | null;
 }
 
 interface ProfileLite {
@@ -86,6 +87,9 @@ const Chat = () => {
   const [selectedProfile, setSelectedProfile] = useState<ProfileLite | null>(null);
   const [newMsgCount, setNewMsgCount] = useState(0);
   const [showJumpBtn, setShowJumpBtn] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -435,6 +439,54 @@ const Chat = () => {
     }
   };
 
+  const startEdit = (m: ChatMessage) => {
+    setEditingId(m.id);
+    setEditingText(m.content ?? "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !user) return;
+    const text = editingText.trim();
+    if (!text) {
+      toast.error("Pesan tidak boleh kosong");
+      return;
+    }
+    if (text.length > 2000) {
+      toast.error("Pesan terlalu panjang");
+      return;
+    }
+    const target = messagesRef.current.find((m) => m.id === editingId);
+    if (target && target.content === text) {
+      cancelEdit();
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from("messages")
+        .update({ content: text, edited_at: nowIso })
+        .eq("id", editingId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingId ? { ...m, content: text, edited_at: nowIso } : m,
+        ),
+      );
+      cancelEdit();
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mengedit pesan");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const typingNames = useMemo(() => {
     return Object.keys(typingUsers)
       .map((uid) => {
@@ -583,6 +635,11 @@ const Chat = () => {
                           <span className="text-[10px] text-muted-foreground">
                             {formatTime(m.created_at)}
                           </span>
+                          {m.edited_at && !m.deleted && (
+                            <span className="text-[10px] italic text-muted-foreground">
+                              diedit
+                            </span>
+                          )}
                         </div>
                         <div
                           className={`relative min-w-0 max-w-full px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap border ${
@@ -642,9 +699,59 @@ const Chat = () => {
                             </button>
                           )}
                           {m.content && (
-                            <div className={m.image_url ? "mt-1.5 px-2 pb-1" : ""}>
-                              {m.content}
-                            </div>
+                            editingId === m.id ? (
+                              <div className={`flex flex-col gap-2 min-w-[200px] ${m.image_url ? "mt-1.5 px-2 pb-1" : ""}`}>
+                                <textarea
+                                  value={editingText}
+                                  onChange={(e) => setEditingText(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      saveEdit();
+                                    } else if (e.key === "Escape") {
+                                      e.preventDefault();
+                                      cancelEdit();
+                                    }
+                                  }}
+                                  rows={2}
+                                  maxLength={2000}
+                                  autoFocus
+                                  disabled={savingEdit}
+                                  className="text-sm rounded-lg p-2 bg-background/70 text-foreground border border-border/60 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <div className="flex gap-1 justify-end">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={cancelEdit}
+                                    disabled={savingEdit}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    Batal
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={saveEdit}
+                                    disabled={savingEdit || !editingText.trim()}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    {savingEdit ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <>
+                                        <Check className="w-3 h-3 mr-1" /> Simpan
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className={m.image_url ? "mt-1.5 px-2 pb-1" : ""}>
+                                {m.content}
+                              </div>
+                            )
                           )}
                           <button
                             type="button"
@@ -659,6 +766,18 @@ const Chat = () => {
                           >
                             <CornerUpLeft className="w-3 h-3" />
                           </button>
+                          {mine && m.content && editingId !== m.id && (
+                            <button
+                              type="button"
+                              onClick={() => startEdit(m)}
+                              className={`absolute -top-2 w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md ${
+                                mine ? "-left-16" : "-right-16"
+                              }`}
+                              aria-label="Edit pesan"
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          )}
                           {(mine || role === "admin") && (
                             <button
                               type="button"
