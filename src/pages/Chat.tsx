@@ -805,7 +805,7 @@ const Chat = () => {
                               {(mine || role === "admin") && (
                                 <button
                                   type="button"
-                                  onClick={() => handleDelete(m.id)}
+                                  onClick={() => setDeleteTargetId(m.id)}
                                   className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md"
                                   aria-label={mine ? "Hapus pesan" : "Hapus pesan pengguna (admin)"}
                                 >
