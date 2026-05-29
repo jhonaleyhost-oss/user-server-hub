@@ -103,6 +103,7 @@ const Chat = () => {
   const [reads, setReads] = useState<Record<string, string[]>>({});
   const [readersDialogFor, setReadersDialogFor] = useState<string | null>(null);
   const [readTick, setReadTick] = useState(0);
+  const [cooldownLeft, setCooldownLeft] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -112,12 +113,19 @@ const Chat = () => {
   const atBottomRef = useRef<boolean>(true);
   const pageVisibleRef = useRef<boolean>(true);
   const markingRef = useRef<Set<string>>(new Set());
+  const lastSentAtRef = useRef<number>(0);
   const MAX_FILES = 6;
   const MAX_SIZE = 5 * 1024 * 1024;
   const messagesRef = useRef<ChatMessage[]>([]);
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+
+  useEffect(() => {
+    if (cooldownLeft <= 0) return;
+    const t = setTimeout(() => setCooldownLeft((s) => Math.max(0, s - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [cooldownLeft]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -472,6 +480,15 @@ const Chat = () => {
     const text = input.trim();
     if (!text && pending.length === 0) return;
     if (text.length > 2000) return;
+    if (role !== "admin") {
+      const now = Date.now();
+      const elapsed = now - lastSentAtRef.current;
+      if (elapsed < 5000) {
+        const left = Math.ceil((5000 - elapsed) / 1000);
+        toast.error(`Tunggu ${left}d sebelum kirim pesan lagi`);
+        return;
+      }
+    }
     setSending(true);
     try {
       // Upload all pending images in parallel
@@ -513,6 +530,10 @@ const Chat = () => {
       const { error } = await supabase.from("messages").insert(rows);
       if (error) throw error;
 
+      lastSentAtRef.current = Date.now();
+      if (role !== "admin") {
+        setCooldownLeft(5);
+      }
       // Cleanup previews
       pending.forEach((p) => URL.revokeObjectURL(p.preview));
       setPending([]);
@@ -1062,11 +1083,17 @@ const Chat = () => {
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={sending || (!input.trim() && pending.length === 0)}
+                  disabled={sending || cooldownLeft > 0 || (!input.trim() && pending.length === 0)}
                   className="h-11 w-11 rounded-full shrink-0"
-                  aria-label="Kirim"
+                  aria-label={cooldownLeft > 0 ? `Tunggu ${cooldownLeft}d` : "Kirim"}
                 >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : cooldownLeft > 0 ? (
+                    <span className="text-xs font-semibold tabular-nums">{cooldownLeft}</span>
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </Button>
               </form>
             </div>
