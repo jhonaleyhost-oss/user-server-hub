@@ -439,6 +439,54 @@ const Chat = () => {
     }
   };
 
+  const startEdit = (m: ChatMessage) => {
+    setEditingId(m.id);
+    setEditingText(m.content ?? "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId || !user) return;
+    const text = editingText.trim();
+    if (!text) {
+      toast.error("Pesan tidak boleh kosong");
+      return;
+    }
+    if (text.length > 2000) {
+      toast.error("Pesan terlalu panjang");
+      return;
+    }
+    const target = messagesRef.current.find((m) => m.id === editingId);
+    if (target && target.content === text) {
+      cancelEdit();
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const nowIso = new Date().toISOString();
+      const { error } = await supabase
+        .from("messages")
+        .update({ content: text, edited_at: nowIso })
+        .eq("id", editingId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === editingId ? { ...m, content: text, edited_at: nowIso } : m,
+        ),
+      );
+      cancelEdit();
+    } catch (err: any) {
+      toast.error(err?.message || "Gagal mengedit pesan");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const typingNames = useMemo(() => {
     return Object.keys(typingUsers)
       .map((uid) => {
