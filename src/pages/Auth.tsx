@@ -43,6 +43,17 @@ const Auth = () => {
     if (!forgotEmail) return;
     setForgotLoading(true);
     try {
+      const { data: exists, error: checkErr } = await supabase.rpc('email_exists', { _email: forgotEmail });
+      if (checkErr) {
+        toast({ variant: 'destructive', title: 'Gagal', description: checkErr.message });
+        setForgotLoading(false);
+        return;
+      }
+      if (!exists) {
+        toast({ variant: 'destructive', title: 'Email Tidak Terdaftar', description: 'Email tersebut tidak ditemukan di database kami.' });
+        setForgotLoading(false);
+        return;
+      }
       const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
