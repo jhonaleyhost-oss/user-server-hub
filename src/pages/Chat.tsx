@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -28,6 +28,7 @@ interface ChatMessage {
   image_url: string | null;
   deleted?: boolean | null;
   deleted_by?: string | null;
+  edited_at?: string | null;
 }
 
 interface ProfileLite {
@@ -86,6 +87,9 @@ const Chat = () => {
   const [selectedProfile, setSelectedProfile] = useState<ProfileLite | null>(null);
   const [newMsgCount, setNewMsgCount] = useState(0);
   const [showJumpBtn, setShowJumpBtn] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
