@@ -20,10 +20,14 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const [checking, setChecking] = useState(true);
+  const completedRef = useState({ done: false })[0];
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
+    // Mark recovery mode so the rest of the app treats user as logged out
+    sessionStorage.setItem('pwd_recovery', '1');
+
     // Recovery flow: Supabase sets a session from URL hash automatically
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY' || session) {
@@ -38,6 +42,12 @@ const ResetPassword = () => {
 
     return () => {
       authListener.subscription.unsubscribe();
+      // If user navigated away without completing the reset, sign out
+      // so the recovery session cannot be reused to access the account.
+      if (!completedRef.done) {
+        sessionStorage.removeItem('pwd_recovery');
+        supabase.auth.signOut().catch(() => {});
+      }
     };
   }, []);
 
@@ -69,6 +79,8 @@ const ResetPassword = () => {
           description: error.message,
         });
       } else {
+        completedRef.done = true;
+        sessionStorage.removeItem('pwd_recovery');
         toast({
           title: 'Password Berhasil Direset',
           description: 'Silakan login dengan password baru Anda.',
