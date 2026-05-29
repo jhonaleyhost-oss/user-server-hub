@@ -347,6 +347,7 @@ export type Database = {
         Row: {
           content: string | null
           created_at: string
+          edited_at: string | null
           id: string
           image_url: string | null
           read_by_admin: boolean
@@ -359,6 +360,7 @@ export type Database = {
         Insert: {
           content?: string | null
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           read_by_admin?: boolean
@@ -371,6 +373,7 @@ export type Database = {
         Update: {
           content?: string | null
           created_at?: string
+          edited_at?: string | null
           id?: string
           image_url?: string | null
           read_by_admin?: boolean
