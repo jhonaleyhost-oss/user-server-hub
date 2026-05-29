@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, ImagePlus, Loader2, ArrowLeft, MessageCircle, LifeBuoy, X } from "lucide-react";
+import { Send, ImagePlus, Loader2, ArrowLeft, MessageCircle, LifeBuoy, X, Pencil, Check } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -19,6 +19,8 @@ interface SupportMessage {
   content: string | null;
   image_url: string | null;
   created_at: string;
+  edited_at?: string | null;
+  sender_user_id?: string | null;
 }
 
 interface Thread {
@@ -85,6 +87,8 @@ const Support = () => {
   const [sending, setSending] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
@@ -170,6 +174,16 @@ const Support = () => {
             );
           }
           if (isAdmin) loadThreads();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "support_messages" },
+        (payload) => {
+          const m = payload.new as SupportMessage;
+          if (m.thread_user_id === activeThread) {
+            setMessages((prev) => prev.map((p) => (p.id === m.id ? { ...p, ...m } : p)));
+          }
         },
       )
       .subscribe();
@@ -280,6 +294,40 @@ const Support = () => {
     } finally {
       setSending(false);
     }
+  };
+
+  const startEdit = (m: SupportMessage) => {
+    setEditingId(m.id);
+    setEditingText(m.content || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingText("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    const text = editingText.trim();
+    if (!text) {
+      toast.error("Pesan tidak boleh kosong");
+      return;
+    }
+    const id = editingId;
+    const { error } = await supabase
+      .from("support_messages")
+      .update({ content: text, edited_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) {
+      toast.error("Gagal mengedit pesan");
+      return;
+    }
+    setMessages((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, content: text, edited_at: new Date().toISOString() } : p,
+      ),
+    );
+    cancelEdit();
   };
 
   if (authLoading || roleLoading) {
@@ -445,33 +493,95 @@ const Support = () => {
                       const mine = isAdmin
                         ? m.sender_role === "admin"
                         : m.sender_role === "user";
+                      const isEditing = editingId === m.id;
                       return (
                         <div
                           key={m.id}
                           className={`flex ${mine ? "justify-end" : "justify-start"}`}
                         >
                           <div
-                            className={`max-w-[80%] rounded-2xl px-3 py-2 ${
+                            className={`group relative max-w-[80%] rounded-2xl px-3 py-2 ${
                               mine
                                 ? "bg-primary text-primary-foreground rounded-br-sm"
                                 : "bg-secondary text-foreground rounded-bl-sm"
                             }`}
                           >
                             {m.image_url && <SupportImage value={m.image_url} />}
-                            {m.content && (
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2 min-w-[200px]">
+                                <textarea
+                                  value={editingText}
+                                  onChange={(e) => setEditingText(e.target.value)}
+                                  rows={2}
+                                  className="text-sm rounded-md p-2 bg-background/80 text-foreground border border-border resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                                  autoFocus
+                                />
+                                <div className="flex gap-1 justify-end">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={cancelEdit}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    Batal
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    onClick={saveEdit}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Check className="w-3 h-3 mr-1" /> Simpan
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              m.content && (
                               <p className="text-sm whitespace-pre-wrap break-words">
                                 {m.content}
                               </p>
+                              )
                             )}
-                            <p
-                              className={`text-[10px] mt-1 ${
-                                mine
-                                  ? "text-primary-foreground/70"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              {formatTime(m.created_at)}
-                            </p>
+                            {!isEditing && (
+                              <div
+                                className={`flex items-center gap-1.5 mt-1 ${
+                                  mine ? "justify-end" : "justify-start"
+                                }`}
+                              >
+                                <p
+                                  className={`text-[10px] ${
+                                    mine
+                                      ? "text-primary-foreground/70"
+                                      : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {formatTime(m.created_at)}
+                                </p>
+                                {m.edited_at && (
+                                  <span
+                                    className={`text-[10px] italic ${
+                                      mine
+                                        ? "text-primary-foreground/70"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    · diedit
+                                  </span>
+                                )}
+                                {mine && m.content && (
+                                  <button
+                                    onClick={() => startEdit(m)}
+                                    className={`opacity-0 group-hover:opacity-100 transition-opacity ${
+                                      mine
+                                        ? "text-primary-foreground/70 hover:text-primary-foreground"
+                                        : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                    title="Edit pesan"
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
