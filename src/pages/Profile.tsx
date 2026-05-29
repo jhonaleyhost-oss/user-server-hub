@@ -456,6 +456,53 @@ export default function Profile() {
           </GlassCard>
         </div>
       </PageTransition>
+
+      <Dialog open={emailConfirmOpen} onOpenChange={(o) => { setEmailConfirmOpen(o); if (!o) setEmailConfirmPassword(""); }}>
+        <DialogContent className="bg-card border border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-primary" />
+              Konfirmasi Password
+            </DialogTitle>
+            <DialogDescription>
+              Untuk keamanan, masukkan password kamu sebelum mengubah email
+              dari <span className="font-semibold text-foreground">{user?.email}</span> ke{" "}
+              <span className="font-semibold text-primary">{email}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-pass" className="text-xs">Password kamu</Label>
+            <Input
+              id="confirm-pass"
+              type="password"
+              value={emailConfirmPassword}
+              onChange={(e) => setEmailConfirmPassword(e.target.value)}
+              placeholder="Masukkan password saat ini"
+              className="h-11"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter" && !savingEmail) confirmEmailChange(); }}
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setEmailConfirmOpen(false)}
+              disabled={savingEmail}
+              className="h-11"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={confirmEmailChange}
+              disabled={savingEmail || !emailConfirmPassword}
+              className="h-11 gap-2"
+            >
+              {savingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+              Konfirmasi & Kirim
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
