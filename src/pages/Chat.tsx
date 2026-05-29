@@ -753,40 +753,40 @@ const Chat = () => {
                               </div>
                             )
                           )}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setReplyTo(m);
-                              setTimeout(() => inputRef.current?.focus(), 0);
-                            }}
-                            className={`absolute -top-2 w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md ${
-                              mine ? "-left-9" : "-right-9"
-                            }`}
-                            aria-label="Balas pesan"
-                          >
-                            <CornerUpLeft className="w-3 h-3" />
-                          </button>
-                          {mine && m.content && editingId !== m.id && (
-                            <button
-                              type="button"
-                              onClick={() => startEdit(m)}
-                              className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md"
-                              aria-label="Edit pesan"
-                            >
-                              <Pencil className="w-3 h-3" />
-                            </button>
-                          )}
-                          {(mine || role === "admin") && (
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(m.id)}
-                              className={`absolute -top-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-md ${
-                                mine ? "-left-2" : "-right-2"
-                              }`}
-                              aria-label={mine ? "Hapus pesan" : "Hapus pesan pengguna (admin)"}
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
+                          {editingId !== m.id && (
+                            <div className="absolute -bottom-3 -right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReplyTo(m);
+                                  setTimeout(() => inputRef.current?.focus(), 0);
+                                }}
+                                className="w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center shadow-md"
+                                aria-label="Balas pesan"
+                              >
+                                <CornerUpLeft className="w-3 h-3" />
+                              </button>
+                              {mine && m.content && (
+                                <button
+                                  type="button"
+                                  onClick={() => startEdit(m)}
+                                  className="w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center shadow-md"
+                                  aria-label="Edit pesan"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                              )}
+                              {(mine || role === "admin") && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDelete(m.id)}
+                                  className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md"
+                                  aria-label={mine ? "Hapus pesan" : "Hapus pesan pengguna (admin)"}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           )}
                           </>
                           )}
