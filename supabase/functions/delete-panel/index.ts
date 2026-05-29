@@ -39,6 +39,10 @@ serve(async (req) => {
 
     console.log('User authenticated:', user.id);
 
+    // Check if user is admin (admins can delete any panel)
+    const { data: isAdminData } = await supabase.rpc('is_admin', { _user_id: user.id });
+    const isAdmin = !!isAdminData;
+
     // Parse request body
     const { panelId }: DeletePanelRequest = await req.json();
     
@@ -49,7 +53,7 @@ serve(async (req) => {
     }
 
     // Get panel details (with server info for API keys)
-    const { data: panelData, error: panelError } = await supabase
+    let panelQuery = supabase
       .from('user_panels')
       .select(`
         *,
@@ -59,9 +63,13 @@ serve(async (req) => {
           plta_key
         )
       `)
-      .eq('id', panelId)
-      .eq('user_id', user.id)
-      .single();
+      .eq('id', panelId);
+
+    if (!isAdmin) {
+      panelQuery = panelQuery.eq('user_id', user.id);
+    }
+
+    const { data: panelData, error: panelError } = await panelQuery.single();
 
     if (panelError || !panelData) {
       console.error('Panel fetch error:', panelError);
