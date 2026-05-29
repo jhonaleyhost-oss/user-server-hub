@@ -300,17 +300,13 @@ const Chat = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Auto scroll
+  // Auto-scroll when at bottom; otherwise leave position alone
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
     if (distanceFromBottom < 120) {
       el.scrollTop = el.scrollHeight;
-      setNewMsgCount(0);
-    } else {
-      // user is scrolled up — count incoming as new
-      setNewMsgCount((c) => c + 1);
     }
   }, [messages.length, typingUsers]);
 
@@ -322,7 +318,6 @@ const Chat = () => {
     if (!el) return;
     const jump = () => {
       el.scrollTop = el.scrollHeight;
-      setNewMsgCount(0);
     };
     requestAnimationFrame(jump);
     const t = setTimeout(jump, 350);
@@ -336,12 +331,72 @@ const Chat = () => {
     const onScroll = () => {
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       const up = distanceFromBottom > 120;
+      atBottomRef.current = !up;
       setShowJumpBtn(up);
-      if (!up) setNewMsgCount(0);
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
   }, [loading]);
+
+  // Track page visibility
+  useEffect(() => {
+    const onVis = () => {
+      pageVisibleRef.current = document.visibilityState === "visible" && document.hasFocus();
+    };
+    onVis();
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onVis);
+    window.addEventListener("blur", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onVis);
+      window.removeEventListener("blur", onVis);
+    };
+  }, []);
+
+  // Compute unread messages (not mine, not yet read by me)
+  const unreadIds = useMemo(() => {
+    if (!user) return [] as string[];
+    return messages
+      .filter(
+        (m) =>
+          m.user_id !== user.id &&
+          !m.deleted &&
+          !(reads[m.id] || []).includes(user.id),
+      )
+      .map((m) => m.id);
+  }, [messages, reads, user]);
+
+  const unreadCount = unreadIds.length;
+
+  // Auto-mark as read when at bottom + tab visible
+  useEffect(() => {
+    if (!user || unreadIds.length === 0) return;
+    if (!atBottomRef.current || !pageVisibleRef.current) return;
+
+    const toMark = unreadIds.filter((id) => !markingRef.current.has(id));
+    if (toMark.length === 0) return;
+    toMark.forEach((id) => markingRef.current.add(id));
+
+    (async () => {
+      const rows = toMark.map((id) => ({ message_id: id, user_id: user.id }));
+      const { error } = await supabase
+        .from("message_reads")
+        .upsert(rows, { onConflict: "message_id,user_id", ignoreDuplicates: true });
+      if (error) {
+        toMark.forEach((id) => markingRef.current.delete(id));
+        return;
+      }
+      setReads((prev) => {
+        const next = { ...prev };
+        for (const id of toMark) {
+          const arr = next[id] || [];
+          if (!arr.includes(user.id)) next[id] = [...arr, user.id];
+        }
+        return next;
+      });
+    })();
+  }, [unreadIds, user]);
 
   const jumpToLatest = () => {
     const el = scrollRef.current;
