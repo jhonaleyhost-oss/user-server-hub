@@ -257,6 +257,18 @@ const Chat = () => {
         const state = channel.presenceState() as Record<string, PresenceState[]>;
         setOnlineUsers(new Set(Object.keys(state)));
       })
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "message_reads" },
+        (payload) => {
+          const r = payload.new as { message_id: string; user_id: string };
+          setReads((prev) => {
+            const arr = prev[r.message_id] || [];
+            if (arr.includes(r.user_id)) return prev;
+            return { ...prev, [r.message_id]: [...arr, r.user_id] };
+          });
+        }
+      )
       .on("broadcast", { event: "typing" }, ({ payload }) => {
         const uid = (payload as { user_id: string }).user_id;
         if (!uid || uid === user.id) return;
