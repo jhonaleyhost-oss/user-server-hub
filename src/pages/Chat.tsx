@@ -17,6 +17,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Calendar, Server, Shield } from "lucide-react";
 
 interface ChatMessage {
@@ -90,6 +100,7 @@ const Chat = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -794,7 +805,7 @@ const Chat = () => {
                               {(mine || role === "admin") && (
                                 <button
                                   type="button"
-                                  onClick={() => handleDelete(m.id)}
+                                  onClick={() => setDeleteTargetId(m.id)}
                                   className="w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow-md"
                                   aria-label={mine ? "Hapus pesan" : "Hapus pesan pengguna (admin)"}
                                 >
@@ -958,6 +969,29 @@ const Chat = () => {
               />
             </div>
           )}
+
+          <AlertDialog open={!!deleteTargetId} onOpenChange={(o) => !o && setDeleteTargetId(null)}>
+            <AlertDialogContent className="rounded-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Yakin hapus pesan ini?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Pesan yang sudah dihapus tidak bisa dikembalikan.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (deleteTargetId) handleDelete(deleteTargetId);
+                    setDeleteTargetId(null);
+                  }}
+                >
+                  Hapus
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <Dialog open={!!selectedProfile} onOpenChange={(o) => !o && setSelectedProfile(null)}>
             <DialogContent className="max-w-sm rounded-3xl">
