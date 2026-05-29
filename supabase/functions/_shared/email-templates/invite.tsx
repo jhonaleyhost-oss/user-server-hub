@@ -27,25 +27,23 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to join {siteName}</Preview>
+    <Preview>Kamu diundang bergabung ke {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
+        <div style={brandBar}>{siteName}</div>
+        <Heading style={h1}>Kamu diundang!</Heading>
         <Text style={text}>
-          You've been invited to join{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          Kamu diundang untuk bergabung ke{' '}
+          <Link href={siteUrl} style={link}><strong>{siteName}</strong></Link>.
+          Klik tombol di bawah untuk menerima undangan dan membuat akun.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Accept Invitation
+          Terima Undangan
         </Button>
         <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+          Jika kamu tidak menunggu undangan ini, abaikan saja email ini.
         </Text>
+        <Text style={brandFooter}>© {siteName} • Jhonaley Store</Text>
       </Container>
     </Body>
   </Html>
@@ -53,27 +51,12 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const main = { backgroundColor: '#ffffff', fontFamily: '"Plus Jakarta Sans", -apple-system, Segoe UI, Roboto, Arial, sans-serif' }
+const container = { padding: '24px 28px', maxWidth: '560px' }
+const brandBar = { display: 'inline-block', background: 'linear-gradient(135deg, #e11d48, #9333ea)', color: '#ffffff', fontSize: '13px', fontWeight: 700, letterSpacing: '0.5px', padding: '6px 14px', borderRadius: '999px', marginBottom: '24px' }
+const h1 = { fontSize: '24px', fontWeight: 700 as const, color: '#0f172a', margin: '0 0 16px' }
+const text = { fontSize: '14px', color: '#475569', lineHeight: '1.6', margin: '0 0 20px' }
+const link = { color: '#e11d48', textDecoration: 'underline', fontWeight: 600 }
+const button = { background: 'linear-gradient(135deg, #e11d48, #9333ea)', color: '#ffffff', fontSize: '14px', fontWeight: 600, borderRadius: '12px', padding: '14px 26px', textDecoration: 'none', display: 'inline-block' }
+const footer = { fontSize: '12px', color: '#94a3b8', margin: '28px 0 0', lineHeight: '1.5' }
+const brandFooter = { fontSize: '11px', color: '#cbd5e1', margin: '24px 0 0', textAlign: 'center' as const }
