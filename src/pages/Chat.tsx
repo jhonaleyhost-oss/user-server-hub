@@ -104,6 +104,7 @@ const Chat = () => {
   const [readersDialogFor, setReadersDialogFor] = useState<string | null>(null);
   const [readTick, setReadTick] = useState(0);
   const [cooldownLeft, setCooldownLeft] = useState(0);
+  const [totalMembers, setTotalMembers] = useState(0);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -152,6 +153,7 @@ const Chat = () => {
   const refreshProfiles = async () => {
     const { data, error } = await supabase.rpc("get_public_users");
     if (error || !data) return;
+    setTotalMembers((data as any[]).length);
     setProfiles((prev) => {
       const next = { ...prev };
       for (const p of data as Array<{
@@ -268,13 +270,23 @@ const Chat = () => {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "message_reads" },
-        (payload) => {
+        async (payload) => {
           const r = payload.new as { message_id: string; user_id: string };
           setReads((prev) => {
             const arr = prev[r.message_id] || [];
             if (arr.includes(r.user_id)) return prev;
             return { ...prev, [r.message_id]: [...arr, r.user_id] };
           });
+          if (!profiles[r.user_id]) {
+            await refreshProfiles();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "profiles" },
+        async () => {
+          await refreshProfiles();
         }
       )
       .on("broadcast", { event: "typing" }, ({ payload }) => {
@@ -777,7 +789,7 @@ const Chat = () => {
                           )}
                           {mine && !m.deleted && (() => {
                             const readers = (reads[m.id] || []).filter((uid) => uid !== user?.id);
-                            const totalOthers = Math.max(0, Object.keys(profiles).length - 1);
+                            const totalOthers = Math.max(0, totalMembers - 1);
                             const allRead = totalOthers > 0 && readers.length >= totalOthers;
                             const someRead = readers.length > 0;
                             return (
