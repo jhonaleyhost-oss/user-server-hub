@@ -180,8 +180,11 @@ const Support = () => {
 
   // Auto-scroll
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages.length]);
+    if (loading) return;
+    requestAnimationFrame(() => {
+      endRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+    });
+  }, [messages.length, loading, activeThread]);
 
   // Mark as read
   useEffect(() => {
