@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -92,6 +92,13 @@ const Activity = () => {
   const [, setTick] = useState(0);
   const [tab, setTab] = useState<"panel" | "signup" | "upgrade">("panel");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  // Reset to page 1 when tab or search changes
+  useEffect(() => {
+    setPage(1);
+  }, [tab, search]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -188,6 +195,13 @@ const Activity = () => {
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
   }, [current, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage]
+  );
 
   return (
     <AppShell>
