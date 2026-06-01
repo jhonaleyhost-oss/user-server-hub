@@ -171,8 +171,8 @@ export default function AdminActivityLogs() {
           Belum ada aktivitas tercatat.
         </div>
       ) : (
-        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-          {filtered.map((log) => {
+        <div className="space-y-2">
+          {paginated.map((log) => {
             const meta = actionMeta[log.action] ?? {
               label: log.action,
               icon: History,
@@ -228,6 +228,15 @@ export default function AdminActivityLogs() {
               </div>
             );
           })}
+          {filtered.length > PAGE_SIZE && (
+            <AdminPagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filtered.length}
+              itemsPerPage={PAGE_SIZE}
+            />
+          )}
         </div>
       )}
     </div>
