@@ -7,6 +7,7 @@ import AppShell from "@/components/AppShell";
 import GlassCard from "@/components/GlassCard";
 import { PageTransition } from "@/components/PageTransition";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AdminPagination from "@/components/AdminPagination";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,8 @@ export default function Users() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("newest");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   useEffect(() => {
     const load = async () => {
@@ -80,6 +83,10 @@ export default function Users() {
     };
     load();
   }, []);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, sortBy]);
 
   const filtered = users
     .filter((u) => {
@@ -113,6 +120,9 @@ export default function Users() {
     });
 
   const total = users.length;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <AppShell>
@@ -176,7 +186,7 @@ export default function Users() {
             </GlassCard>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {filtered.map((u, i) => {
+              {paginated.map((u, i) => {
                 const username = u.full_name?.trim() || "Pengguna";
                 const initial = username.charAt(0).toUpperCase();
                 return (
@@ -216,6 +226,16 @@ export default function Users() {
                 );
               })}
             </div>
+          )}
+
+          {!loading && filtered.length > PAGE_SIZE && (
+            <AdminPagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filtered.length}
+              itemsPerPage={PAGE_SIZE}
+            />
           )}
         </div>
 

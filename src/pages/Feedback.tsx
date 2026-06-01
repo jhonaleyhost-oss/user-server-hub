@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import qrisLogo from "@/assets/qris-logo.png";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AdminPagination from "@/components/AdminPagination";
 
 interface FeedbackRow {
   id: string;
@@ -113,6 +114,9 @@ const Feedback = () => {
   const [tips, setTips] = useState<TipRow[]>([]);
   const [showQris, setShowQris] = useState(false);
   const [payMethod, setPayMethod] = useState<"qris" | "all">("qris");
+  const [tipsPage, setTipsPage] = useState(1);
+  const [itemsPage, setItemsPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [qrisPayload, setQrisPayload] = useState<string>("");
   const [qrisLoading, setQrisLoading] = useState(false);
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
@@ -892,7 +896,7 @@ const Feedback = () => {
               </p>
             ) : (
               <div className="space-y-2">
-                {tips.map((t) => (
+                {tips.slice((Math.min(tipsPage, Math.max(1, Math.ceil(tips.length / PAGE_SIZE))) - 1) * PAGE_SIZE, Math.min(tipsPage, Math.max(1, Math.ceil(tips.length / PAGE_SIZE))) * PAGE_SIZE).map((t) => (
                   <div
                     key={t.id}
                     className="p-3 rounded-lg bg-gradient-to-r from-emerald-500/10 via-secondary/30 to-amber/10 border border-emerald-500/20"
@@ -931,6 +935,15 @@ const Feedback = () => {
                     )}
                   </div>
                 ))}
+                {tips.length > PAGE_SIZE && (
+                  <AdminPagination
+                    currentPage={Math.min(tipsPage, Math.max(1, Math.ceil(tips.length / PAGE_SIZE)))}
+                    totalPages={Math.max(1, Math.ceil(tips.length / PAGE_SIZE))}
+                    onPageChange={setTipsPage}
+                    totalItems={tips.length}
+                    itemsPerPage={PAGE_SIZE}
+                  />
+                )}
               </div>
             )}
           </GlassCard>
@@ -950,7 +963,7 @@ const Feedback = () => {
               </p>
             ) : (
               <div className="space-y-3">
-                {items.map((f) => {
+                {items.slice((Math.min(itemsPage, Math.max(1, Math.ceil(items.length / PAGE_SIZE))) - 1) * PAGE_SIZE, Math.min(itemsPage, Math.max(1, Math.ceil(items.length / PAGE_SIZE))) * PAGE_SIZE).map((f) => {
                   const canDelete = user?.id === f.user_id || role === "admin";
                   return (
                     <div
@@ -997,6 +1010,15 @@ const Feedback = () => {
                     </div>
                   );
                 })}
+                {items.length > PAGE_SIZE && (
+                  <AdminPagination
+                    currentPage={Math.min(itemsPage, Math.max(1, Math.ceil(items.length / PAGE_SIZE)))}
+                    totalPages={Math.max(1, Math.ceil(items.length / PAGE_SIZE))}
+                    onPageChange={setItemsPage}
+                    totalItems={items.length}
+                    itemsPerPage={PAGE_SIZE}
+                  />
+                )}
               </div>
             )}
           </GlassCard>

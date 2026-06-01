@@ -4,6 +4,7 @@ import { Loader2, RefreshCw, Trash2, History, User, Mail, Lock, Image as ImageIc
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import AdminPagination from "@/components/AdminPagination";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,6 +44,8 @@ export default function AdminActivityLogs() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [clearing, setClearing] = useState(false);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -66,6 +69,14 @@ export default function AdminActivityLogs() {
       (l.detail ?? "").toLowerCase().includes(q)
     );
   });
+
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("user_activity_logs").delete().eq("id", id);
@@ -160,8 +171,8 @@ export default function AdminActivityLogs() {
           Belum ada aktivitas tercatat.
         </div>
       ) : (
-        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
-          {filtered.map((log) => {
+        <div className="space-y-2">
+          {paginated.map((log) => {
             const meta = actionMeta[log.action] ?? {
               label: log.action,
               icon: History,
@@ -217,6 +228,15 @@ export default function AdminActivityLogs() {
               </div>
             );
           })}
+          {filtered.length > PAGE_SIZE && (
+            <AdminPagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filtered.length}
+              itemsPerPage={PAGE_SIZE}
+            />
+          )}
         </div>
       )}
     </div>
