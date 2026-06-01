@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import qrisLogo from "@/assets/qris-logo.png";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import AdminPagination from "@/components/AdminPagination";
 
 interface FeedbackRow {
   id: string;
