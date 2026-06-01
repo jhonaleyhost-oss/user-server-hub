@@ -229,15 +229,13 @@ export default function Users() {
           )}
 
           {!loading && filtered.length > PAGE_SIZE && (
-            <GlassCard className="p-3">
-              <AdminPagination
-                currentPage={safePage}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                totalItems={filtered.length}
-                itemsPerPage={PAGE_SIZE}
-              />
-            </GlassCard>
+            <AdminPagination
+              currentPage={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={filtered.length}
+              itemsPerPage={PAGE_SIZE}
+            />
           )}
         </div>
 
