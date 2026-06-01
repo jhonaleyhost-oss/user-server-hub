@@ -99,9 +99,9 @@ const Activity = () => {
 
   const load = async () => {
     const [panelRes, signupRes, upgradeRes, usersRes] = await Promise.all([
-      (supabase.rpc as any)("get_panel_activity", { _limit: 200 }),
-      (supabase.rpc as any)("get_signup_activity", { _limit: 200 }),
-      (supabase.rpc as any)("get_upgrade_activity", { _limit: 200 }),
+      (supabase.rpc as any)("get_panel_activity", { _limit: 500 }),
+      (supabase.rpc as any)("get_signup_activity", { _limit: 500 }),
+      (supabase.rpc as any)("get_upgrade_activity", { _limit: 500 }),
       supabase.rpc("get_public_users"),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
