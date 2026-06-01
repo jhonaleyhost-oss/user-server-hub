@@ -316,7 +316,7 @@ const Activity = () => {
             </GlassCard>
           ) : (
             <div className="space-y-2.5">
-              {filtered.map((a) => {
+              {paginated.map((a) => {
                 const name = a.full_name?.trim() || "Pengguna";
                 const initial = name.charAt(0).toUpperCase();
                 return (
@@ -445,6 +445,37 @@ const Activity = () => {
                 );
               })}
             </div>
+          )}
+
+          {!loading && filtered.length > PAGE_SIZE && (
+            <GlassCard className="!rounded-full p-2 mt-3 flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="h-9 w-9 rounded-full shrink-0"
+                aria-label="Sebelumnya"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="text-xs text-muted-foreground text-center flex-1">
+                Halaman <span className="font-semibold text-foreground">{safePage}</span> / {totalPages}
+                <span className="hidden sm:inline"> • {filtered.length} total</span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="h-9 w-9 rounded-full shrink-0"
+                aria-label="Berikutnya"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </GlassCard>
           )}
         </div>
       </PageTransition>
