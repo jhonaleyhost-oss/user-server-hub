@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -92,6 +92,13 @@ const Activity = () => {
   const [, setTick] = useState(0);
   const [tab, setTab] = useState<"panel" | "signup" | "upgrade">("panel");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  // Reset to page 1 when tab or search changes
+  useEffect(() => {
+    setPage(1);
+  }, [tab, search]);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -188,6 +195,13 @@ const Activity = () => {
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
   }, [current, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [filtered, safePage]
+  );
 
   return (
     <AppShell>
@@ -302,7 +316,7 @@ const Activity = () => {
             </GlassCard>
           ) : (
             <div className="space-y-2.5">
-              {filtered.map((a) => {
+              {paginated.map((a) => {
                 const name = a.full_name?.trim() || "Pengguna";
                 const initial = name.charAt(0).toUpperCase();
                 return (
@@ -431,6 +445,37 @@ const Activity = () => {
                 );
               })}
             </div>
+          )}
+
+          {!loading && filtered.length > PAGE_SIZE && (
+            <GlassCard className="!rounded-full p-2 mt-3 flex items-center justify-between gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={safePage <= 1}
+                className="h-9 w-9 rounded-full shrink-0"
+                aria-label="Sebelumnya"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="text-xs text-muted-foreground text-center flex-1">
+                Halaman <span className="font-semibold text-foreground">{safePage}</span> / {totalPages}
+                <span className="hidden sm:inline"> • {filtered.length} total</span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safePage >= totalPages}
+                className="h-9 w-9 rounded-full shrink-0"
+                aria-label="Berikutnya"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </GlassCard>
           )}
         </div>
       </PageTransition>
