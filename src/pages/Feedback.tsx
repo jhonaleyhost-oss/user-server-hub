@@ -114,6 +114,9 @@ const Feedback = () => {
   const [tips, setTips] = useState<TipRow[]>([]);
   const [showQris, setShowQris] = useState(false);
   const [payMethod, setPayMethod] = useState<"qris" | "all">("qris");
+  const [tipsPage, setTipsPage] = useState(1);
+  const [itemsPage, setItemsPage] = useState(1);
+  const PAGE_SIZE = 50;
   const [qrisPayload, setQrisPayload] = useState<string>("");
   const [qrisLoading, setQrisLoading] = useState(false);
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
