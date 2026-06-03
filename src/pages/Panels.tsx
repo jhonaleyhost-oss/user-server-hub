@@ -65,6 +65,9 @@ const Panels = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
   const [waNumbers, setWaNumbers] = useState<Record<string, string>>({});
+  const [processLogs, setProcessLogs] = useState<string[]>([]);
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [logDialogSuccess, setLogDialogSuccess] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
