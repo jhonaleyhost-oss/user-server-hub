@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Terminal, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect, useRef } from 'react';
 
 interface Props {
   open: boolean;
@@ -28,6 +29,14 @@ const ProcessLogDialog = ({
   success,
 }: Props) => {
   const { toast } = useToast();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom whenever logs update (live streaming)
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const copyLogs = async () => {
     try {
@@ -59,7 +68,10 @@ const ProcessLogDialog = ({
           </DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="bg-black/80 border border-border rounded-lg p-3 max-h-[50vh] overflow-y-auto font-mono text-xs text-green-300 space-y-0.5">
+        <div
+          ref={scrollRef}
+          className="bg-black/80 border border-border rounded-lg p-3 max-h-[50vh] min-h-[200px] overflow-y-auto font-mono text-xs text-green-300 space-y-0.5"
+        >
           {logs.length === 0 ? (
             <div className="text-muted-foreground">Tidak ada log.</div>
           ) : (
