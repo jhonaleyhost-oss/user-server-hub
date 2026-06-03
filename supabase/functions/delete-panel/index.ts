@@ -16,6 +16,24 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const logs: string[] = [];
+  const log = (msg: string) => {
+    const line = `[${new Date().toISOString().split('T')[1].split('.')[0]}] ${msg}`;
+    logs.push(line);
+    console.log(line);
+  };
+
+  // Helper: fetch with timeout — critical so dead servers don't hang the function
+  const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 5000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(id);
+    }
+  };
+
   try {
     // Get authorization header
     const authHeader = req.headers.get('Authorization');
@@ -33,11 +51,11 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
-      console.error('Auth error:', authError);
+      log(`Auth error: ${authError?.message}`);
       throw new Error('Unauthorized');
     }
 
-    console.log('User authenticated:', user.id);
+    log(`User terverifikasi: ${user.id}`);
 
     // Check if user is admin (admins can delete any panel)
     const { data: isAdminData } = await supabase.rpc('is_admin', { _user_id: user.id });
@@ -46,7 +64,7 @@ serve(async (req) => {
     // Parse request body
     const { panelId }: DeletePanelRequest = await req.json();
     
-    console.log('Request to delete panel:', panelId);
+    log(`Permintaan hapus panel: ${panelId}`);
 
     if (!panelId) {
       throw new Error('Missing required field: panelId');
@@ -72,43 +90,71 @@ serve(async (req) => {
     const { data: panelData, error: panelError } = await panelQuery.single();
 
     if (panelError || !panelData) {
-      console.error('Panel fetch error:', panelError);
+      log(`Panel fetch error: ${panelError?.message}`);
       throw new Error('Panel tidak ditemukan atau Anda tidak memiliki akses');
     }
 
-    console.log('Panel found:', panelData.username, 'Ptero Server ID:', panelData.ptero_server_id, 'Ptero User ID:', panelData.ptero_user_id);
+    log(`Panel ditemukan: ${panelData.username} (ptero_server_id=${panelData.ptero_server_id}, ptero_user_id=${panelData.ptero_user_id})`);
 
     const pteroServer = panelData.pterodactyl_servers;
 
-    // Step 1: Delete server in Pterodactyl (if exists)
-    if (panelData.ptero_server_id) {
-      console.log('Deleting server from Pterodactyl...');
-      const deleteServerResponse = await fetch(
-        `${pteroServer.domain}/api/application/servers/${panelData.ptero_server_id}/force`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${pteroServer.plta_key}`,
-            'Accept': 'application/json',
+    // Step 0: Quick health check (2s) so we skip remote calls on dead servers
+    let serverAlive = false;
+    if (pteroServer?.domain) {
+      log(`Cek status server ${pteroServer.domain}...`);
+      try {
+        const ping = await fetchWithTimeout(
+          `${pteroServer.domain}/api/application/servers?per_page=1`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${pteroServer.plta_key}`,
+              'Accept': 'application/json',
+            },
           },
-        }
-      );
-
-      console.log('Delete server response:', deleteServerResponse.status);
-
-      if (!deleteServerResponse.ok && deleteServerResponse.status !== 404) {
-        const errorText = await deleteServerResponse.text();
-        console.error('Failed to delete Pterodactyl server:', deleteServerResponse.status, errorText);
-        // Continue anyway - we still want to delete from our database
-      } else {
-        console.log('Server deleted from Pterodactyl successfully');
+          2500
+        );
+        serverAlive = ping.ok;
+        log(serverAlive ? `Server online (HTTP ${ping.status})` : `Server merespon HTTP ${ping.status} — lewati panggilan API`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        log(`Server tidak merespon (${msg}) — lewati panggilan API, lanjut hapus dari database`);
+        serverAlive = false;
       }
+    } else {
+      log('Panel tidak punya server terkait — langsung hapus dari database');
     }
 
-    // Step 2: Delete user in Pterodactyl (if exists)
-    // Note: Only delete if no other panels use this user
-    if (panelData.ptero_user_id) {
-      // Check if other panels use the same ptero_user_id
+    // Step 1: Delete server in Pterodactyl (only if server alive)
+    if (serverAlive && panelData.ptero_server_id) {
+      log(`Menghapus server Pterodactyl id=${panelData.ptero_server_id}...`);
+      try {
+        const resp = await fetchWithTimeout(
+          `${pteroServer.domain}/api/application/servers/${panelData.ptero_server_id}/force`,
+          {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${pteroServer.plta_key}`,
+              'Accept': 'application/json',
+            },
+          },
+          5000
+        );
+        if (resp.ok || resp.status === 404) {
+          log(`Server Pterodactyl terhapus (HTTP ${resp.status})`);
+        } else {
+          const t = await resp.text().catch(() => '');
+          log(`Gagal hapus server Pterodactyl HTTP ${resp.status}: ${t.slice(0, 200)}`);
+        }
+      } catch (e) {
+        log(`Timeout/error hapus server Pterodactyl: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } else if (panelData.ptero_server_id) {
+      log('Lewati hapus server Pterodactyl karena server offline');
+    }
+
+    // Step 2: Delete user in Pterodactyl if no other panels use it
+    if (serverAlive && panelData.ptero_user_id) {
       const { count } = await supabase
         .from('user_panels')
         .select('*', { count: 'exact', head: true })
@@ -116,49 +162,57 @@ serve(async (req) => {
         .neq('id', panelId);
 
       if (count === 0) {
-        console.log('No other panels use this Pterodactyl user, deleting user...');
-        const deleteUserResponse = await fetch(
-          `${pteroServer.domain}/api/application/users/${panelData.ptero_user_id}`,
-          {
-            method: 'DELETE',
-            headers: {
-              'Authorization': `Bearer ${pteroServer.plta_key}`,
-              'Accept': 'application/json',
+        log(`Menghapus user Pterodactyl id=${panelData.ptero_user_id}...`);
+        try {
+          const resp = await fetchWithTimeout(
+            `${pteroServer.domain}/api/application/users/${panelData.ptero_user_id}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'Authorization': `Bearer ${pteroServer.plta_key}`,
+                'Accept': 'application/json',
+              },
             },
+            5000
+          );
+          if (resp.ok || resp.status === 404) {
+            log(`User Pterodactyl terhapus (HTTP ${resp.status})`);
+          } else {
+            const t = await resp.text().catch(() => '');
+            log(`Gagal hapus user Pterodactyl HTTP ${resp.status}: ${t.slice(0, 200)}`);
           }
-        );
-
-        console.log('Delete user response:', deleteUserResponse.status);
-
-        if (!deleteUserResponse.ok && deleteUserResponse.status !== 404) {
-          const errorText = await deleteUserResponse.text();
-          console.error('Failed to delete Pterodactyl user:', deleteUserResponse.status, errorText);
-        } else {
-          console.log('User deleted from Pterodactyl successfully');
+        } catch (e) {
+          log(`Timeout/error hapus user Pterodactyl: ${e instanceof Error ? e.message : String(e)}`);
         }
       } else {
-        console.log('Other panels still use this Pterodactyl user, skipping user deletion');
+        log(`Skip hapus user Pterodactyl — masih dipakai ${count} panel lain`);
       }
+    } else if (panelData.ptero_user_id) {
+      log('Lewati hapus user Pterodactyl karena server offline');
     }
 
     // Step 3: Delete from our database
-    console.log('Deleting panel from database...');
+    log('Menghapus panel dari database...');
     const { error: deleteError } = await supabase
       .from('user_panels')
       .delete()
       .eq('id', panelId);
 
     if (deleteError) {
-      console.error('Database delete error:', deleteError);
+      log(`DB delete error: ${deleteError.message}`);
       throw new Error(`Failed to delete panel from database: ${deleteError.message}`);
     }
 
-    console.log('Panel deleted successfully!');
+    log('Panel berhasil dihapus dari database');
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Panel berhasil dihapus dari Pterodactyl dan database!',
+        message: serverAlive
+          ? 'Panel berhasil dihapus dari Pterodactyl dan database!'
+          : 'Panel berhasil dihapus dari database (server Pterodactyl offline, dilewati).',
+        serverAlive,
+        logs,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -167,11 +221,12 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat menghapus panel';
-    console.error('Error in delete-panel:', errorMessage);
+    log(`ERROR: ${errorMessage}`);
     return new Response(
       JSON.stringify({
         success: false,
         error: errorMessage,
+        logs,
       }),
       {
         status: 400,
