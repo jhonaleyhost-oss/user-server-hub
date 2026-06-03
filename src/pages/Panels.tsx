@@ -412,6 +412,14 @@ Login URL: ${panel.login_url}
         </motion.div>
       </div>
     </div>
+    <ProcessLogDialog
+      open={logDialogOpen}
+      onOpenChange={setLogDialogOpen}
+      title="Log Hapus Panel"
+      description="Proses langkah demi langkah saat menghapus panel."
+      logs={processLogs}
+      success={logDialogSuccess}
+    />
     </AppShell>
     </PageTransition>
   );
