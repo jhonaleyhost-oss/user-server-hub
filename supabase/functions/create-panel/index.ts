@@ -304,6 +304,7 @@ serve(async (req) => {
         ram: ram,
         cpu: cpu,
         disk: disk,
+        panel_type: type,
       })
       .select()
       .single();
