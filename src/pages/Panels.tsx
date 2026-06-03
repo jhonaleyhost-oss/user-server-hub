@@ -19,6 +19,7 @@ import { PageTransition } from '@/components/PageTransition';
 import AppShell from '@/components/AppShell';
 
 import GlassCard from '@/components/GlassCard';
+import ProcessLogDialog from '@/components/ProcessLogDialog';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccentColorPicker from '@/components/AccentColorPicker';
 import { Button } from '@/components/ui/button';
@@ -64,6 +65,9 @@ const Panels = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
   const [waNumbers, setWaNumbers] = useState<Record<string, string>>({});
+  const [processLogs, setProcessLogs] = useState<string[]>([]);
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [logDialogSuccess, setLogDialogSuccess] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
@@ -140,12 +144,19 @@ Login URL: ${panel.login_url}
       if (error) throw error;
       
       if (!data.success) {
+        setProcessLogs(Array.isArray(data?.logs) ? data.logs : []);
+        setLogDialogSuccess(false);
+        setLogDialogOpen(true);
         throw new Error(data.error || 'Gagal menghapus panel');
       }
 
+      setProcessLogs(Array.isArray(data?.logs) ? data.logs : []);
+      setLogDialogSuccess(true);
+      setLogDialogOpen(true);
+
       toast({
         title: 'Berhasil',
-        description: 'Panel berhasil dihapus dari server dan database.',
+        description: data?.message || 'Panel berhasil dihapus.',
       });
 
       fetchPanels();
@@ -401,6 +412,14 @@ Login URL: ${panel.login_url}
         </motion.div>
       </div>
     </div>
+    <ProcessLogDialog
+      open={logDialogOpen}
+      onOpenChange={setLogDialogOpen}
+      title="Log Hapus Panel"
+      description="Proses langkah demi langkah saat menghapus panel."
+      logs={processLogs}
+      success={logDialogSuccess}
+    />
     </AppShell>
     </PageTransition>
   );
