@@ -1826,6 +1826,14 @@ const Admin = () => {
         </p>
       </div>
     </div>
+    <ProcessLogDialog
+      open={logDialogOpen}
+      onOpenChange={setLogDialogOpen}
+      title={logDialogTitle}
+      description="Detail langkah eksekusi pada Pterodactyl dan database."
+      logs={processLogs}
+      success={logDialogSuccess}
+    />
     </PageTransition>
     </AppShell>
   );
