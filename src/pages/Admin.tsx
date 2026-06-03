@@ -615,11 +615,22 @@ const Admin = () => {
         body: { panelId },
       });
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Gagal menghapus panel');
+      if (!data?.success) {
+        setLogDialogTitle('Log Hapus Panel');
+        setProcessLogs(Array.isArray(data?.logs) ? data.logs : []);
+        setLogDialogSuccess(false);
+        setLogDialogOpen(true);
+        throw new Error(data?.error || 'Gagal menghapus panel');
+      }
+
+      setLogDialogTitle('Log Hapus Panel');
+      setProcessLogs(Array.isArray(data?.logs) ? data.logs : []);
+      setLogDialogSuccess(true);
+      setLogDialogOpen(true);
 
       toast({
         title: 'Berhasil',
-        description: 'Panel berhasil dihapus dari server & database.',
+        description: data?.message || 'Panel berhasil dihapus.',
       });
 
       fetchPanels();
