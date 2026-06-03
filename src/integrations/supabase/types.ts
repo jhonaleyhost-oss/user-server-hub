@@ -592,6 +592,7 @@ export type Database = {
           id: string
           is_active: boolean
           login_url: string
+          panel_type: string
           password: string
           ptero_server_id: number | null
           ptero_user_id: number | null
@@ -609,6 +610,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           login_url: string
+          panel_type?: string
           password: string
           ptero_server_id?: number | null
           ptero_user_id?: number | null
@@ -626,6 +628,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           login_url?: string
+          panel_type?: string
           password?: string
           ptero_server_id?: number | null
           ptero_user_id?: number | null
@@ -746,6 +749,7 @@ export type Database = {
           disk: number
           full_name: string
           id: string
+          panel_type: string
           ram: number
           role: Database["public"]["Enums"]["app_role"]
           server_domain: string
