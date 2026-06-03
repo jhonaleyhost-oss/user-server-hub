@@ -669,6 +669,7 @@ const Admin = () => {
       let deletedCount = 0;
       let failedCount = 0;
       let processedCount = 0;
+      const allLogs: string[] = [];
 
       // Delete in parallel batches of 10 for speed
       const BATCH_SIZE = 10;
@@ -778,11 +779,12 @@ const Admin = () => {
               const { data, error } = await supabase.functions.invoke('delete-panel', {
                 body: { panelId: panel.id },
               });
-              if (error) return { error };
-              if (!data?.success) return { error: new Error(data?.error || 'failed') };
-              return { error: null };
+              const logs: string[] = Array.isArray(data?.logs) ? data.logs : [];
+              if (error) return { error, panel, logs };
+              if (!data?.success) return { error: new Error(data?.error || 'failed'), panel, logs };
+              return { error: null, panel, logs };
             } catch (e: any) {
-              return { error: e };
+              return { error: e, panel, logs: [] as string[] };
             }
           })
         );
@@ -790,6 +792,11 @@ const Admin = () => {
         // Count results
         results.forEach((result) => {
           processedCount++;
+          const header = `===== ${result.panel.username} (${result.panel.id.slice(0, 8)}) — ${result.error ? 'GAGAL' : 'OK'} =====`;
+          allLogs.push(header);
+          if (result.logs && result.logs.length > 0) allLogs.push(...result.logs);
+          if (result.error) allLogs.push(`ERROR: ${result.error.message || result.error}`);
+          allLogs.push('');
           if (result.error) {
             failedCount++;
           } else {
@@ -810,6 +817,12 @@ const Admin = () => {
 
       // Reset progress
       setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0, type: 'panels' });
+
+      // Show consolidated process log
+      setLogDialogTitle(`Log Clear All — ${deletedCount} OK / ${failedCount} gagal`);
+      setProcessLogs(allLogs);
+      setLogDialogSuccess(failedCount === 0);
+      setLogDialogOpen(true);
 
       if (deletedCount > 0) {
         toast({
