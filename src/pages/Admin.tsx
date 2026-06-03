@@ -765,6 +765,7 @@ const Admin = () => {
       let deletedCount = 0;
       let failedCount = 0;
       let processedCount = 0;
+      const allLogs: string[] = [];
 
       // Delete in parallel batches of 10 for speed
       const BATCH_SIZE = 10;
