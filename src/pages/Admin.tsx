@@ -767,11 +767,19 @@ const Admin = () => {
       let processedCount = 0;
       const allLogs: string[] = [];
 
+      // Open live log dialog from the start
+      setLogDialogTitle(`Menghapus ${targetPanels.length} ${label}...`);
+      setProcessLogs([`Mulai menghapus ${targetPanels.length} ${label} (batch 10 paralel)...`, '']);
+      setLogDialogSuccess(true);
+      setLogDialogOpen(true);
+
       // Delete in parallel batches of 10 for speed
       const BATCH_SIZE = 10;
       
       for (let i = 0; i < targetPanels.length; i += BATCH_SIZE) {
         const batch = targetPanels.slice(i, i + BATCH_SIZE);
+        allLogs.push(`--- Batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} panel) ---`);
+        setProcessLogs([...allLogs]);
         
         // Process batch in parallel
         const results = await Promise.all(
@@ -805,6 +813,10 @@ const Admin = () => {
           }
         });
 
+        // Live update logs + progress after each batch
+        setProcessLogs([...allLogs]);
+        setLogDialogTitle(`Menghapus ${label}... ${processedCount}/${targetPanels.length} (OK ${deletedCount} / Gagal ${failedCount})`);
+
         // Update progress after each batch
         setClearingProgress({
           isClearing: true,
@@ -819,11 +831,11 @@ const Admin = () => {
       // Reset progress
       setClearingProgress({ isClearing: false, total: 0, current: 0, deleted: 0, failed: 0, type: 'panels' });
 
-      // Show consolidated process log
-      setLogDialogTitle(`Log Clear All — ${deletedCount} OK / ${failedCount} gagal`);
-      setProcessLogs(allLogs);
+      // Finalize log dialog title + status
+      allLogs.push(`=== SELESAI: ${deletedCount} berhasil, ${failedCount} gagal ===`);
+      setProcessLogs([...allLogs]);
+      setLogDialogTitle(`Selesai — ${deletedCount} OK / ${failedCount} gagal`);
       setLogDialogSuccess(failedCount === 0);
-      setLogDialogOpen(true);
 
       if (deletedCount > 0) {
         toast({
