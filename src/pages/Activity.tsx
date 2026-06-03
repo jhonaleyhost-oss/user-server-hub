@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -23,6 +23,7 @@ interface PanelActivity {
   disk: number;
   server_name: string | null;
   server_domain: string | null;
+  panel_type: string | null;
   created_at: string;
 }
 
@@ -375,6 +376,16 @@ const Activity = () => {
                                 <span className="truncate max-w-[140px]">
                                   {a.server_name || a.server_domain || "Unknown"}
                                 </span>
+                              </span>
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-semibold ${
+                                  a.panel_type === "python"
+                                    ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                                    : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                }`}
+                              >
+                                <Code2 className="w-3 h-3" />
+                                {a.panel_type === "python" ? "Python" : "NodeJS"}
                               </span>
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
                                 <MemoryStick className="w-3 h-3 text-accent" />
