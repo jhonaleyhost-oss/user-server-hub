@@ -176,6 +176,12 @@ const Admin = () => {
 
   // Server status
   const [serverStatuses, setServerStatuses] = useState<Record<string, ServerStatus>>({});
+
+  // Process logs viewer for delete-panel
+  const [processLogs, setProcessLogs] = useState<string[]>([]);
+  const [logDialogOpen, setLogDialogOpen] = useState(false);
+  const [logDialogSuccess, setLogDialogSuccess] = useState(true);
+  const [logDialogTitle, setLogDialogTitle] = useState('Log Hapus Panel');
   const [checkingStatus, setCheckingStatus] = useState(false);
 
   // Clear all progress
