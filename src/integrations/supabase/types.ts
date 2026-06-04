@@ -276,32 +276,38 @@ export type Database = {
       }
       popup_settings: {
         Row: {
+          audience: string
           buttons: Json | null
           content: string
           created_at: string
           id: string
           image_url: string | null
           is_active: boolean
+          kind: string
           title: string
           updated_at: string
         }
         Insert: {
+          audience?: string
           buttons?: Json | null
           content?: string
           created_at?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
+          kind?: string
           title?: string
           updated_at?: string
         }
         Update: {
+          audience?: string
           buttons?: Json | null
           content?: string
           created_at?: string
           id?: string
           image_url?: string | null
           is_active?: boolean
+          kind?: string
           title?: string
           updated_at?: string
         }
