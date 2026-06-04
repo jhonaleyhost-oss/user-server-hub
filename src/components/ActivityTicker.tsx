@@ -174,11 +174,15 @@ const ActivityTicker = () => {
             created_at: string;
           };
           const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          const [uname, ptypeRaw] = (row.detail || "").split("|");
+          const ptype = (ptypeRaw || "").toLowerCase();
+          const typeLabel = ptype === "python" ? "Python" : ptype === "nodejs" ? "NodeJS" : null;
+          const detailText = uname ? (typeLabel ? `${uname} • ${typeLabel}` : uname) : undefined;
           push({
             id: `panel-${row.id}`,
             kind: "panel",
             text: `${name} membuat panel`,
-            detail: row.detail ?? undefined,
+            detail: detailText,
             created_at: row.created_at,
           });
         }
