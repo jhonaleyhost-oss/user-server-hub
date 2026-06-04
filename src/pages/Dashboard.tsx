@@ -38,6 +38,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import AccentColorPicker from '@/components/AccentColorPicker';
 import ActivityTicker from '@/components/ActivityTicker';
 import UpgradeTicker from '@/components/UpgradeTicker';
+import WarningPopup from '@/components/WarningPopup';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -317,7 +318,7 @@ const Dashboard = () => {
     <PageTransition>
     <AppShell>
     <div className="min-h-screen py-6 px-4 bg-background">
-
+      <WarningPopup />
 
       <div className="w-full max-w-2xl mx-auto relative z-10">
         <ActivityTicker />
