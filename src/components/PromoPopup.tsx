@@ -34,6 +34,7 @@ const PromoPopup = () => {
         .from('popup_settings')
         .select('id, title, content, image_url, buttons')
         .eq('is_active', true)
+        .eq('kind', 'promo')
         .limit(1)
         .maybeSingle();
 
