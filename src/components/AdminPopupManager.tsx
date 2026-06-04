@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Eye, EyeOff, Plus, Trash2, Loader2, Image } from 'lucide-react';
+import { Save, Eye, EyeOff, Plus, Trash2, Loader2, Image, Sparkles, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,22 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import GlassCard from '@/components/GlassCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface PopupButton {
   label: string;
   url: string;
 }
+
+type PopupKind = 'promo' | 'warning';
+type PopupAudience = 'all' | 'reseller';
 
 interface PopupData {
   id: string;
@@ -21,9 +32,16 @@ interface PopupData {
   image_url: string | null;
   is_active: boolean;
   buttons: PopupButton[];
+  kind: PopupKind;
+  audience: PopupAudience;
 }
 
-const AdminPopupManager = () => {
+const KIND_DEFAULTS: Record<PopupKind, Partial<PopupData>> = {
+  promo: { title: 'Promo', kind: 'promo', audience: 'all' },
+  warning: { title: 'Pengumuman Penting', kind: 'warning', audience: 'all' },
+};
+
+const PopupEditor = ({ kind }: { kind: PopupKind }) => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,9 +49,10 @@ const AdminPopupManager = () => {
 
   const fetchPopup = async () => {
     setLoading(true);
-    const { data } = await supabase
+    const { data } = await (supabase
       .from('popup_settings')
-      .select('*')
+      .select('*') as any)
+      .eq('kind', kind)
       .limit(1)
       .maybeSingle();
 
@@ -41,23 +60,32 @@ const AdminPopupManager = () => {
       const buttons = Array.isArray(data.buttons)
         ? (data.buttons as unknown as PopupButton[])
         : [];
-      setPopup({ ...data, buttons });
+      setPopup({
+        ...data,
+        buttons,
+        kind: (data.kind as PopupKind) || kind,
+        audience: (data.audience as PopupAudience) || 'all',
+      });
+    } else {
+      setPopup(null);
     }
     setLoading(false);
   };
 
-  useEffect(() => { fetchPopup(); }, []);
+  useEffect(() => { fetchPopup(); }, [kind]);
 
   const handleSave = async () => {
     if (!popup) return;
     setSaving(true);
 
-    const payload = {
+    const payload: any = {
       title: popup.title,
       content: popup.content,
       image_url: popup.image_url || null,
       is_active: popup.is_active,
       buttons: JSON.parse(JSON.stringify(popup.buttons)),
+      kind: popup.kind,
+      audience: popup.audience,
     };
 
     let error;
@@ -102,10 +130,24 @@ const AdminPopupManager = () => {
   }
 
   if (!popup) {
+    const defaults = KIND_DEFAULTS[kind];
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground mb-4">Belum ada popup. Buat sekarang?</p>
-        <Button onClick={() => setPopup({ id: '', title: 'Promo', content: '', image_url: null, is_active: true, buttons: [] })}>
+        <p className="text-muted-foreground mb-4">Belum ada popup {kind}. Buat sekarang?</p>
+        <Button
+          onClick={() =>
+            setPopup({
+              id: '',
+              title: (defaults.title as string) || 'Popup',
+              content: '',
+              image_url: null,
+              is_active: true,
+              buttons: [],
+              kind,
+              audience: 'all',
+            })
+          }
+        >
           <Plus className="w-4 h-4 mr-2" /> Buat Popup
         </Button>
       </div>
@@ -123,6 +165,28 @@ const AdminPopupManager = () => {
           </span>
         </div>
         <Switch checked={popup.is_active} onCheckedChange={(v) => setPopup({ ...popup, is_active: v })} />
+      </div>
+
+      {/* Audience (warning only, but available for promo too) */}
+      <div className="space-y-2">
+        <Label className="text-sm text-muted-foreground">Target Audience</Label>
+        <Select
+          value={popup.audience}
+          onValueChange={(v) => setPopup({ ...popup, audience: v as PopupAudience })}
+        >
+          <SelectTrigger className="input-glass">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua Pengguna</SelectItem>
+            <SelectItem value="reseller">Hanya Reseller</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-[11px] text-muted-foreground">
+          {popup.audience === 'reseller'
+            ? 'Popup hanya muncul untuk user dengan role reseller (dan admin).'
+            : 'Popup muncul untuk semua user yang login.'}
+        </p>
       </div>
 
       {/* Title */}
@@ -202,6 +266,31 @@ const AdminPopupManager = () => {
         Simpan Popup
       </Button>
     </div>
+  );
+};
+
+const AdminPopupManager = () => {
+  return (
+    <Tabs defaultValue="promo" className="w-full">
+      <TabsList className="grid grid-cols-2 mb-4">
+        <TabsTrigger value="promo" className="gap-2">
+          <Sparkles className="w-4 h-4" /> Promo
+        </TabsTrigger>
+        <TabsTrigger value="warning" className="gap-2">
+          <AlertTriangle className="w-4 h-4" /> Warning
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="promo">
+        <PopupEditor kind="promo" />
+      </TabsContent>
+      <TabsContent value="warning">
+        <p className="text-[11px] text-muted-foreground mb-3">
+          Warning popup muncul di halaman Dashboard. Reseller & admin bisa centang
+          "Jangan tampilkan lagi".
+        </p>
+        <PopupEditor kind="warning" />
+      </TabsContent>
+    </Tabs>
   );
 };
 
