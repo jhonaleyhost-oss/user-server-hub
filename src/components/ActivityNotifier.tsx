@@ -68,8 +68,14 @@ const ActivityNotifier = () => {
           };
           if (row.actor_user_id === user.id) return;
           const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          const [uname, ptypeRaw] = (row.detail || "").split("|");
+          const ptype = (ptypeRaw || "").toLowerCase();
+          const typeLabel = ptype === "python" ? "Python" : ptype === "nodejs" ? "NodeJS" : null;
+          const desc = uname
+            ? `Username: ${uname}${typeLabel ? ` • ${typeLabel}` : ""}`
+            : undefined;
           toast(`${name} membuat panel baru`, {
-            description: row.detail ? `Username: ${row.detail}` : undefined,
+            description: desc,
             icon: <Server className="w-4 h-4 text-primary" />,
             duration: 4000,
           });

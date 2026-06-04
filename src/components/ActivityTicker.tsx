@@ -94,12 +94,15 @@ const ActivityTicker = () => {
         full_name: string | null;
         username: string;
         created_at: string;
+        panel_type?: string | null;
       }>) {
+        const ptype = (p.panel_type || "").toLowerCase();
+        const typeLabel = ptype === "python" ? "Python" : ptype === "nodejs" ? "NodeJS" : null;
         collected.push({
           id: `panel-${p.id}`,
           kind: "panel",
           text: `${p.full_name?.trim() || "Seseorang"} membuat panel`,
-          detail: p.username,
+          detail: typeLabel ? `${p.username} • ${typeLabel}` : p.username,
           created_at: p.created_at,
         });
       }
@@ -174,11 +177,15 @@ const ActivityTicker = () => {
             created_at: string;
           };
           const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          const [uname, ptypeRaw] = (row.detail || "").split("|");
+          const ptype = (ptypeRaw || "").toLowerCase();
+          const typeLabel = ptype === "python" ? "Python" : ptype === "nodejs" ? "NodeJS" : null;
+          const detailText = uname ? (typeLabel ? `${uname} • ${typeLabel}` : uname) : undefined;
           push({
             id: `panel-${row.id}`,
             kind: "panel",
             text: `${name} membuat panel`,
-            detail: row.detail ?? undefined,
+            detail: detailText,
             created_at: row.created_at,
           });
         }
