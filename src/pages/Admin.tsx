@@ -30,6 +30,7 @@ import {
 import AdminPagination from '@/components/AdminPagination';
 import AdminPopupManager from '@/components/AdminPopupManager';
 import AdminActivityLogs from '@/components/AdminActivityLogs';
+import AdminOfflinePanels from '@/components/AdminOfflinePanels';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -952,7 +953,7 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-6 bg-secondary/50 mb-6">
+            <TabsList className="grid w-full grid-cols-7 bg-secondary/50 mb-6">
               <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Users className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Pengguna</span> ({filteredUsers.length})
@@ -964,6 +965,10 @@ const Admin = () => {
               <TabsTrigger value="panels" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <HardDrive className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Panel</span> ({filteredPanels.length})
+              </TabsTrigger>
+              <TabsTrigger value="offline" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <WifiOff className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Offline</span>
               </TabsTrigger>
               <TabsTrigger value="devices" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Fingerprint className="w-4 h-4 mr-2" />
@@ -1823,6 +1828,11 @@ const Admin = () => {
             {/* Popup Tab */}
             <TabsContent value="popup">
               <AdminPopupManager />
+            </TabsContent>
+
+            {/* Offline Panels Tab */}
+            <TabsContent value="offline">
+              <AdminOfflinePanels />
             </TabsContent>
 
             {/* Activity Logs Tab */}

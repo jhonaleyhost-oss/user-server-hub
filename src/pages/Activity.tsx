@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2 } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2, ShieldAlert, Trash2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -51,10 +51,22 @@ interface UpgradeActivity {
   created_at: string;
 }
 
+interface AdminCleanupActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+  role: string;
+  count: number;
+  server_name: string;
+  created_at: string;
+}
+
 type FeedItem =
   | ({ kind: "panel" } & PanelActivity)
   | ({ kind: "signup" } & SignupActivity)
-  | ({ kind: "upgrade" } & UpgradeActivity);
+  | ({ kind: "upgrade" } & UpgradeActivity)
+  | ({ kind: "admin_cleanup" } & AdminCleanupActivity);
 
 const formatSpec = (n: number) => (n === 0 ? "Unlimited" : `${n}`);
 
@@ -87,11 +99,12 @@ const Activity = () => {
   const [panels, setPanels] = useState<PanelActivity[]>([]);
   const [signups, setSignups] = useState<SignupActivity[]>([]);
   const [upgrades, setUpgrades] = useState<UpgradeActivity[]>([]);
+  const [cleanups, setCleanups] = useState<AdminCleanupActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
-  const [tab, setTab] = useState<"panel" | "signup" | "upgrade">("panel");
+  const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "admin">("panel");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
@@ -106,11 +119,17 @@ const Activity = () => {
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes, upgradeRes, usersRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_upgrade_activity", { _limit: 500 }),
       supabase.rpc("get_public_users"),
+      supabase
+        .from("activity_events")
+        .select("id, actor_user_id, actor_name, actor_role, detail, amount, created_at")
+        .eq("kind", "admin_cleanup")
+        .order("created_at", { ascending: false })
+        .limit(200),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
@@ -119,6 +138,25 @@ const Activity = () => {
     setPanels((panelRes.data ?? []) as PanelActivity[]);
     setSignups((signupRes.data ?? []) as SignupActivity[]);
     setUpgrades((upgradeRes.data ?? []) as UpgradeActivity[]);
+    if (!cleanupRes.error && cleanupRes.data) {
+      const rows = cleanupRes.data as Array<{
+        id: string; actor_user_id: string | null; actor_name: string | null;
+        actor_role: string | null; detail: string | null; amount: number | null; created_at: string;
+      }>;
+      setCleanups(rows.map(r => {
+        const [countStr, serverName] = (r.detail || "").split("|");
+        return {
+          id: r.id,
+          user_id: r.actor_user_id || "",
+          full_name: r.actor_name,
+          avatar_url: null,
+          role: r.actor_role || "admin",
+          count: r.amount ?? (parseInt(countStr || "0", 10) || 0),
+          server_name: serverName || "Server",
+          created_at: r.created_at,
+        };
+      }));
+    }
     if (!usersRes.error && usersRes.data) {
       const map: Record<string, { plan: string | null; permanent: boolean }> = {};
       for (const u of usersRes.data as Array<{
@@ -183,8 +221,11 @@ const Activity = () => {
     if (tab === "upgrade") {
       return upgrades.map((u) => ({ kind: "upgrade" as const, ...u }));
     }
+    if (tab === "admin") {
+      return cleanups.map((c) => ({ kind: "admin_cleanup" as const, ...c }));
+    }
     return signups.map((s) => ({ kind: "signup" as const, ...s }));
-  }, [tab, panels, signups, upgrades]);
+  }, [tab, panels, signups, upgrades, cleanups]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -193,6 +234,7 @@ const Activity = () => {
       const fields: (string | null | undefined)[] = [a.full_name, a.role];
       if (a.kind === "panel") fields.push(a.username, a.server_name, a.server_domain);
       if (a.kind === "upgrade") fields.push(a.plan, String(a.amount));
+      if (a.kind === "admin_cleanup") fields.push(a.server_name, String(a.count));
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
   }, [current, search]);
@@ -220,7 +262,9 @@ const Activity = () => {
                     ? "Log pembuatan panel secara real-time"
                     : tab === "signup"
                     ? "Log pendaftaran user baru secara real-time"
-                    : "Log upgrade Reseller secara real-time"}
+                    : tab === "upgrade"
+                    ? "Log upgrade Reseller secara real-time"
+                    : "Log admin membersihkan panel offline"}
                 </p>
               </div>
             </div>
@@ -237,7 +281,7 @@ const Activity = () => {
             </Button>
           </GlassCard>
 
-          <GlassCard className="!rounded-full p-1 mb-3 flex gap-1">
+          <GlassCard className="!rounded-full p-1 mb-3 flex gap-1 overflow-x-auto">
             <button
               type="button"
               onClick={() => setTab("panel")}
@@ -276,6 +320,19 @@ const Activity = () => {
               <Crown className="w-3.5 h-3.5" />
               Upgrade
               <span className="ml-1 text-[10px] opacity-80">({upgrades.length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab("admin")}
+              className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
+                tab === "admin"
+                  ? "bg-gradient-to-r from-rose-500 to-primary text-white shadow"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Admin
+              <span className="ml-1 text-[10px] opacity-80">({cleanups.length})</span>
             </button>
           </GlassCard>
 
@@ -409,6 +466,25 @@ const Activity = () => {
                             </span>
                             <span className="text-muted-foreground">sebagai pengguna baru</span>
                           </div>
+                        ) : a.kind === "admin_cleanup" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Membersihkan{" "}
+                              <span className="font-semibold text-rose-400">{a.count} panel offline</span>
+                              {" • "}
+                              <span className="font-semibold text-foreground">{a.server_name}</span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold">
+                                <Trash2 className="w-3 h-3" />
+                                Cleanup
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                <Server className="w-3 h-3 text-primary" />
+                                {a.server_name}
+                              </span>
+                            </div>
+                          </>
                         ) : (
                           <>
                             <p className="text-xs text-muted-foreground mb-2">

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Server, MessageCircle, Star } from "lucide-react";
+import { Server, MessageCircle, Star, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -78,6 +78,27 @@ const ActivityNotifier = () => {
             description: desc,
             icon: <Server className="w-4 h-4 text-primary" />,
             duration: 4000,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.admin_cleanup" },
+        async (payload) => {
+          if (!readyRef.current) return;
+          const row = payload.new as {
+            actor_user_id: string | null;
+            actor_name: string | null;
+            detail: string | null;
+            amount: number | null;
+          };
+          const name = row.actor_name?.trim() || (row.actor_user_id ? await nameOf(row.actor_user_id) : "Admin");
+          const [countStr, serverName] = (row.detail || "").split("|");
+          const count = row.amount ?? (parseInt(countStr || "0", 10) || 0);
+          toast(`${name} membersihkan panel offline`, {
+            description: `${count} panel dihapus${serverName ? ` • ${serverName}` : ""}`,
+            icon: <ShieldAlert className="w-4 h-4 text-rose-400" />,
+            duration: 5000,
           });
         }
       )
