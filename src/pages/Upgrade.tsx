@@ -56,9 +56,9 @@ interface Plan {
 }
 
 const PLANS: Plan[] = [
-  { key: '1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 5000 },
-  { key: '2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 10000, badge: 'Hemat' },
-  { key: 'perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 15000, badge: 'Spesial', highlight: true },
+  { key: '1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 10000 },
+  { key: '2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 15000, badge: 'Hemat' },
+  { key: 'perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 20000, badge: 'Spesial', highlight: true },
 ];
 
 const PAKASIR_SLUG = 'jhonaley-store';
