@@ -94,7 +94,7 @@ const ActivityNotifier = () => {
           };
           const name = row.actor_name?.trim() || (row.actor_user_id ? await nameOf(row.actor_user_id) : "Admin");
           const [countStr, serverName] = (row.detail || "").split("|");
-          const count = row.amount ?? parseInt(countStr || "0", 10) || 0;
+          const count = row.amount ?? (parseInt(countStr || "0", 10) || 0);
           toast(`${name} membersihkan panel offline`, {
             description: `${count} panel dihapus${serverName ? ` • ${serverName}` : ""}`,
             icon: <ShieldAlert className="w-4 h-4 text-rose-400" />,

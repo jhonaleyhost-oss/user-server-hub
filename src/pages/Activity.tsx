@@ -151,7 +151,7 @@ const Activity = () => {
           full_name: r.actor_name,
           avatar_url: null,
           role: r.actor_role || "admin",
-          count: r.amount ?? parseInt(countStr || "0", 10) || 0,
+          count: r.amount ?? (parseInt(countStr || "0", 10) || 0),
           server_name: serverName || "Server",
           created_at: r.created_at,
         };
