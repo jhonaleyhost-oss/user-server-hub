@@ -535,7 +535,11 @@ const Chat = () => {
       setInput("");
       setReplyTo(null);
     } catch (err: any) {
-      toast.error(err?.message || "Gagal mengirim pesan");
+      const msg = String(err?.message || "");
+      const friendly = /failed to fetch|networkerror|load failed/i.test(msg)
+        ? "Tidak ada koneksi internet. Coba lagi setelah online."
+        : msg || "Gagal mengirim pesan";
+      toast.error(friendly, { id: "chat-send-error" });
     } finally {
       setSending(false);
     }
@@ -611,7 +615,11 @@ const Chat = () => {
       );
       cancelEdit();
     } catch (err: any) {
-      toast.error(err?.message || "Gagal mengedit pesan");
+      const msg = String(err?.message || "");
+      const friendly = /failed to fetch|networkerror|load failed/i.test(msg)
+        ? "Tidak ada koneksi internet. Coba lagi setelah online."
+        : msg || "Gagal mengedit pesan";
+      toast.error(friendly, { id: "chat-edit-error" });
     } finally {
       setSavingEdit(false);
     }
