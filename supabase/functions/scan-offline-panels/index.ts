@@ -40,7 +40,7 @@ serve(async (req) => {
 
     const { data: server, error: srvErr } = await supabase
       .from('pterodactyl_servers')
-      .select('id, name, domain, plta_key')
+      .select('id, name, domain, plta_key, pltc_key')
       .eq('id', serverId)
       .single();
     if (srvErr || !server) throw new Error('Server tidak ditemukan');
@@ -73,7 +73,7 @@ serve(async (req) => {
     type Result = {
       id: string; username: string; email: string; owner_email: string | null; owner_name: string | null;
       ptero_server_id: number | null;
-      status: 'orphan' | 'suspended' | 'unreachable' | 'online' | 'unknown';
+      status: 'orphan' | 'suspended' | 'power_off' | 'unreachable' | 'online' | 'unknown';
       panel_type: string | null; ram: number; cpu: number; disk: number; created_at: string;
     };
     const results: Result[] = [];
@@ -118,7 +118,32 @@ serve(async (req) => {
               try {
                 const body = await r.json();
                 const suspended = !!body?.attributes?.suspended;
-                status = suspended ? 'suspended' : 'online';
+                if (suspended) {
+                  status = 'suspended';
+                } else {
+                  // Cek power state via Client API (mirip /delserveroff bot)
+                  const uuid = body?.attributes?.uuid as string | undefined;
+                  if (uuid && server.pltc_key) {
+                    try {
+                      const cr = await fetchWithTimeout(
+                        `${server.domain}/api/client/servers/${uuid}/resources`,
+                        { headers: { 'Authorization': `Bearer ${server.pltc_key}`, 'Accept': 'application/json' } },
+                        4000
+                      );
+                      if (cr.ok) {
+                        const cb = await cr.json();
+                        const state = String(cb?.attributes?.current_state || '').toLowerCase();
+                        status = (state === 'offline' || state === 'stopped') ? 'power_off' : 'online';
+                      } else {
+                        status = 'online';
+                      }
+                    } catch {
+                      status = 'online';
+                    }
+                  } else {
+                    status = 'online';
+                  }
+                }
               } catch {
                 status = 'online';
               }
@@ -148,6 +173,7 @@ serve(async (req) => {
 
     const orphanCount = results.filter(r => r.status === 'orphan').length;
     const suspendedCount = results.filter(r => r.status === 'suspended').length;
+    const powerOffCount = results.filter(r => r.status === 'power_off').length;
     const unreachableCount = results.filter(r => r.status === 'unreachable').length;
 
     return new Response(JSON.stringify({
@@ -157,8 +183,9 @@ serve(async (req) => {
       total: results.length,
       orphanCount,
       suspendedCount,
+      powerOffCount,
       unreachableCount,
-      offlineCount: orphanCount + suspendedCount + unreachableCount,
+      offlineCount: orphanCount + suspendedCount + powerOffCount + unreachableCount,
       onlineCount: results.filter(r => r.status === 'online').length,
       panels: results,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
