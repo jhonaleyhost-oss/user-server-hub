@@ -177,7 +177,7 @@ const Chat = () => {
         .limit(100);
       if (cancelled) return;
       if (error) {
-        toast.error("Gagal memuat pesan");
+        toast.error("Gagal memuat pesan", { id: "chat-load-error" });
         setLoading(false);
         return;
       }
