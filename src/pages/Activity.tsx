@@ -107,6 +107,12 @@ const Activity = () => {
   const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "admin">("panel");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const [page, setPage] = useState(1);
+  const [totalCounts, setTotalCounts] = useState<{ panel: number; signup: number; upgrade: number; admin: number }>({
+    panel: 0,
+    signup: 0,
+    upgrade: 0,
+    admin: 0,
+  });
   const PAGE_SIZE = 50;
 
   // Reset to page 1 when tab or search changes
@@ -119,7 +125,7 @@ const Activity = () => {
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes, signupCountRes, panelCountRes, upgradeCountRes, adminCountRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_upgrade_activity", { _limit: 500 }),
@@ -130,6 +136,10 @@ const Activity = () => {
         .eq("kind", "admin_cleanup")
         .order("created_at", { ascending: false })
         .limit(200),
+      supabase.from("profiles").select("user_id", { count: "exact", head: true }),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "panel_created"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "upgrade"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "admin_cleanup"),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
@@ -138,6 +148,12 @@ const Activity = () => {
     setPanels((panelRes.data ?? []) as PanelActivity[]);
     setSignups((signupRes.data ?? []) as SignupActivity[]);
     setUpgrades((upgradeRes.data ?? []) as UpgradeActivity[]);
+    setTotalCounts({
+      panel: panelCountRes.count ?? (panelRes.data?.length ?? 0),
+      signup: signupCountRes.count ?? (signupRes.data?.length ?? 0),
+      upgrade: upgradeCountRes.count ?? (upgradeRes.data?.length ?? 0),
+      admin: adminCountRes.count ?? 0,
+    });
     if (!cleanupRes.error && cleanupRes.data) {
       const rows = cleanupRes.data as Array<{
         id: string; actor_user_id: string | null; actor_name: string | null;
