@@ -57,7 +57,11 @@ const WarningPopup = () => {
 
       try {
         // Suppress only within the same daily window (resets 07:00 WIB).
-        if (localStorage.getItem(dismissedKey(data.id)) === currentWindowKey()) return;
+        const stored = localStorage.getItem(dismissedKey(data.id));
+        const windowKey = currentWindowKey();
+        if (stored === windowKey) return;
+        // New day: clear stale dismissal so the checkbox starts fresh.
+        if (stored) localStorage.removeItem(dismissedKey(data.id));
       } catch {}
 
       const buttons = Array.isArray(data.buttons)
