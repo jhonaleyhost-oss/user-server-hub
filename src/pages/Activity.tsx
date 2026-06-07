@@ -125,7 +125,7 @@ const Activity = () => {
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes, signupCountRes, panelCountRes, upgradeCountRes, adminCountRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_upgrade_activity", { _limit: 500 }),
@@ -136,10 +136,6 @@ const Activity = () => {
         .eq("kind", "admin_cleanup")
         .order("created_at", { ascending: false })
         .limit(200),
-      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "signup"),
-      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "panel"),
-      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "upgrade"),
-      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "admin_cleanup"),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
@@ -148,12 +144,20 @@ const Activity = () => {
     setPanels((panelRes.data ?? []) as PanelActivity[]);
     setSignups((signupRes.data ?? []) as SignupActivity[]);
     setUpgrades((upgradeRes.data ?? []) as UpgradeActivity[]);
-    setTotalCounts({
-      panel: panelCountRes.count ?? (panelRes.data?.length ?? 0),
-      signup: signupCountRes.count ?? (signupRes.data?.length ?? 0),
-      upgrade: upgradeCountRes.count ?? (upgradeRes.data?.length ?? 0),
-      admin: adminCountRes.count ?? 0,
-    });
+    // Load total counts in background (don't block main render)
+    Promise.all([
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "panel"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "signup"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "upgrade"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "admin_cleanup"),
+    ]).then(([pc, sc, uc, ac]) => {
+      setTotalCounts({
+        panel: pc.count ?? (panelRes.data?.length ?? 0),
+        signup: sc.count ?? (signupRes.data?.length ?? 0),
+        upgrade: uc.count ?? (upgradeRes.data?.length ?? 0),
+        admin: ac.count ?? 0,
+      });
+    }).catch((e) => console.error("Count fetch failed:", e));
     if (!cleanupRes.error && cleanupRes.data) {
       const rows = cleanupRes.data as Array<{
         id: string; actor_user_id: string | null; actor_name: string | null;
@@ -193,8 +197,14 @@ const Activity = () => {
     if (!user) return;
     (async () => {
       setLoading(true);
-      await load();
-      setLoading(false);
+      try {
+        await load();
+      } catch (e) {
+        console.error("Activity load failed:", e);
+        toast.error("Gagal memuat aktivitas");
+      } finally {
+        setLoading(false);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
