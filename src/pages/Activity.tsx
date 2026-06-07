@@ -136,8 +136,8 @@ const Activity = () => {
         .eq("kind", "admin_cleanup")
         .order("created_at", { ascending: false })
         .limit(200),
-      supabase.from("profiles").select("user_id", { count: "exact", head: true }),
-      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "panel_created"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "signup"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "panel"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "upgrade"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "admin_cleanup"),
     ]);
