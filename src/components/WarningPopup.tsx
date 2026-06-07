@@ -29,6 +29,16 @@ const WarningPopup = () => {
 
   const dismissedKey = (id: string) => `warning_popup_dismissed_${id}`;
 
+  // Window key resets every day at 07:00 WIB (= 00:00 UTC).
+  // We use the current UTC date (YYYY-MM-DD) as the window identifier.
+  const currentWindowKey = () => {
+    const now = new Date();
+    const y = now.getUTCFullYear();
+    const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(now.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   useEffect(() => {
     if (roleLoading) return;
     const fetchPopup = async () => {
@@ -46,7 +56,8 @@ const WarningPopup = () => {
       if (audience === 'reseller' && !(isReseller || isAdmin)) return;
 
       try {
-        if (localStorage.getItem(dismissedKey(data.id)) === '1') return;
+        // Suppress only within the same daily window (resets 07:00 WIB).
+        if (localStorage.getItem(dismissedKey(data.id)) === currentWindowKey()) return;
       } catch {}
 
       const buttons = Array.isArray(data.buttons)
@@ -70,7 +81,7 @@ const WarningPopup = () => {
   const handleClose = () => {
     if (canHide && dontShow && popup) {
       try {
-        localStorage.setItem(dismissedKey(popup.id), '1');
+        localStorage.setItem(dismissedKey(popup.id), currentWindowKey());
       } catch {}
     }
     setOpen(false);
