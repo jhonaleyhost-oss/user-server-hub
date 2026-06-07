@@ -193,8 +193,14 @@ const Activity = () => {
     if (!user) return;
     (async () => {
       setLoading(true);
-      await load();
-      setLoading(false);
+      try {
+        await load();
+      } catch (e) {
+        console.error("Activity load failed:", e);
+        toast.error("Gagal memuat aktivitas");
+      } finally {
+        setLoading(false);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
