@@ -309,7 +309,7 @@ const Activity = () => {
             >
               <Server className="w-3.5 h-3.5" />
               Panel
-              <span className="ml-1 text-[10px] opacity-80">({panels.length})</span>
+              <span className="ml-1 text-[10px] opacity-80">({totalCounts.panel || panels.length})</span>
             </button>
             <button
               type="button"
@@ -322,7 +322,7 @@ const Activity = () => {
             >
               <UserPlus className="w-3.5 h-3.5" />
               Pendaftar
-              <span className="ml-1 text-[10px] opacity-80">({signups.length})</span>
+              <span className="ml-1 text-[10px] opacity-80">({totalCounts.signup || signups.length})</span>
             </button>
             <button
               type="button"
@@ -335,7 +335,7 @@ const Activity = () => {
             >
               <Crown className="w-3.5 h-3.5" />
               Upgrade
-              <span className="ml-1 text-[10px] opacity-80">({upgrades.length})</span>
+              <span className="ml-1 text-[10px] opacity-80">({totalCounts.upgrade || upgrades.length})</span>
             </button>
             <button
               type="button"
@@ -348,7 +348,7 @@ const Activity = () => {
             >
               <ShieldAlert className="w-3.5 h-3.5" />
               Admin
-              <span className="ml-1 text-[10px] opacity-80">({cleanups.length})</span>
+              <span className="ml-1 text-[10px] opacity-80">({totalCounts.admin || cleanups.length})</span>
             </button>
           </GlassCard>
 
