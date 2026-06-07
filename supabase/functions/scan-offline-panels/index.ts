@@ -72,19 +72,20 @@ serve(async (req) => {
 
     type Result = {
       id: string; username: string; email: string; owner_email: string | null; owner_name: string | null;
-      ptero_server_id: number | null; status: 'offline' | 'online' | 'unknown';
+      ptero_server_id: number | null;
+      status: 'orphan' | 'suspended' | 'unreachable' | 'online' | 'unknown';
       panel_type: string | null; ram: number; cpu: number; disk: number; created_at: string;
     };
     const results: Result[] = [];
 
     if (!serverAlive) {
-      // Server itself dead — semua panel di server ini dianggap offline (tidak bisa diakses)
+      // Server itself dead — semua panel di server ini dianggap unreachable
       for (const p of (panels || [])) {
         results.push({
           id: p.id, username: p.username, email: p.email,
           owner_email: profileMap[p.user_id]?.email ?? null,
           owner_name: profileMap[p.user_id]?.full_name ?? null,
-          ptero_server_id: p.ptero_server_id, status: 'offline',
+          ptero_server_id: p.ptero_server_id, status: 'unreachable',
           panel_type: p.panel_type, ram: p.ram, cpu: p.cpu, disk: p.disk, created_at: p.created_at,
         });
       }
@@ -100,7 +101,7 @@ serve(async (req) => {
               id: p.id, username: p.username, email: p.email,
               owner_email: profileMap[p.user_id]?.email ?? null,
               owner_name: profileMap[p.user_id]?.full_name ?? null,
-              ptero_server_id: null, status: 'offline',
+              ptero_server_id: null, status: 'orphan',
               panel_type: p.panel_type, ram: p.ram, cpu: p.cpu, disk: p.disk, created_at: p.created_at,
             };
           }
@@ -110,7 +111,20 @@ serve(async (req) => {
               { headers: { 'Authorization': `Bearer ${server.plta_key}`, 'Accept': 'application/json' } },
               4000
             );
-            const status: Result['status'] = r.status === 404 ? 'offline' : r.ok ? 'online' : 'unknown';
+            let status: Result['status'];
+            if (r.status === 404) {
+              status = 'orphan';
+            } else if (r.ok) {
+              try {
+                const body = await r.json();
+                const suspended = !!body?.attributes?.suspended;
+                status = suspended ? 'suspended' : 'online';
+              } catch {
+                status = 'online';
+              }
+            } else {
+              status = 'unknown';
+            }
             return {
               id: p.id, username: p.username, email: p.email,
               owner_email: profileMap[p.user_id]?.email ?? null,
@@ -123,7 +137,7 @@ serve(async (req) => {
               id: p.id, username: p.username, email: p.email,
               owner_email: profileMap[p.user_id]?.email ?? null,
               owner_name: profileMap[p.user_id]?.full_name ?? null,
-              ptero_server_id: p.ptero_server_id, status: 'unknown',
+              ptero_server_id: p.ptero_server_id, status: 'unreachable',
               panel_type: p.panel_type, ram: p.ram, cpu: p.cpu, disk: p.disk, created_at: p.created_at,
             };
           }
@@ -132,12 +146,19 @@ serve(async (req) => {
       }
     }
 
+    const orphanCount = results.filter(r => r.status === 'orphan').length;
+    const suspendedCount = results.filter(r => r.status === 'suspended').length;
+    const unreachableCount = results.filter(r => r.status === 'unreachable').length;
+
     return new Response(JSON.stringify({
       success: true,
       serverAlive,
       serverName: server.name,
       total: results.length,
-      offlineCount: results.filter(r => r.status === 'offline').length,
+      orphanCount,
+      suspendedCount,
+      unreachableCount,
+      offlineCount: orphanCount + suspendedCount + unreachableCount,
       onlineCount: results.filter(r => r.status === 'online').length,
       panels: results,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });

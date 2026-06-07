@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { WifiOff, Loader2, RefreshCw, Trash2, ServerCrash, CheckCircle2, AlertTriangle, Code2 } from 'lucide-react';
+import { WifiOff, Loader2, RefreshCw, Trash2, ServerCrash, CheckCircle2, AlertTriangle, Code2, Ghost, PauseCircle, CloudOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,9 +17,12 @@ interface ServerOption { id: string; name: string; domain: string; }
 interface OfflinePanel {
   id: string; username: string; email: string;
   owner_email: string | null; owner_name: string | null;
-  ptero_server_id: number | null; status: 'offline' | 'online' | 'unknown';
+  ptero_server_id: number | null;
+  status: 'orphan' | 'suspended' | 'unreachable' | 'online' | 'unknown';
   panel_type: string | null; ram: number; cpu: number; disk: number; created_at: string;
 }
+
+type FilterType = 'all' | 'orphan' | 'ptero';
 
 const AdminOfflinePanels = () => {
   const { toast } = useToast();
@@ -31,6 +34,7 @@ const AdminOfflinePanels = () => {
   const [scanned, setScanned] = useState(false);
   const [serverAlive, setServerAlive] = useState<boolean | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filter, setFilter] = useState<FilterType>('all');
   const [logs, setLogs] = useState<string[]>([]);
   const [logOpen, setLogOpen] = useState(false);
   const [logSuccess, setLogSuccess] = useState(true);
@@ -60,12 +64,14 @@ const AdminOfflinePanels = () => {
       setPanels(data.panels || []);
       setServerAlive(!!data.serverAlive);
       setScanned(true);
-      // Auto-select all offline panels
-      const offlineIds = (data.panels || []).filter((p: OfflinePanel) => p.status === 'offline').map((p: OfflinePanel) => p.id);
+      // Auto-select all panels that are NOT online (orphan + suspended + unreachable + unknown)
+      const offlineIds = (data.panels || [])
+        .filter((p: OfflinePanel) => p.status !== 'online')
+        .map((p: OfflinePanel) => p.id);
       setSelected(new Set(offlineIds));
       toast({
         title: 'Scan selesai',
-        description: `${data.offlineCount} panel offline dari ${data.total} panel${!data.serverAlive ? ' (server tidak merespon)' : ''}.`,
+        description: `${data.orphanCount ?? 0} orphan • ${(data.suspendedCount ?? 0) + (data.unreachableCount ?? 0)} offline Ptero • ${data.onlineCount ?? 0} online`,
       });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Gagal scan', description: e.message });
@@ -74,12 +80,27 @@ const AdminOfflinePanels = () => {
     }
   };
 
-  const offlinePanels = panels.filter(p => p.status === 'offline');
-  const allSelected = offlinePanels.length > 0 && offlinePanels.every(p => selected.has(p.id));
+  const orphanPanels = panels.filter(p => p.status === 'orphan');
+  const pteroOfflinePanels = panels.filter(p => p.status === 'suspended' || p.status === 'unreachable');
+  const allOfflinePanels = panels.filter(p => p.status !== 'online');
+
+  const visiblePanels =
+    filter === 'orphan' ? orphanPanels
+    : filter === 'ptero' ? pteroOfflinePanels
+    : allOfflinePanels;
+
+  const allSelected = visiblePanels.length > 0 && visiblePanels.every(p => selected.has(p.id));
 
   const toggleAll = () => {
-    if (allSelected) setSelected(new Set());
-    else setSelected(new Set(offlinePanels.map(p => p.id)));
+    if (allSelected) {
+      const next = new Set(selected);
+      visiblePanels.forEach(p => next.delete(p.id));
+      setSelected(next);
+    } else {
+      const next = new Set(selected);
+      visiblePanels.forEach(p => next.add(p.id));
+      setSelected(next);
+    }
   };
   const toggleOne = (id: string) => {
     const next = new Set(selected);
@@ -112,6 +133,30 @@ const AdminOfflinePanels = () => {
   const fmtDate = (s: string) =>
     new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: '2-digit' });
 
+  const statusBadge = (s: OfflinePanel['status']) => {
+    if (s === 'orphan') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-rose-500/10 border-rose-500/30 text-rose-400">
+        <Ghost className="w-3 h-3" />Orphan 404
+      </span>
+    );
+    if (s === 'suspended') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-amber/10 border-amber/40 text-amber">
+        <PauseCircle className="w-3 h-3" />Suspended
+      </span>
+    );
+    if (s === 'unreachable') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-orange-500/10 border-orange-500/30 text-orange-400">
+        <CloudOff className="w-3 h-3" />Unreachable
+      </span>
+    );
+    if (s === 'unknown') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-muted/30 border-border text-muted-foreground">
+        <AlertTriangle className="w-3 h-3" />Unknown
+      </span>
+    );
+    return null;
+  };
+
   return (
     <div className="space-y-4">
       {/* Controls */}
@@ -137,14 +182,18 @@ const AdminOfflinePanels = () => {
       {/* Status summary */}
       {scanned && (
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-3 gap-2">
+          className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="rounded-xl p-3 border border-border bg-secondary/30">
             <p className="text-[10px] text-muted-foreground uppercase">Total</p>
             <p className="text-lg font-bold">{panels.length}</p>
           </div>
-          <div className="rounded-xl p-3 border border-red-500/30 bg-red-500/10">
-            <p className="text-[10px] text-red-300 uppercase flex items-center gap-1"><WifiOff className="w-3 h-3" />Offline</p>
-            <p className="text-lg font-bold text-red-400">{offlinePanels.length}</p>
+          <div className="rounded-xl p-3 border border-rose-500/30 bg-rose-500/10">
+            <p className="text-[10px] text-rose-300 uppercase flex items-center gap-1"><Ghost className="w-3 h-3" />Orphan (404)</p>
+            <p className="text-lg font-bold text-rose-400">{orphanPanels.length}</p>
+          </div>
+          <div className="rounded-xl p-3 border border-amber/40 bg-amber/10">
+            <p className="text-[10px] text-amber uppercase flex items-center gap-1"><WifiOff className="w-3 h-3" />Offline Ptero</p>
+            <p className="text-lg font-bold text-amber">{pteroOfflinePanels.length}</p>
           </div>
           <div className="rounded-xl p-3 border border-emerald-500/30 bg-emerald-500/10">
             <p className="text-[10px] text-emerald-300 uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Online</p>
@@ -157,28 +206,52 @@ const AdminOfflinePanels = () => {
         <div className="flex items-start gap-2 p-3 rounded-lg border border-amber/40 bg-amber/10 text-xs">
           <AlertTriangle className="w-4 h-4 text-amber shrink-0 mt-0.5" />
           <p className="text-amber">
-            Server Pterodactyl <b>tidak merespon</b> — semua panel di server ini dianggap offline.
+            Server Pterodactyl <b>tidak merespon</b> — semua panel di server ini ditandai <b>Unreachable</b>.
             Hapus panel hanya akan membersihkan database lokal.
           </p>
         </div>
       )}
 
+      {/* Filter chips */}
+      {scanned && allOfflinePanels.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {([
+            { key: 'all', label: `Semua (${allOfflinePanels.length})`, color: 'bg-primary text-primary-foreground' },
+            { key: 'orphan', label: `Orphan 404 (${orphanPanels.length})`, color: 'bg-rose-500 text-white' },
+            { key: 'ptero', label: `Offline Ptero (${pteroOfflinePanels.length})`, color: 'bg-amber text-black' },
+          ] as { key: FilterType; label: string; color: string }[]).map(f => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+                filter === f.key
+                  ? `${f.color} border-transparent shadow`
+                  : 'bg-secondary/40 text-muted-foreground border-border hover:text-foreground'
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Bulk action */}
-      {scanned && offlinePanels.length > 0 && (
+      {scanned && visiblePanels.length > 0 && (
         <div className="flex items-center justify-between flex-wrap gap-2">
           <p className="text-xs text-muted-foreground">
-            <b className="text-foreground">{selected.size}</b> dari {offlinePanels.length} panel offline dipilih
+            <b className="text-foreground">{selected.size}</b> dipilih
+            {filter !== 'all' && <span> dari {visiblePanels.length} ditampilkan</span>}
           </p>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" disabled={selected.size === 0 || deleting} className="gap-2">
                 {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                Hapus {selected.size} Panel Offline
+                Hapus {selected.size} Panel
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="bg-card border border-border rounded-xl">
               <AlertDialogHeader>
-                <AlertDialogTitle>Hapus {selected.size} panel offline?</AlertDialogTitle>
+                <AlertDialogTitle>Hapus {selected.size} panel?</AlertDialogTitle>
                 <AlertDialogDescription>
                   Panel akan dihapus dari database. Aksi ini tidak dapat dibatalkan dan akan tercatat di Aktivitas.
                 </AlertDialogDescription>
@@ -202,7 +275,7 @@ const AdminOfflinePanels = () => {
         </div>
       )}
 
-      {scanned && offlinePanels.length === 0 && (
+      {scanned && allOfflinePanels.length === 0 && (
         <div className="text-center py-10 border border-dashed border-emerald-500/30 rounded-xl bg-emerald-500/5">
           <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto mb-2" />
           <p className="text-sm text-emerald-300">Tidak ada panel offline. Semua bersih ✨</p>
@@ -210,7 +283,7 @@ const AdminOfflinePanels = () => {
       )}
 
       {/* Table */}
-      {scanned && offlinePanels.length > 0 && (
+      {scanned && visiblePanels.length > 0 && (
         <div className="overflow-x-auto rounded-xl border border-border">
           <Table>
             <TableHeader>
@@ -218,6 +291,7 @@ const AdminOfflinePanels = () => {
                 <TableHead className="w-10">
                   <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
                 </TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Username</TableHead>
                 <TableHead>Owner</TableHead>
                 <TableHead>Tipe</TableHead>
@@ -226,11 +300,12 @@ const AdminOfflinePanels = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {offlinePanels.map(p => (
+              {visiblePanels.map(p => (
                 <TableRow key={p.id} className="border-border/50">
                   <TableCell>
                     <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleOne(p.id)} />
                   </TableCell>
+                  <TableCell>{statusBadge(p.status)}</TableCell>
                   <TableCell className="font-mono text-xs">{p.username}</TableCell>
                   <TableCell className="text-xs">
                     <div className="font-medium">{p.owner_name || '—'}</div>
