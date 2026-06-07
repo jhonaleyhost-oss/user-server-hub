@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { WifiOff, Loader2, RefreshCw, Trash2, ServerCrash, CheckCircle2, AlertTriangle, Code2, Ghost, PauseCircle, CloudOff } from 'lucide-react';
+import { WifiOff, Loader2, RefreshCw, Trash2, ServerCrash, CheckCircle2, AlertTriangle, Code2, Ghost, PauseCircle, CloudOff, Power } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -18,11 +18,11 @@ interface OfflinePanel {
   id: string; username: string; email: string;
   owner_email: string | null; owner_name: string | null;
   ptero_server_id: number | null;
-  status: 'orphan' | 'suspended' | 'unreachable' | 'online' | 'unknown';
+  status: 'orphan' | 'suspended' | 'power_off' | 'unreachable' | 'online' | 'unknown';
   panel_type: string | null; ram: number; cpu: number; disk: number; created_at: string;
 }
 
-type FilterType = 'all' | 'orphan' | 'ptero';
+type FilterType = 'all' | 'orphan' | 'power_off' | 'suspended' | 'unreachable';
 
 const AdminOfflinePanels = () => {
   const { toast } = useToast();
@@ -71,7 +71,7 @@ const AdminOfflinePanels = () => {
       setSelected(new Set(offlineIds));
       toast({
         title: 'Scan selesai',
-        description: `${data.orphanCount ?? 0} orphan • ${(data.suspendedCount ?? 0) + (data.unreachableCount ?? 0)} offline Ptero • ${data.onlineCount ?? 0} online`,
+        description: `${data.orphanCount ?? 0} orphan • ${data.powerOffCount ?? 0} power off • ${data.suspendedCount ?? 0} suspended • ${data.unreachableCount ?? 0} unreachable • ${data.onlineCount ?? 0} online`,
       });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Gagal scan', description: e.message });
@@ -81,12 +81,16 @@ const AdminOfflinePanels = () => {
   };
 
   const orphanPanels = panels.filter(p => p.status === 'orphan');
-  const pteroOfflinePanels = panels.filter(p => p.status === 'suspended' || p.status === 'unreachable');
+  const powerOffPanels = panels.filter(p => p.status === 'power_off');
+  const suspendedPanels = panels.filter(p => p.status === 'suspended');
+  const unreachablePanels = panels.filter(p => p.status === 'unreachable');
   const allOfflinePanels = panels.filter(p => p.status !== 'online');
 
   const visiblePanels =
     filter === 'orphan' ? orphanPanels
-    : filter === 'ptero' ? pteroOfflinePanels
+    : filter === 'power_off' ? powerOffPanels
+    : filter === 'suspended' ? suspendedPanels
+    : filter === 'unreachable' ? unreachablePanels
     : allOfflinePanels;
 
   const allSelected = visiblePanels.length > 0 && visiblePanels.every(p => selected.has(p.id));
@@ -139,6 +143,11 @@ const AdminOfflinePanels = () => {
         <Ghost className="w-3 h-3" />Orphan 404
       </span>
     );
+    if (s === 'power_off') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-red-500/10 border-red-500/30 text-red-400">
+        <Power className="w-3 h-3" />Power Off
+      </span>
+    );
     if (s === 'suspended') return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-amber/10 border-amber/40 text-amber">
         <PauseCircle className="w-3 h-3" />Suspended
@@ -182,7 +191,7 @@ const AdminOfflinePanels = () => {
       {/* Status summary */}
       {scanned && (
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          className="grid grid-cols-2 sm:grid-cols-5 gap-2">
           <div className="rounded-xl p-3 border border-border bg-secondary/30">
             <p className="text-[10px] text-muted-foreground uppercase">Total</p>
             <p className="text-lg font-bold">{panels.length}</p>
@@ -191,9 +200,13 @@ const AdminOfflinePanels = () => {
             <p className="text-[10px] text-rose-300 uppercase flex items-center gap-1"><Ghost className="w-3 h-3" />Orphan (404)</p>
             <p className="text-lg font-bold text-rose-400">{orphanPanels.length}</p>
           </div>
+          <div className="rounded-xl p-3 border border-red-500/30 bg-red-500/10">
+            <p className="text-[10px] text-red-300 uppercase flex items-center gap-1"><Power className="w-3 h-3" />Power Off</p>
+            <p className="text-lg font-bold text-red-400">{powerOffPanels.length}</p>
+          </div>
           <div className="rounded-xl p-3 border border-amber/40 bg-amber/10">
-            <p className="text-[10px] text-amber uppercase flex items-center gap-1"><WifiOff className="w-3 h-3" />Offline Ptero</p>
-            <p className="text-lg font-bold text-amber">{pteroOfflinePanels.length}</p>
+            <p className="text-[10px] text-amber uppercase flex items-center gap-1"><PauseCircle className="w-3 h-3" />Suspended</p>
+            <p className="text-lg font-bold text-amber">{suspendedPanels.length}</p>
           </div>
           <div className="rounded-xl p-3 border border-emerald-500/30 bg-emerald-500/10">
             <p className="text-[10px] text-emerald-300 uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Online</p>
@@ -218,7 +231,9 @@ const AdminOfflinePanels = () => {
           {([
             { key: 'all', label: `Semua (${allOfflinePanels.length})`, color: 'bg-primary text-primary-foreground' },
             { key: 'orphan', label: `Orphan 404 (${orphanPanels.length})`, color: 'bg-rose-500 text-white' },
-            { key: 'ptero', label: `Offline Ptero (${pteroOfflinePanels.length})`, color: 'bg-amber text-black' },
+            { key: 'power_off', label: `Power Off (${powerOffPanels.length})`, color: 'bg-red-500 text-white' },
+            { key: 'suspended', label: `Suspended (${suspendedPanels.length})`, color: 'bg-amber text-black' },
+            { key: 'unreachable', label: `Unreachable (${unreachablePanels.length})`, color: 'bg-orange-500 text-white' },
           ] as { key: FilterType; label: string; color: string }[]).map(f => (
             <button
               key={f.key}
