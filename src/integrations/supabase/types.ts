@@ -47,6 +47,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_rentals: {
+        Row: {
+          amount: number | null
+          buttons: Json
+          content: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          image_url: string | null
+          is_admin_slot: boolean
+          order_id: string | null
+          paid_at: string | null
+          starts_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          buttons?: Json
+          content?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_admin_slot?: boolean
+          order_id?: string | null
+          paid_at?: string | null
+          starts_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          buttons?: Json
+          content?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_admin_slot?: boolean
+          order_id?: string | null
+          paid_at?: string | null
+          starts_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           created_at: string
@@ -726,7 +780,17 @@ export type Database = {
           role: string
         }[]
       }
+      activate_ad_rental: { Args: { _order_id: string }; Returns: Json }
       activate_reseller: { Args: { _order_id: string }; Returns: Json }
+      create_admin_ad: {
+        Args: {
+          _buttons: Json
+          _content: string
+          _image_url: string
+          _title: string
+        }
+        Returns: string
+      }
       decrement_panel_count: { Args: { _user_id: string }; Returns: undefined }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -736,6 +800,30 @@ export type Database = {
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
+      }
+      get_active_ads: {
+        Args: never
+        Returns: {
+          buttons: Json
+          content: string
+          expires_at: string
+          id: string
+          image_url: string
+          is_admin_slot: boolean
+          owner_name: string
+          owner_role: Database["public"]["Enums"]["app_role"]
+          title: string
+        }[]
+      }
+      get_ad_slot_info: {
+        Args: never
+        Returns: {
+          available: number
+          month_end: string
+          month_start: string
+          total: number
+          used: number
+        }[]
       }
       get_my_reseller_status: {
         Args: never

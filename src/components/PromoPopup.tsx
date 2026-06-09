@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ExternalLink, Sparkles } from 'lucide-react';
+import { X, ExternalLink, Sparkles, Megaphone, Crown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useNavigate } from 'react-router-dom';
 
-interface PopupButton {
-  label: string;
-  url: string;
-}
+interface PopupButton { label: string; url: string }
 
 interface PopupData {
   id: string;
@@ -17,48 +15,99 @@ interface PopupData {
   content: string;
   image_url: string | null;
   buttons: PopupButton[];
+  // ad metadata
+  isAd?: boolean;
+  ownerName?: string;
 }
+
+// Get next 7AM WIB timestamp (in user local time we use 07:00 local; close enough)
+const nextSevenAm = () => {
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(7, 0, 0, 0);
+  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 1);
+  return target.getTime();
+};
 
 const PromoPopup = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [open, setOpen] = useState(false);
   const [dontShow, setDontShow] = useState(false);
   const { isReseller, isAdmin, loading: roleLoading } = useUserRole();
+  const navigate = useNavigate();
   const canHide = isReseller || isAdmin;
 
-  const dismissedKey = (id: string) => `promo_popup_dismissed_${id}`;
+  const sessionKey = (id: string) => `promo_session_${id}`;
+  const hiddenKey = (id: string) => `promo_hidden_until_${id}`;
 
   useEffect(() => {
-    const fetchPopup = async () => {
-      const { data } = await supabase
+    const fetchAll = async () => {
+      const candidates: PopupData[] = [];
+
+      // 1) Admin promo popup
+      const { data: promo } = await supabase
         .from('popup_settings')
         .select('id, title, content, image_url, buttons')
         .eq('is_active', true)
         .eq('kind', 'promo')
         .limit(1)
         .maybeSingle();
-
-      if (data) {
-        try {
-          if (localStorage.getItem(dismissedKey(data.id)) === '1') return;
-        } catch {}
-        const buttons = Array.isArray(data.buttons)
-          ? (data.buttons as unknown as PopupButton[])
-          : [];
-        setPopup({ ...data, buttons });
-        setOpen(true);
+      if (promo) {
+        candidates.push({
+          ...promo,
+          buttons: Array.isArray(promo.buttons) ? (promo.buttons as unknown as PopupButton[]) : [],
+        });
       }
+
+      // 2) Active rented ads
+      const { data: ads } = await supabase.rpc('get_active_ads');
+      if (Array.isArray(ads)) {
+        for (const a of ads as any[]) {
+          if (!a.content) continue;
+          candidates.push({
+            id: a.id,
+            title: a.title,
+            content: a.content,
+            image_url: a.image_url,
+            buttons: Array.isArray(a.buttons) ? a.buttons : [],
+            isAd: true,
+            ownerName: a.owner_name || 'Pengiklan',
+          });
+        }
+      }
+
+      // Filter dismissed
+      const now = Date.now();
+      const available = candidates.filter((p) => {
+        try {
+          if (sessionStorage.getItem(sessionKey(p.id)) === '1') return false;
+          const hideUntil = localStorage.getItem(hiddenKey(p.id));
+          if (hideUntil && parseInt(hideUntil, 10) > now) return false;
+        } catch {}
+        return true;
+      });
+      if (available.length === 0) return;
+
+      // Random rotation
+      const pick = available[Math.floor(Math.random() * available.length)];
+      setPopup(pick);
+      setOpen(true);
     };
 
     if (roleLoading) return;
-    const timer = setTimeout(fetchPopup, 600);
+    const timer = setTimeout(fetchAll, 600);
     return () => clearTimeout(timer);
   }, [roleLoading]);
 
   const handleClose = () => {
-    if (canHide && dontShow && popup) {
+    if (popup) {
       try {
-        localStorage.setItem(dismissedKey(popup.id), '1');
+        // Always set session-dismiss so it doesn't reopen in same tab
+        sessionStorage.setItem(sessionKey(popup.id), '1');
+        // Reseller "hide until 7AM tomorrow"
+        if (canHide && dontShow) {
+          localStorage.setItem(hiddenKey(popup.id), String(nextSevenAm()));
+        }
       } catch {}
     }
     setOpen(false);
@@ -130,6 +179,18 @@ const PromoPopup = () => {
               <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
             </div>
 
+            {/* Ad label */}
+            {popup.isAd && (
+              <div className="px-4 sm:px-5 pt-2 flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber/15 text-amber border border-amber/30">
+                  <Megaphone className="w-3 h-3" /> Iklan
+                </span>
+                <span className="text-[10px] text-muted-foreground truncate">
+                  oleh <span className="font-semibold text-foreground">{popup.ownerName}</span>
+                </span>
+              </div>
+            )}
+
             {/* Header with glow */}
             <div className="relative p-4 pb-2 sm:p-5 sm:pb-3 shrink-0">
               <div
@@ -141,7 +202,11 @@ const PromoPopup = () => {
               <div className="relative flex items-start justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-primary/15 border border-primary/20">
-                    <Sparkles className="w-5 h-5 text-primary" />
+                    {popup.isAd ? (
+                      <Megaphone className="w-5 h-5 text-primary" />
+                    ) : (
+                      <Sparkles className="w-5 h-5 text-primary" />
+                    )}
                   </div>
                   <h2 className="text-base font-bold text-foreground leading-tight">{popup.title}</h2>
                 </div>
@@ -190,13 +255,21 @@ const PromoPopup = () => {
 
             {/* Footer */}
             <div className="p-4 pt-2 shrink-0">
+              {popup.isAd && !canHide && (
+                <button
+                  onClick={() => { handleClose(); navigate('/upgrade'); }}
+                  className="w-full mb-2 text-[11px] text-muted-foreground hover:text-amber transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <Crown className="w-3 h-3" /> Jadi Reseller untuk hilangkan iklan
+                </button>
+              )}
               {canHide && (
                 <label className="flex items-center gap-2 mb-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
                   <Checkbox
                     checked={dontShow}
                     onCheckedChange={(v) => setDontShow(v === true)}
                   />
-                  <span>Jangan tampilkan lagi</span>
+                  <span>Jangan tampilkan lagi (muncul lagi besok 07:00)</span>
                 </label>
               )}
               <Button
