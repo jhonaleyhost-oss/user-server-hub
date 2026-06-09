@@ -72,6 +72,23 @@ Deno.serve(async (req) => {
     );
 
     // Route by order_id prefix: TIP- => tip jar, lainnya => reseller upgrade
+    if (order_id.startsWith("AD-")) {
+      const { data: act, error: actErr } = await supabase.rpc("activate_ad_rental", {
+        _order_id: order_id,
+      });
+      if (actErr) {
+        console.error("[pakasir-webhook] activate_ad_rental error", actErr);
+        return new Response(JSON.stringify({ ok: false, error: actErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log("[pakasir-webhook] ad activated", act);
+      return new Response(JSON.stringify({ ok: true, status, kind: "ad_rental", activation: act }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (order_id.startsWith("TIP-")) {
       const { error: tipErr } = await supabase
         .from("tips")

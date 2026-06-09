@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Server, MessageCircle, Star, ShieldAlert } from "lucide-react";
+import { Server, MessageCircle, Star, ShieldAlert, Megaphone } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -147,6 +147,25 @@ const ActivityNotifier = () => {
           toast(`${name} memberi feedback`, {
             description: `${stars}${row.message ? ` — ${row.message.slice(0, 80)}` : ""}`,
             icon: <Star className="w-4 h-4 text-amber-400" />,
+            duration: 5000,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.ad_rental" },
+        async (payload) => {
+          if (!readyRef.current) return;
+          const row = payload.new as {
+            actor_user_id: string;
+            actor_name: string | null;
+            detail: string | null;
+            amount: number | null;
+          };
+          const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          toast(`${name} memasang iklan baru`, {
+            description: row.detail || `Iklan aktif 30 hari${row.amount ? ` • Rp ${row.amount.toLocaleString("id-ID")}` : ""}`,
+            icon: <Megaphone className="w-4 h-4 text-amber-400" />,
             duration: 5000,
           });
         }

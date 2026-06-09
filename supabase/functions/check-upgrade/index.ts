@@ -30,12 +30,17 @@ Deno.serve(async (req) => {
     const completed = status === "completed" || status === "success" || status === "paid";
 
     let activation: unknown = null;
+    let kind = "upgrade";
     if (completed) {
       const supabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
-      const { data: act, error: actErr } = await supabase.rpc("activate_reseller", {
+      const rpcName = String(order_id).startsWith("AD-")
+        ? "activate_ad_rental"
+        : "activate_reseller";
+      kind = String(order_id).startsWith("AD-") ? "ad_rental" : "upgrade";
+      const { data: act, error: actErr } = await supabase.rpc(rpcName, {
         _order_id: order_id,
       });
       if (actErr) {
@@ -47,7 +52,7 @@ Deno.serve(async (req) => {
       activation = act;
     }
 
-    return new Response(JSON.stringify({ status, completed, activation, raw: data }), {
+    return new Response(JSON.stringify({ status, completed, activation, kind, raw: data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
