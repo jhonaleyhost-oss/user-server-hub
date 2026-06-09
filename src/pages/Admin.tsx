@@ -31,6 +31,7 @@ import AdminPagination from '@/components/AdminPagination';
 import AdminPopupManager from '@/components/AdminPopupManager';
 import AdminActivityLogs from '@/components/AdminActivityLogs';
 import AdminOfflinePanels from '@/components/AdminOfflinePanels';
+import AdminAdRentals from '@/components/AdminAdRentals';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -953,7 +954,7 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-7 bg-secondary/50 mb-6">
+            <TabsList className="grid w-full grid-cols-8 bg-secondary/50 mb-6">
               <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Users className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Pengguna</span> ({filteredUsers.length})
@@ -977,6 +978,10 @@ const Admin = () => {
               <TabsTrigger value="popup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Megaphone className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Popup</span>
+              </TabsTrigger>
+              <TabsTrigger value="ads" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Megaphone className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Iklan</span>
               </TabsTrigger>
               <TabsTrigger value="logs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Shield className="w-4 h-4 mr-2" />
@@ -1828,6 +1833,11 @@ const Admin = () => {
             {/* Popup Tab */}
             <TabsContent value="popup">
               <AdminPopupManager />
+            </TabsContent>
+
+            {/* Ad Rentals Tab */}
+            <TabsContent value="ads">
+              <AdminAdRentals />
             </TabsContent>
 
             {/* Offline Panels Tab */}
