@@ -20,6 +20,7 @@ import {
   Play,
   Trash2,
   Calendar,
+  Crown,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,6 +57,7 @@ const daysLeft = (iso: string | null) => {
 };
 
 const BENEFITS = [
+  { icon: Crown, title: 'BONUS: Role Reseller 30 Hari', desc: 'Setiap pembelian iklan otomatis upgrade akun kamu jadi Reseller selama 30 hari (senilai Rp 25.000)! Jika sudah reseller, masa aktif diperpanjang 30 hari.' },
   { icon: Eye, title: 'Eksposur ke Semua User', desc: 'Iklan tampil sebagai popup di seluruh halaman website (Dashboard, Panel, Auth, dll) untuk semua pengguna yang login.' },
   { icon: Calendar, title: 'Durasi 30 Hari Penuh', desc: 'Sekali bayar, iklan aktif penuh selama 30 hari kalender. Tidak ada biaya tambahan.' },
   { icon: FileText, title: 'Konten Bisa Diedit', desc: 'Judul, gambar, deskripsi, dan tombol link bisa diubah kapan saja selama masa aktif iklan.' },
@@ -382,6 +384,23 @@ const AdsRental = () => {
                     <span className="text-sm text-muted-foreground">/ 30 hari</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-5">Bayar sekali, iklan kamu tayang penuh selama satu bulan.</p>
+
+                  <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-amber/20 via-primary/15 to-amber/20 border border-amber/40 relative overflow-hidden">
+                    <div className="flex items-start gap-3 relative">
+                      <div className="p-2 rounded-lg bg-amber/20 border border-amber/40 shrink-0">
+                        <Crown className="w-5 h-5 text-amber" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
+                          🎁 BONUS GRATIS: Role Reseller 30 Hari
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber text-black">SENILAI Rp 25.000</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Otomatis aktif begitu pembayaran lunas. Sudah reseller? Masa aktif kamu diperpanjang +30 hari.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="grid sm:grid-cols-2 gap-3 mb-6">
                     {BENEFITS.map((b) => (
