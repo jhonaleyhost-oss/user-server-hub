@@ -20,6 +20,7 @@ import {
   Play,
   Trash2,
   Calendar,
+  Crown,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
