@@ -72,7 +72,7 @@ const TOS = [
   'DILARANG menyertakan link phishing, malware, virus, atau apapun yang membahayakan perangkat/akun pengguna.',
   'Pengiklan bertanggung jawab penuh atas isi iklan dan klaim yang dibuat. Sengketa dengan pembeli/konsumen adalah tanggung jawab pengiklan.',
   'Admin berhak menonaktifkan iklan tanpa pemberitahuan dan TANPA REFUND apabila ditemukan pelanggaran TOS ini.',
-  'Slot iklan terbatas 2 per bulan kalender (di luar slot admin). Jika bulan ini penuh, silakan coba lagi di bulan berikutnya.',
+  'Slot iklan terbatas hanya 2 aktif secara global (di luar slot admin). Jika penuh, tunggu sampai ada iklan yang expired untuk membuka slot baru.',
   'Pembayaran yang sudah berhasil tidak dapat dikembalikan (non-refundable) kecuali terjadi kegagalan sistem dari pihak kami.',
   'Dengan menyewa slot iklan ini Anda setuju pada semua ketentuan di atas.',
 ];
@@ -179,7 +179,7 @@ const AdsRental = () => {
 
   const startPurchase = async () => {
     if (!user) { toast.error('Silakan login dulu'); return; }
-    if (slot.available <= 0) { toast.error('Slot bulan ini sudah penuh, coba lagi bulan depan.'); return; }
+    if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
     if (activeRental) { toast.info('Kamu sudah punya iklan aktif.'); return; }
     setCreating(true);
     try {
@@ -301,7 +301,7 @@ const AdsRental = () => {
                     <span className={`text-2xl font-bold ${slot.available > 0 ? 'text-primary' : 'text-destructive'}`}>
                       {slot.available} / {slot.total}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">bulan ini</span>
+                    <span className="text-[10px] text-muted-foreground">slot aktif</span>
                   </div>
                 )}
               </div>
@@ -401,12 +401,12 @@ const AdsRental = () => {
                     className="w-full sm:w-auto gap-2 btn-primary h-12 px-8 font-bold"
                   >
                     {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-5 h-5" />}
-                    {slot.available <= 0 ? 'Slot Bulan Ini Penuh' : 'Sewa Sekarang via QRIS'}
+                    {slot.available <= 0 ? 'Slot Penuh, Tunggu Ada Expired' : 'Sewa Sekarang via QRIS'}
                   </Button>
                   {slot.available <= 0 && (
                     <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Maks 2 slot per bulan sudah terisi. Coba lagi di bulan depan.
+                      Maks 2 slot aktif sudah terisi. Tunggu sampai ada iklan expired.
                     </p>
                   )}
                 </div>
