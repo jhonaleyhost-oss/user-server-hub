@@ -33,7 +33,7 @@ import { toast } from 'sonner';
 import AdEditor, { AdRentalRow, AdButton } from '@/components/AdEditor';
 import { useNavigate } from 'react-router-dom';
 
-const PRICE = 50000;
+const PRICE = 30000;
 const DURATION_DAYS = 30;
 const QRIS_KEY = (uid: string) => `ad_rental_qris_${uid}`;
 
