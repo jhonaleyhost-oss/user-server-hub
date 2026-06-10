@@ -57,6 +57,7 @@ const daysLeft = (iso: string | null) => {
 };
 
 const BENEFITS = [
+  { icon: Crown, title: 'BONUS: Role Reseller 30 Hari', desc: 'Setiap pembelian iklan otomatis upgrade akun kamu jadi Reseller selama 30 hari (senilai Rp 25.000)! Jika sudah reseller, masa aktif diperpanjang 30 hari.' },
   { icon: Eye, title: 'Eksposur ke Semua User', desc: 'Iklan tampil sebagai popup di seluruh halaman website (Dashboard, Panel, Auth, dll) untuk semua pengguna yang login.' },
   { icon: Calendar, title: 'Durasi 30 Hari Penuh', desc: 'Sekali bayar, iklan aktif penuh selama 30 hari kalender. Tidak ada biaya tambahan.' },
   { icon: FileText, title: 'Konten Bisa Diedit', desc: 'Judul, gambar, deskripsi, dan tombol link bisa diubah kapan saja selama masa aktif iklan.' },
