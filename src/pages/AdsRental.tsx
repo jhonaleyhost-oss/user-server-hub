@@ -72,7 +72,7 @@ const TOS = [
   'DILARANG menyertakan link phishing, malware, virus, atau apapun yang membahayakan perangkat/akun pengguna.',
   'Pengiklan bertanggung jawab penuh atas isi iklan dan klaim yang dibuat. Sengketa dengan pembeli/konsumen adalah tanggung jawab pengiklan.',
   'Admin berhak menonaktifkan iklan tanpa pemberitahuan dan TANPA REFUND apabila ditemukan pelanggaran TOS ini.',
-  'Slot iklan terbatas 2 per bulan kalender (di luar slot admin). Jika bulan ini penuh, silakan coba lagi di bulan berikutnya.',
+  'Slot iklan terbatas hanya 2 aktif secara global (di luar slot admin). Jika penuh, tunggu sampai ada iklan yang expired untuk membuka slot baru.',
   'Pembayaran yang sudah berhasil tidak dapat dikembalikan (non-refundable) kecuali terjadi kegagalan sistem dari pihak kami.',
   'Dengan menyewa slot iklan ini Anda setuju pada semua ketentuan di atas.',
 ];
@@ -179,7 +179,7 @@ const AdsRental = () => {
 
   const startPurchase = async () => {
     if (!user) { toast.error('Silakan login dulu'); return; }
-    if (slot.available <= 0) { toast.error('Slot bulan ini sudah penuh, coba lagi bulan depan.'); return; }
+    if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
     if (activeRental) { toast.info('Kamu sudah punya iklan aktif.'); return; }
     setCreating(true);
     try {
