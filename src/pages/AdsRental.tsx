@@ -33,7 +33,7 @@ import { toast } from 'sonner';
 import AdEditor, { AdRentalRow, AdButton } from '@/components/AdEditor';
 import { useNavigate } from 'react-router-dom';
 
-const PRICE = 50000;
+const PRICE = 30000;
 const DURATION_DAYS = 30;
 const QRIS_KEY = (uid: string) => `ad_rental_qris_${uid}`;
 
@@ -378,7 +378,7 @@ const AdsRental = () => {
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-4xl font-bold text-foreground">Rp 50.000</span>
+                    <span className="text-4xl font-bold text-foreground">Rp 30.000</span>
                     <span className="text-sm text-muted-foreground">/ 30 hari</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-5">Bayar sekali, iklan kamu tayang penuh selama satu bulan.</p>
