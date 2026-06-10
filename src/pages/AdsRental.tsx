@@ -301,7 +301,7 @@ const AdsRental = () => {
                     <span className={`text-2xl font-bold ${slot.available > 0 ? 'text-primary' : 'text-destructive'}`}>
                       {slot.available} / {slot.total}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">bulan ini</span>
+                    <span className="text-[10px] text-muted-foreground">slot aktif</span>
                   </div>
                 )}
               </div>
@@ -401,12 +401,12 @@ const AdsRental = () => {
                     className="w-full sm:w-auto gap-2 btn-primary h-12 px-8 font-bold"
                   >
                     {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-5 h-5" />}
-                    {slot.available <= 0 ? 'Slot Bulan Ini Penuh' : 'Sewa Sekarang via QRIS'}
+                    {slot.available <= 0 ? 'Slot Penuh, Tunggu Ada Expired' : 'Sewa Sekarang via QRIS'}
                   </Button>
                   {slot.available <= 0 && (
                     <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3.5 h-3.5" />
-                      Maks 2 slot per bulan sudah terisi. Coba lagi di bulan depan.
+                      Maks 2 slot aktif sudah terisi. Tunggu sampai ada iklan expired.
                     </p>
                   )}
                 </div>
