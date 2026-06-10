@@ -20,9 +20,9 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <PromoPopup />
             <BrowserRouter>
               <ChatNotifier />
+              <PromoPopup />
               <AnimatedRoutes />
             </BrowserRouter>
           </TooltipProvider>
