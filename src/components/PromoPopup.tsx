@@ -219,16 +219,34 @@ const PromoPopup = () => {
               </div>
             </div>
 
-            {/* Image */}
-            {popup.image_url && (
-              <div className="px-4 shrink-0">
+            {/* Image (clickable if first button has URL) */}
+            {popup.image_url && (() => {
+              const firstUrl = popup.buttons.find((b) => b.url)?.url;
+              const img = (
                 <img
                   src={popup.image_url}
-                  alt="Promo"
-                  className="w-full rounded-xl object-cover max-h-44 border border-border/30"
+                  alt={popup.title || 'Promo'}
+                  className="w-full rounded-xl object-cover max-h-44 border border-border/30 transition-transform hover:scale-[1.01]"
                 />
-              </div>
-            )}
+              );
+              return (
+                <div className="px-4 shrink-0">
+                  {firstUrl ? (
+                    <a
+                      href={firstUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block cursor-pointer"
+                      title="Klik untuk lihat lebih lanjut"
+                    >
+                      {img}
+                    </a>
+                  ) : (
+                    img
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Content - scrollable */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 text-[13px] space-y-0.5">
