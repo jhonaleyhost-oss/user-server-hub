@@ -56,9 +56,9 @@ interface Plan {
 }
 
 const PLANS: Plan[] = [
-  { key: '1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 10000 },
-  { key: '2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 15000, badge: 'Hemat' },
-  { key: 'perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 20000, badge: 'Spesial', highlight: true },
+  { key: '1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 5000 },
+  { key: '2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 10000, badge: 'Hemat' },
+  { key: 'perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 15000, badge: 'Spesial', highlight: true },
 ];
 
 const PAKASIR_SLUG = 'jhonaley-store';
@@ -622,7 +622,7 @@ const Upgrade = () => {
                   <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip & Aman 100%
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 16 / Core 8
+                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 8 GB / 4 Core
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
                   <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python & Node.js
@@ -702,7 +702,7 @@ const Upgrade = () => {
 
                 <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
                   <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan{' '}
-                  <span className="font-semibold">VPS Dedicated</span>. Jika ingin yang{' '}
+                  <span className="font-semibold">VPS DIGITALOCEAN</span>. Jika ingin yang{' '}
                   <span className="font-semibold">anti mokad</span>, silahkan scroll ke bawah dan pilih paket tersebut.
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
