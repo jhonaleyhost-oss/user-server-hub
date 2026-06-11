@@ -53,6 +53,7 @@ export type Database = {
           buttons: Json
           content: string
           created_at: string
+          duration_days: number
           expires_at: string | null
           id: string
           image_url: string | null
@@ -70,6 +71,7 @@ export type Database = {
           buttons?: Json
           content?: string
           created_at?: string
+          duration_days?: number
           expires_at?: string | null
           id?: string
           image_url?: string | null
@@ -87,6 +89,7 @@ export type Database = {
           buttons?: Json
           content?: string
           created_at?: string
+          duration_days?: number
           expires_at?: string | null
           id?: string
           image_url?: string | null
