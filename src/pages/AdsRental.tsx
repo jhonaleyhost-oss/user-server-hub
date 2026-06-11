@@ -400,10 +400,40 @@ const AdsRental = () => {
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-4xl font-bold text-foreground">Rp 30.000</span>
-                    <span className="text-sm text-muted-foreground">/ 30 hari</span>
+                    <span className="text-4xl font-bold text-foreground">Rp {selectedPkg.price.toLocaleString('id-ID')}</span>
+                    <span className="text-sm text-muted-foreground">/ {selectedPkg.days} hari</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-5">Bayar sekali, iklan kamu tayang penuh selama satu bulan.</p>
+                  <p className="text-sm text-muted-foreground mb-5">Pilih paket di bawah — bayar sekali, iklan tayang penuh selama durasi paket.</p>
+
+                  {/* Package picker */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+                    {PACKAGES.map((p) => {
+                      const active = p.key === selectedPkg.key;
+                      return (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => setSelectedPkg(p)}
+                          className={`relative text-left rounded-xl p-3 border-2 transition-all ${
+                            active
+                              ? 'border-amber bg-gradient-to-br from-amber/15 via-primary/10 to-accent/10 shadow-lg shadow-amber/10 scale-[1.02]'
+                              : 'border-border/60 bg-secondary/30 hover:border-primary/40'
+                          }`}
+                        >
+                          {p.badge && (
+                            <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber to-primary text-background">
+                              {p.badge}
+                            </span>
+                          )}
+                          <p className="text-sm font-bold text-foreground">{p.label}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">Rp {p.price.toLocaleString('id-ID')}</p>
+                          <p className="text-[10px] text-amber mt-1 flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5" /> +{p.days}h reseller
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
 
                   <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-amber/20 via-primary/15 to-amber/20 border border-amber/40 relative overflow-hidden">
                     <div className="flex items-start gap-3 relative">
@@ -412,11 +442,11 @@ const AdsRental = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
-                          🎁 BONUS GRATIS: Role Reseller 30 Hari
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber text-black">SENILAI Rp 25.000</span>
+                          🎁 BONUS GRATIS: Role Reseller {selectedPkg.days} Hari
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber text-black">GRATIS</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Otomatis aktif begitu pembayaran lunas. Sudah reseller? Masa aktif kamu diperpanjang +30 hari.
+                          Otomatis aktif begitu pembayaran lunas. Sudah reseller? Masa aktif kamu diperpanjang +{selectedPkg.days} hari.
                         </p>
                       </div>
                     </div>
@@ -440,7 +470,9 @@ const AdsRental = () => {
                     className="w-full sm:w-auto gap-2 btn-primary h-12 px-8 font-bold"
                   >
                     {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-5 h-5" />}
-                    {slot.available <= 0 ? 'Slot Penuh, Tunggu Ada Expired' : 'Sewa Sekarang via QRIS'}
+                    {slot.available <= 0
+                      ? 'Slot Penuh, Tunggu Ada Expired'
+                      : `Sewa ${selectedPkg.label} — Rp ${selectedPkg.price.toLocaleString('id-ID')}`}
                   </Button>
                   {slot.available <= 0 && (
                     <p className="text-xs text-destructive mt-2 flex items-center gap-1">
@@ -523,7 +555,7 @@ const AdsRental = () => {
                 <div>
                   <h3 className="text-lg font-bold text-foreground">Scan QRIS untuk Bayar</h3>
                   <p className="text-sm text-muted-foreground">
-                    Total: <span className="font-bold text-primary">Rp {PRICE.toLocaleString('id-ID')}</span>
+                    Total: <span className="font-bold text-primary">Rp {qrisAmount.toLocaleString('id-ID')}</span>
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-1">Order: {orderId}</p>
                 </div>
