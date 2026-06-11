@@ -34,9 +34,23 @@ import { toast } from 'sonner';
 import AdEditor, { AdRentalRow, AdButton } from '@/components/AdEditor';
 import { useNavigate } from 'react-router-dom';
 
-const PRICE = 30000;
-const DURATION_DAYS = 30;
 const QRIS_KEY = (uid: string) => `ad_rental_qris_${uid}`;
+
+interface AdPackage {
+  key: '1d' | '7d' | '14d' | '30d';
+  label: string;
+  days: number;
+  price: number;
+  badge?: string;
+  highlight?: boolean;
+}
+
+const PACKAGES: AdPackage[] = [
+  { key: '1d',  label: '1 Hari',  days: 1,  price: 2000 },
+  { key: '7d',  label: '7 Hari',  days: 7,  price: 10000, badge: 'Populer' },
+  { key: '14d', label: '14 Hari', days: 14, price: 18000, badge: 'Hemat' },
+  { key: '30d', label: '30 Hari', days: 30, price: 30000, badge: 'Best', highlight: true },
+];
 
 interface MyRental extends AdRentalRow {
   status: string;
@@ -57,7 +71,7 @@ const daysLeft = (iso: string | null) => {
 };
 
 const BENEFITS = [
-  { icon: Crown, title: 'BONUS: Role Reseller 30 Hari', desc: 'Setiap pembelian iklan otomatis upgrade akun kamu jadi Reseller selama 30 hari (senilai Rp 25.000)! Jika sudah reseller, masa aktif diperpanjang 30 hari.' },
+  { icon: Crown, title: 'BONUS: Role Reseller Gratis', desc: 'Setiap pembelian iklan otomatis upgrade akun kamu jadi Reseller selama durasi paket (1/7/14/30 hari). Jika sudah reseller, masa aktif diperpanjang sesuai paket.' },
   { icon: Eye, title: 'Eksposur ke Semua User', desc: 'Iklan tampil sebagai popup di seluruh halaman website (Dashboard, Panel, Auth, dll) untuk semua pengguna yang login.' },
   { icon: Calendar, title: 'Durasi 30 Hari Penuh', desc: 'Sekali bayar, iklan aktif penuh selama 30 hari kalender. Tidak ada biaya tambahan.' },
   { icon: FileText, title: 'Konten Bisa Diedit', desc: 'Judul, gambar, deskripsi, dan tombol link bisa diubah kapan saja selama masa aktif iklan.' },
@@ -96,10 +110,12 @@ const AdsRental = () => {
   const [slot, setSlot] = useState<SlotInfo>({ total: 2, used: 0, available: 2 });
   const [myRentals, setMyRentals] = useState<MyRental[]>([]);
   const [creating, setCreating] = useState(false);
+  const [selectedPkg, setSelectedPkg] = useState<AdPackage>(PACKAGES[3]);
 
   // QRIS state
   const [orderId, setOrderId] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
+  const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
   const [polling, setPolling] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
@@ -142,6 +158,7 @@ const AdsRental = () => {
         if (s.savedAt && Date.now() - s.savedAt < 30 * 60 * 1000) {
           setOrderId(s.orderId);
           setQrisPayload(s.qrisPayload);
+          setQrisAmount(s.amount || 0);
           setShowQris(true);
           setPolling(s.orderId);
         } else {
@@ -162,7 +179,7 @@ const AdsRental = () => {
       }
       try {
         const { data } = await supabase.functions.invoke('check-upgrade', {
-          body: { order_id: polling, amount: PRICE },
+          body: { order_id: polling, amount: qrisAmount },
         });
         if (data?.completed) {
           toast.success('Pembayaran berhasil! Iklan kamu aktif 🎉');
@@ -183,6 +200,7 @@ const AdsRental = () => {
     if (!user) { toast.error('Silakan login dulu'); return; }
     if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
     if (activeRental) { toast.info('Kamu sudah punya iklan aktif.'); return; }
+    const pkg = selectedPkg;
     setCreating(true);
     try {
       const stamp = Date.now().toString(36).toUpperCase();
@@ -194,7 +212,8 @@ const AdsRental = () => {
         user_id: user.id,
         order_id: oid,
         status: 'pending',
-        amount: PRICE,
+        amount: pkg.price,
+        duration_days: pkg.days,
         title: 'Iklan Anda',
         content: '',
         buttons: [],
@@ -203,7 +222,7 @@ const AdsRental = () => {
 
       // 2) Get QRIS
       const { data, error } = await supabase.functions.invoke('create-qris', {
-        body: { amount: PRICE, order_id: oid },
+        body: { amount: pkg.price, order_id: oid },
       });
       if (error || !data?.qris) {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
@@ -212,11 +231,12 @@ const AdsRental = () => {
       }
       setOrderId(oid);
       setQrisPayload(data.qris as string);
+      setQrisAmount(pkg.price);
       setShowQris(true);
       setPolling(oid);
       setPaid(false);
       try {
-        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, savedAt: Date.now() }));
+        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, amount: pkg.price, savedAt: Date.now() }));
       } catch {}
     } finally {
       setCreating(false);
@@ -256,7 +276,7 @@ const AdsRental = () => {
   };
 
   const handleCopy = async () => {
-    const url = `https://app.pakasir.com/pay/jhonaley-store/${PRICE}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
+    const url = `https://app.pakasir.com/pay/jhonaley-store/${qrisAmount}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
     await navigator.clipboard.writeText(url);
     toast.success('Link pembayaran disalin');
   };
