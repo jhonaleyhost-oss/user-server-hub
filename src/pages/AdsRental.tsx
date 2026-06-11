@@ -34,9 +34,23 @@ import { toast } from 'sonner';
 import AdEditor, { AdRentalRow, AdButton } from '@/components/AdEditor';
 import { useNavigate } from 'react-router-dom';
 
-const PRICE = 30000;
-const DURATION_DAYS = 30;
 const QRIS_KEY = (uid: string) => `ad_rental_qris_${uid}`;
+
+interface AdPackage {
+  key: '1d' | '7d' | '14d' | '30d';
+  label: string;
+  days: number;
+  price: number;
+  badge?: string;
+  highlight?: boolean;
+}
+
+const PACKAGES: AdPackage[] = [
+  { key: '1d',  label: '1 Hari',  days: 1,  price: 2000 },
+  { key: '7d',  label: '7 Hari',  days: 7,  price: 10000, badge: 'Populer' },
+  { key: '14d', label: '14 Hari', days: 14, price: 18000, badge: 'Hemat' },
+  { key: '30d', label: '30 Hari', days: 30, price: 30000, badge: 'Best', highlight: true },
+];
 
 interface MyRental extends AdRentalRow {
   status: string;
@@ -57,7 +71,7 @@ const daysLeft = (iso: string | null) => {
 };
 
 const BENEFITS = [
-  { icon: Crown, title: 'BONUS: Role Reseller 30 Hari', desc: 'Setiap pembelian iklan otomatis upgrade akun kamu jadi Reseller selama 30 hari (senilai Rp 25.000)! Jika sudah reseller, masa aktif diperpanjang 30 hari.' },
+  { icon: Crown, title: 'BONUS: Role Reseller Gratis', desc: 'Setiap pembelian iklan otomatis upgrade akun kamu jadi Reseller selama durasi paket (1/7/14/30 hari). Jika sudah reseller, masa aktif diperpanjang sesuai paket.' },
   { icon: Eye, title: 'Eksposur ke Semua User', desc: 'Iklan tampil sebagai popup di seluruh halaman website (Dashboard, Panel, Auth, dll) untuk semua pengguna yang login.' },
   { icon: Calendar, title: 'Durasi 30 Hari Penuh', desc: 'Sekali bayar, iklan aktif penuh selama 30 hari kalender. Tidak ada biaya tambahan.' },
   { icon: FileText, title: 'Konten Bisa Diedit', desc: 'Judul, gambar, deskripsi, dan tombol link bisa diubah kapan saja selama masa aktif iklan.' },
@@ -96,10 +110,12 @@ const AdsRental = () => {
   const [slot, setSlot] = useState<SlotInfo>({ total: 2, used: 0, available: 2 });
   const [myRentals, setMyRentals] = useState<MyRental[]>([]);
   const [creating, setCreating] = useState(false);
+  const [selectedPkg, setSelectedPkg] = useState<AdPackage>(PACKAGES[3]);
 
   // QRIS state
   const [orderId, setOrderId] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
+  const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
   const [polling, setPolling] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
@@ -142,6 +158,7 @@ const AdsRental = () => {
         if (s.savedAt && Date.now() - s.savedAt < 30 * 60 * 1000) {
           setOrderId(s.orderId);
           setQrisPayload(s.qrisPayload);
+          setQrisAmount(s.amount || 0);
           setShowQris(true);
           setPolling(s.orderId);
         } else {
@@ -162,7 +179,7 @@ const AdsRental = () => {
       }
       try {
         const { data } = await supabase.functions.invoke('check-upgrade', {
-          body: { order_id: polling, amount: PRICE },
+          body: { order_id: polling, amount: qrisAmount },
         });
         if (data?.completed) {
           toast.success('Pembayaran berhasil! Iklan kamu aktif 🎉');
@@ -183,6 +200,7 @@ const AdsRental = () => {
     if (!user) { toast.error('Silakan login dulu'); return; }
     if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
     if (activeRental) { toast.info('Kamu sudah punya iklan aktif.'); return; }
+    const pkg = selectedPkg;
     setCreating(true);
     try {
       const stamp = Date.now().toString(36).toUpperCase();
@@ -194,7 +212,8 @@ const AdsRental = () => {
         user_id: user.id,
         order_id: oid,
         status: 'pending',
-        amount: PRICE,
+        amount: pkg.price,
+        duration_days: pkg.days,
         title: 'Iklan Anda',
         content: '',
         buttons: [],
@@ -203,7 +222,7 @@ const AdsRental = () => {
 
       // 2) Get QRIS
       const { data, error } = await supabase.functions.invoke('create-qris', {
-        body: { amount: PRICE, order_id: oid },
+        body: { amount: pkg.price, order_id: oid },
       });
       if (error || !data?.qris) {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
@@ -212,11 +231,12 @@ const AdsRental = () => {
       }
       setOrderId(oid);
       setQrisPayload(data.qris as string);
+      setQrisAmount(pkg.price);
       setShowQris(true);
       setPolling(oid);
       setPaid(false);
       try {
-        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, savedAt: Date.now() }));
+        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, amount: pkg.price, savedAt: Date.now() }));
       } catch {}
     } finally {
       setCreating(false);
@@ -256,7 +276,7 @@ const AdsRental = () => {
   };
 
   const handleCopy = async () => {
-    const url = `https://app.pakasir.com/pay/jhonaley-store/${PRICE}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
+    const url = `https://app.pakasir.com/pay/jhonaley-store/${qrisAmount}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
     await navigator.clipboard.writeText(url);
     toast.success('Link pembayaran disalin');
   };
@@ -380,10 +400,40 @@ const AdsRental = () => {
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
                 <div className="relative">
                   <div className="flex items-baseline gap-2 mb-1">
-                    <span className="text-4xl font-bold text-foreground">Rp 30.000</span>
-                    <span className="text-sm text-muted-foreground">/ 30 hari</span>
+                    <span className="text-4xl font-bold text-foreground">Rp {selectedPkg.price.toLocaleString('id-ID')}</span>
+                    <span className="text-sm text-muted-foreground">/ {selectedPkg.days} hari</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-5">Bayar sekali, iklan kamu tayang penuh selama satu bulan.</p>
+                  <p className="text-sm text-muted-foreground mb-5">Pilih paket di bawah — bayar sekali, iklan tayang penuh selama durasi paket.</p>
+
+                  {/* Package picker */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+                    {PACKAGES.map((p) => {
+                      const active = p.key === selectedPkg.key;
+                      return (
+                        <button
+                          key={p.key}
+                          type="button"
+                          onClick={() => setSelectedPkg(p)}
+                          className={`relative text-left rounded-xl p-3 border-2 transition-all ${
+                            active
+                              ? 'border-amber bg-gradient-to-br from-amber/15 via-primary/10 to-accent/10 shadow-lg shadow-amber/10 scale-[1.02]'
+                              : 'border-border/60 bg-secondary/30 hover:border-primary/40'
+                          }`}
+                        >
+                          {p.badge && (
+                            <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber to-primary text-background">
+                              {p.badge}
+                            </span>
+                          )}
+                          <p className="text-sm font-bold text-foreground">{p.label}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">Rp {p.price.toLocaleString('id-ID')}</p>
+                          <p className="text-[10px] text-amber mt-1 flex items-center gap-1">
+                            <Crown className="w-2.5 h-2.5" /> +{p.days}h reseller
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
 
                   <div className="mb-5 p-4 rounded-xl bg-gradient-to-r from-amber/20 via-primary/15 to-amber/20 border border-amber/40 relative overflow-hidden">
                     <div className="flex items-start gap-3 relative">
@@ -392,11 +442,11 @@ const AdsRental = () => {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-foreground flex items-center gap-2 flex-wrap">
-                          🎁 BONUS GRATIS: Role Reseller 30 Hari
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber text-black">SENILAI Rp 25.000</span>
+                          🎁 BONUS GRATIS: Role Reseller {selectedPkg.days} Hari
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber text-black">GRATIS</span>
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Otomatis aktif begitu pembayaran lunas. Sudah reseller? Masa aktif kamu diperpanjang +30 hari.
+                          Otomatis aktif begitu pembayaran lunas. Sudah reseller? Masa aktif kamu diperpanjang +{selectedPkg.days} hari.
                         </p>
                       </div>
                     </div>
@@ -420,7 +470,9 @@ const AdsRental = () => {
                     className="w-full sm:w-auto gap-2 btn-primary h-12 px-8 font-bold"
                   >
                     {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-5 h-5" />}
-                    {slot.available <= 0 ? 'Slot Penuh, Tunggu Ada Expired' : 'Sewa Sekarang via QRIS'}
+                    {slot.available <= 0
+                      ? 'Slot Penuh, Tunggu Ada Expired'
+                      : `Sewa ${selectedPkg.label} — Rp ${selectedPkg.price.toLocaleString('id-ID')}`}
                   </Button>
                   {slot.available <= 0 && (
                     <p className="text-xs text-destructive mt-2 flex items-center gap-1">
@@ -503,7 +555,7 @@ const AdsRental = () => {
                 <div>
                   <h3 className="text-lg font-bold text-foreground">Scan QRIS untuk Bayar</h3>
                   <p className="text-sm text-muted-foreground">
-                    Total: <span className="font-bold text-primary">Rp {PRICE.toLocaleString('id-ID')}</span>
+                    Total: <span className="font-bold text-primary">Rp {qrisAmount.toLocaleString('id-ID')}</span>
                   </p>
                   <p className="text-[11px] text-muted-foreground mt-1">Order: {orderId}</p>
                 </div>

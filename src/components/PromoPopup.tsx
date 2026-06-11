@@ -33,6 +33,7 @@ const PromoPopup = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [open, setOpen] = useState(false);
   const [dontShow, setDontShow] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const { isReseller, isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const canHide = isReseller || isAdmin;
@@ -219,34 +220,23 @@ const PromoPopup = () => {
               </div>
             </div>
 
-            {/* Image (clickable if first button has URL) */}
-            {popup.image_url && (() => {
-              const firstUrl = popup.buttons.find((b) => b.url)?.url;
-              const img = (
-                <img
-                  src={popup.image_url}
-                  alt={popup.title || 'Promo'}
-                  className="w-full rounded-xl object-cover max-h-44 border border-border/30 transition-transform hover:scale-[1.01]"
-                />
-              );
-              return (
-                <div className="px-4 shrink-0">
-                  {firstUrl ? (
-                    <a
-                      href={firstUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block cursor-pointer"
-                      title="Klik untuk lihat lebih lanjut"
-                    >
-                      {img}
-                    </a>
-                  ) : (
-                    img
-                  )}
-                </div>
-              );
-            })()}
+            {/* Image (click to view full size) */}
+            {popup.image_url && (
+              <div className="px-4 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setLightbox(popup.image_url!)}
+                  className="block w-full cursor-zoom-in"
+                  title="Klik untuk lihat gambar full"
+                >
+                  <img
+                    src={popup.image_url}
+                    alt={popup.title || 'Promo'}
+                    className="w-full rounded-xl object-cover max-h-44 border border-border/30 transition-transform hover:scale-[1.01]"
+                  />
+                </button>
+              </div>
+            )}
 
             {/* Content - scrollable */}
             <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 text-[13px] space-y-0.5">
@@ -299,6 +289,30 @@ const PromoPopup = () => {
               </Button>
             </div>
           </motion.div>
+        </motion.div>
+      )}
+      {lightbox && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[110] bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-secondary/80 hover:bg-secondary flex items-center justify-center"
+            aria-label="Tutup"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          <img
+            src={lightbox}
+            alt="Iklan full"
+            className="max-w-full max-h-full object-contain rounded-xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </motion.div>
       )}
     </AnimatePresence>
