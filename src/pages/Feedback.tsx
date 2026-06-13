@@ -672,7 +672,15 @@ const Feedback = () => {
           {/* Submit feedback */}
           <GlassCard className="p-5">
             <h2 className="text-lg font-bold text-foreground mb-3">Tulis Ulasan</h2>
-            <div className="space-y-3">
+            {!canSendFb && (
+              <div className="mb-3 p-3 rounded-lg bg-amber/10 border border-amber/30 flex items-start gap-2">
+                <Lock className="w-4 h-4 text-amber shrink-0 mt-0.5" />
+                <p className="text-xs text-foreground/90">
+                  Fitur ulasan & balasan hanya untuk pengguna yang sudah <b>upgrade role</b> atau <b>sewa iklan</b>. Donasi tetap bisa siapa saja 💖
+                </p>
+              </div>
+            )}
+            <div className={`space-y-3 ${!canSendFb ? "opacity-60 pointer-events-none select-none" : ""}`}>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Rating kamu</label>
                 <StarRow value={rating} onChange={setRating} size={32} />
@@ -692,7 +700,7 @@ const Feedback = () => {
               </div>
               <Button
                 onClick={handleSubmitFeedback}
-                disabled={submitting || rating < 1}
+                disabled={submitting || rating < 1 || !canSendFb}
                 className="w-full h-11 gap-2"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
