@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download, X } from "lucide-react";
+import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download, X, Lock, MessageCircle, Reply } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
@@ -23,6 +23,16 @@ interface FeedbackRow {
   role: string;
   rating: number;
   message: string | null;
+  created_at: string;
+}
+
+interface ReplyRow {
+  id: string;
+  feedback_id: string;
+  user_id: string;
+  username: string;
+  role: string;
+  content: string;
   created_at: string;
 }
 
@@ -120,6 +130,53 @@ const Feedback = () => {
   const [qrisPayload, setQrisPayload] = useState<string>("");
   const [qrisLoading, setQrisLoading] = useState(false);
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
+  const [canSendFb, setCanSendFb] = useState<boolean>(false);
+  const [replies, setReplies] = useState<ReplyRow[]>([]);
+  const [replyOpen, setReplyOpen] = useState<Record<string, boolean>>({});
+  const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
+  const [replySubmitting, setReplySubmitting] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!user) {
+      setCanSendFb(false);
+      return;
+    }
+    (supabase.rpc as any)("can_send_feedback").then(({ data }: any) => {
+      setCanSendFb(!!data);
+    });
+  }, [user]);
+
+  // Fetch replies + realtime
+  useEffect(() => {
+    supabase
+      .from("feedback_replies" as any)
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1000)
+      .then(({ data }: any) => {
+        if (data) setReplies(data as ReplyRow[]);
+      });
+    const ch = supabase
+      .channel("feedback-replies-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "feedback_replies" },
+        (payload) => {
+          setReplies((prev) => [...prev, payload.new as ReplyRow]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "feedback_replies" },
+        (payload) => {
+          setReplies((prev) => prev.filter((r) => r.id !== (payload.old as any).id));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -273,6 +330,10 @@ const Feedback = () => {
 
   const handleSubmitFeedback = async () => {
     if (!user) return;
+    if (!canSendFb) {
+      toast.error("Hanya pengguna yang sudah upgrade role atau sewa iklan yang bisa memberi ulasan.");
+      return;
+    }
     if (rating < 1 || rating > 5) {
       toast.error("Pilih rating 1-5 bintang terlebih dahulu");
       return;
@@ -305,6 +366,43 @@ const Feedback = () => {
     setRating(0);
     setMessage("");
     toast.success("Terima kasih atas feedback-nya! 🙏");
+  };
+
+  const handleSubmitReply = async (feedbackId: string) => {
+    if (!user) return;
+    if (!canSendFb) {
+      toast.error("Hanya pengguna yang sudah upgrade role atau sewa iklan yang bisa membalas.");
+      return;
+    }
+    const content = (replyDraft[feedbackId] || "").trim();
+    if (!content) {
+      toast.error("Isi balasan dulu");
+      return;
+    }
+    if (content.length > 500) {
+      toast.error("Balasan maksimal 500 karakter");
+      return;
+    }
+    setReplySubmitting((s) => ({ ...s, [feedbackId]: true }));
+    const { error } = await supabase.from("feedback_replies" as any).insert({
+      feedback_id: feedbackId,
+      user_id: user.id,
+      username: fullName || "Anonim",
+      role,
+      content,
+    });
+    setReplySubmitting((s) => ({ ...s, [feedbackId]: false }));
+    if (error) {
+      toast.error("Gagal mengirim balasan: " + error.message);
+      return;
+    }
+    setReplyDraft((d) => ({ ...d, [feedbackId]: "" }));
+    toast.success("Balasan terkirim");
+  };
+
+  const handleDeleteReply = async (id: string) => {
+    const { error } = await supabase.from("feedback_replies" as any).delete().eq("id", id);
+    if (error) toast.error("Gagal menghapus: " + error.message);
   };
 
   const handleDeleteFeedback = async (id: string) => {
