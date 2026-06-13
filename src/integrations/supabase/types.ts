@@ -269,6 +269,44 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback_replies: {
+        Row: {
+          content: string
+          created_at: string
+          feedback_id: string
+          id: string
+          role: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          feedback_id: string
+          id?: string
+          role?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          feedback_id?: string
+          id?: string
+          role?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_replies_feedback_id_fkey"
+            columns: ["feedback_id"]
+            isOneToOne: false
+            referencedRelation: "feedback"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_reads: {
         Row: {
           message_id: string
@@ -785,6 +823,7 @@ export type Database = {
       }
       activate_ad_rental: { Args: { _order_id: string }; Returns: Json }
       activate_reseller: { Args: { _order_id: string }; Returns: Json }
+      can_send_feedback: { Args: never; Returns: boolean }
       create_admin_ad: {
         Args: {
           _buttons: Json
@@ -945,6 +984,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_transacted: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       move_to_dlq: {
         Args: {
