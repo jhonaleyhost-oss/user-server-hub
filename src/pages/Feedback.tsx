@@ -1113,6 +1113,109 @@ const Feedback = () => {
                       <p className="text-[10px] text-muted-foreground mt-2">
                         {formatWIB(f.created_at)}
                       </p>
+
+                      {/* Replies */}
+                      {(() => {
+                        const fReplies = replies.filter((r) => r.feedback_id === f.id);
+                        const isOpen = !!replyOpen[f.id];
+                        return (
+                          <div className="mt-3 pt-3 border-t border-border/40">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setReplyOpen((s) => ({ ...s, [f.id]: !s[f.id] }))
+                              }
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              {fReplies.length > 0
+                                ? `${fReplies.length} balasan`
+                                : "Belum ada balasan"}
+                              <span className="opacity-60">• {isOpen ? "tutup" : "lihat"}</span>
+                            </button>
+
+                            {isOpen && (
+                              <div className="mt-3 space-y-2">
+                                {fReplies.map((r) => {
+                                  const canDelR = user?.id === r.user_id || role === "admin";
+                                  return (
+                                    <div
+                                      key={r.id}
+                                      className="p-2.5 rounded-lg bg-background/50 border border-border/40"
+                                    >
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                                          <span className="text-xs font-semibold text-foreground truncate">
+                                            {r.username}
+                                          </span>
+                                          <VerifiedBadge
+                                            role={r.role}
+                                            plan={planMap[r.user_id]?.plan}
+                                            permanent={planMap[r.user_id]?.permanent}
+                                            size={12}
+                                          />
+                                          <span className="text-[10px] text-muted-foreground">
+                                            {formatWIB(r.created_at)}
+                                          </span>
+                                        </div>
+                                        {canDelR && (
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
+                                            onClick={() => handleDeleteReply(r.id)}
+                                            aria-label="Hapus balasan"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-foreground/90 mt-1 whitespace-pre-wrap break-words">
+                                        {r.content}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+
+                                {canSendFb ? (
+                                  <div className="flex gap-2 items-end">
+                                    <Textarea
+                                      placeholder="Tulis balasan..."
+                                      value={replyDraft[f.id] || ""}
+                                      onChange={(e) =>
+                                        setReplyDraft((d) => ({
+                                          ...d,
+                                          [f.id]: e.target.value,
+                                        }))
+                                      }
+                                      maxLength={500}
+                                      className="min-h-[42px] text-sm flex-1"
+                                    />
+                                    <Button
+                                      onClick={() => handleSubmitReply(f.id)}
+                                      disabled={!!replySubmitting[f.id]}
+                                      size="icon"
+                                      className="h-10 w-10 shrink-0"
+                                      aria-label="Kirim balasan"
+                                    >
+                                      {replySubmitting[f.id] ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Reply className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                                    <Lock className="w-3 h-3" />
+                                    Hanya yang sudah upgrade role / sewa iklan yang bisa membalas.
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
