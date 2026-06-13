@@ -940,6 +940,13 @@ export type Database = {
           unread_admin: number
         }[]
       }
+      get_unread_counts: {
+        Args: never
+        Returns: {
+          chat_unread: number
+          support_unread: number
+        }[]
+      }
       get_upgrade_activity: {
         Args: { _limit?: number }
         Returns: {
