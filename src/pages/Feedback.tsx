@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download, X } from "lucide-react";
+import { Star, Send, Heart, QrCode, Loader2, Trash2, Copy, CheckCircle2, Gift, Download, X, Lock, MessageCircle, Reply } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
@@ -23,6 +23,16 @@ interface FeedbackRow {
   role: string;
   rating: number;
   message: string | null;
+  created_at: string;
+}
+
+interface ReplyRow {
+  id: string;
+  feedback_id: string;
+  user_id: string;
+  username: string;
+  role: string;
+  content: string;
   created_at: string;
 }
 
@@ -120,6 +130,53 @@ const Feedback = () => {
   const [qrisPayload, setQrisPayload] = useState<string>("");
   const [qrisLoading, setQrisLoading] = useState(false);
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
+  const [canSendFb, setCanSendFb] = useState<boolean>(false);
+  const [replies, setReplies] = useState<ReplyRow[]>([]);
+  const [replyOpen, setReplyOpen] = useState<Record<string, boolean>>({});
+  const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
+  const [replySubmitting, setReplySubmitting] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!user) {
+      setCanSendFb(false);
+      return;
+    }
+    (supabase.rpc as any)("can_send_feedback").then(({ data }: any) => {
+      setCanSendFb(!!data);
+    });
+  }, [user]);
+
+  // Fetch replies + realtime
+  useEffect(() => {
+    supabase
+      .from("feedback_replies" as any)
+      .select("*")
+      .order("created_at", { ascending: true })
+      .limit(1000)
+      .then(({ data }: any) => {
+        if (data) setReplies(data as ReplyRow[]);
+      });
+    const ch = supabase
+      .channel("feedback-replies-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "feedback_replies" },
+        (payload) => {
+          setReplies((prev) => [...prev, payload.new as ReplyRow]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "feedback_replies" },
+        (payload) => {
+          setReplies((prev) => prev.filter((r) => r.id !== (payload.old as any).id));
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -273,6 +330,10 @@ const Feedback = () => {
 
   const handleSubmitFeedback = async () => {
     if (!user) return;
+    if (!canSendFb) {
+      toast.error("Hanya pengguna yang sudah upgrade role atau sewa iklan yang bisa memberi ulasan.");
+      return;
+    }
     if (rating < 1 || rating > 5) {
       toast.error("Pilih rating 1-5 bintang terlebih dahulu");
       return;
@@ -305,6 +366,43 @@ const Feedback = () => {
     setRating(0);
     setMessage("");
     toast.success("Terima kasih atas feedback-nya! 🙏");
+  };
+
+  const handleSubmitReply = async (feedbackId: string) => {
+    if (!user) return;
+    if (!canSendFb) {
+      toast.error("Hanya pengguna yang sudah upgrade role atau sewa iklan yang bisa membalas.");
+      return;
+    }
+    const content = (replyDraft[feedbackId] || "").trim();
+    if (!content) {
+      toast.error("Isi balasan dulu");
+      return;
+    }
+    if (content.length > 500) {
+      toast.error("Balasan maksimal 500 karakter");
+      return;
+    }
+    setReplySubmitting((s) => ({ ...s, [feedbackId]: true }));
+    const { error } = await supabase.from("feedback_replies" as any).insert({
+      feedback_id: feedbackId,
+      user_id: user.id,
+      username: fullName || "Anonim",
+      role,
+      content,
+    });
+    setReplySubmitting((s) => ({ ...s, [feedbackId]: false }));
+    if (error) {
+      toast.error("Gagal mengirim balasan: " + error.message);
+      return;
+    }
+    setReplyDraft((d) => ({ ...d, [feedbackId]: "" }));
+    toast.success("Balasan terkirim");
+  };
+
+  const handleDeleteReply = async (id: string) => {
+    const { error } = await supabase.from("feedback_replies" as any).delete().eq("id", id);
+    if (error) toast.error("Gagal menghapus: " + error.message);
   };
 
   const handleDeleteFeedback = async (id: string) => {
@@ -574,7 +672,15 @@ const Feedback = () => {
           {/* Submit feedback */}
           <GlassCard className="p-5">
             <h2 className="text-lg font-bold text-foreground mb-3">Tulis Ulasan</h2>
-            <div className="space-y-3">
+            {!canSendFb && (
+              <div className="mb-3 p-3 rounded-lg bg-amber/10 border border-amber/30 flex items-start gap-2">
+                <Lock className="w-4 h-4 text-amber shrink-0 mt-0.5" />
+                <p className="text-xs text-foreground/90">
+                  Fitur ulasan & balasan hanya untuk pengguna yang sudah <b>upgrade role</b> atau <b>sewa iklan</b>. Donasi tetap bisa siapa saja 💖
+                </p>
+              </div>
+            )}
+            <div className={`space-y-3 ${!canSendFb ? "opacity-60 pointer-events-none select-none" : ""}`}>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Rating kamu</label>
                 <StarRow value={rating} onChange={setRating} size={32} />
@@ -594,7 +700,7 @@ const Feedback = () => {
               </div>
               <Button
                 onClick={handleSubmitFeedback}
-                disabled={submitting || rating < 1}
+                disabled={submitting || rating < 1 || !canSendFb}
                 className="w-full h-11 gap-2"
               >
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
@@ -1007,6 +1113,109 @@ const Feedback = () => {
                       <p className="text-[10px] text-muted-foreground mt-2">
                         {formatWIB(f.created_at)}
                       </p>
+
+                      {/* Replies */}
+                      {(() => {
+                        const fReplies = replies.filter((r) => r.feedback_id === f.id);
+                        const isOpen = !!replyOpen[f.id];
+                        return (
+                          <div className="mt-3 pt-3 border-t border-border/40">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setReplyOpen((s) => ({ ...s, [f.id]: !s[f.id] }))
+                              }
+                              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              {fReplies.length > 0
+                                ? `${fReplies.length} balasan`
+                                : "Belum ada balasan"}
+                              <span className="opacity-60">• {isOpen ? "tutup" : "lihat"}</span>
+                            </button>
+
+                            {isOpen && (
+                              <div className="mt-3 space-y-2">
+                                {fReplies.map((r) => {
+                                  const canDelR = user?.id === r.user_id || role === "admin";
+                                  return (
+                                    <div
+                                      key={r.id}
+                                      className="p-2.5 rounded-lg bg-background/50 border border-border/40"
+                                    >
+                                      <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                                          <span className="text-xs font-semibold text-foreground truncate">
+                                            {r.username}
+                                          </span>
+                                          <VerifiedBadge
+                                            role={r.role}
+                                            plan={planMap[r.user_id]?.plan}
+                                            permanent={planMap[r.user_id]?.permanent}
+                                            size={12}
+                                          />
+                                          <span className="text-[10px] text-muted-foreground">
+                                            {formatWIB(r.created_at)}
+                                          </span>
+                                        </div>
+                                        {canDelR && (
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-6 w-6 text-muted-foreground hover:text-destructive shrink-0"
+                                            onClick={() => handleDeleteReply(r.id)}
+                                            aria-label="Hapus balasan"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-foreground/90 mt-1 whitespace-pre-wrap break-words">
+                                        {r.content}
+                                      </p>
+                                    </div>
+                                  );
+                                })}
+
+                                {canSendFb ? (
+                                  <div className="flex gap-2 items-end">
+                                    <Textarea
+                                      placeholder="Tulis balasan..."
+                                      value={replyDraft[f.id] || ""}
+                                      onChange={(e) =>
+                                        setReplyDraft((d) => ({
+                                          ...d,
+                                          [f.id]: e.target.value,
+                                        }))
+                                      }
+                                      maxLength={500}
+                                      className="min-h-[42px] text-sm flex-1"
+                                    />
+                                    <Button
+                                      onClick={() => handleSubmitReply(f.id)}
+                                      disabled={!!replySubmitting[f.id]}
+                                      size="icon"
+                                      className="h-10 w-10 shrink-0"
+                                      aria-label="Kirim balasan"
+                                    >
+                                      {replySubmitting[f.id] ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Reply className="w-4 h-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                                    <Lock className="w-3 h-3" />
+                                    Hanya yang sudah upgrade role / sewa iklan yang bisa membalas.
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 })}
