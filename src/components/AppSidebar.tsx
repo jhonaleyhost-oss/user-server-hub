@@ -18,6 +18,7 @@ import AccentColorPicker from "@/components/AccentColorPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useResellerStatus, formatResellerRemaining } from "@/hooks/useResellerStatus";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { Clock, Infinity as InfinityIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function AppSidebar() {
   const { isAdmin } = useUserRole();
   const { role } = useUserRole();
   const { status: resellerStatus } = useResellerStatus();
+  const unread = useUnreadCounts();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState<string | null>(null);
@@ -58,15 +60,15 @@ export function AppSidebar() {
     { title: "List Panel", url: "/panels", icon: List },
     { title: "Profil Saya", url: "/profile", icon: UserCog },
     { title: "Pengguna", url: "/users", icon: UsersIcon },
-    { title: "Chat", url: "/chat", icon: MessageCircle },
-    { title: "Support", url: "/support", icon: LifeBuoy },
+    { title: "Chat", url: "/chat", icon: MessageCircle, badge: unread.chat },
+    { title: "Support", url: "/support", icon: LifeBuoy, badge: unread.support },
     { title: "Aktivitas", url: "/activity", icon: ActivityIcon },
     { title: "Rating & Feedback", url: "/feedback", icon: Star },
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
     ...(isAdmin
       ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
-  ];
+  ] as Array<{ title: string; url: string; icon: any; badge?: number }>;
 
   const isActive = (path: string) => pathname === path;
 
@@ -171,8 +173,18 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}>
                       <NavLink to={item.url} end className="flex items-center gap-3">
-                        <item.icon className="h-4 w-4 shrink-0" />
-                        <span>{item.title}</span>
+                        <span className="relative shrink-0">
+                          <item.icon className="h-4 w-4" />
+                          {!!item.badge && item.badge > 0 && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar animate-pulse" />
+                          )}
+                        </span>
+                        <span className="flex-1">{item.title}</span>
+                        {!!item.badge && item.badge > 0 && (
+                          <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
