@@ -551,7 +551,38 @@ const Activity = () => {
                               </span>
                             </div>
                           </>
-                        ) : (
+                        ) : a.kind === "ad" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              {a.event === 'ad_rental' && <>Menyewa iklan <span className="font-semibold text-foreground">"{a.title}"</span></>}
+                              {a.event === 'ad_expired' && <>Masa iklan <span className="font-semibold text-foreground">"{a.title}"</span> berakhir</>}
+                              {a.event === 'role_expired' && <>Role <span className="font-semibold text-amber">Reseller</span> berakhir, kembali ke Free</>}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              {a.event === 'ad_rental' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 border border-primary/30 text-primary font-bold">
+                                  <Megaphone className="w-3 h-3" /> Sewa Iklan
+                                </span>
+                              )}
+                              {a.event === 'ad_expired' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold">
+                                  <CalendarX className="w-3 h-3" /> Iklan Berakhir
+                                </span>
+                              )}
+                              {a.event === 'role_expired' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber/10 border border-amber/30 text-amber font-bold">
+                                  <Crown className="w-3 h-3" /> Reseller Berakhir
+                                </span>
+                              )}
+                              {a.amount ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                  <Wallet className="w-3 h-3 text-amber" />
+                                  Rp {a.amount.toLocaleString("id-ID")}
+                                </span>
+                              ) : null}
+                            </div>
+                          </>
+                        ) : a.kind === "upgrade" ? (
                           <>
                             <p className="text-xs text-muted-foreground mb-2">
                               Upgrade ke{" "}
