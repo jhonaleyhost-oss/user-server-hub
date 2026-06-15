@@ -400,6 +400,19 @@ const Activity = () => {
               Admin
               <span className="ml-1 text-[10px] opacity-80">({totalCounts.admin || cleanups.length})</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setTab("ads")}
+              className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
+                tab === "ads"
+                  ? "bg-gradient-to-r from-primary to-rose-500 text-white shadow"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              Iklan
+              <span className="ml-1 text-[10px] opacity-80">({totalCounts.ads || ads.length})</span>
+            </button>
           </GlassCard>
 
           <GlassCard className="!rounded-3xl p-3 mb-3">
