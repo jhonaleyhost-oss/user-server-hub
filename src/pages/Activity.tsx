@@ -622,7 +622,7 @@ const Activity = () => {
                               )}
                             </div>
                           </>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </GlassCard>
