@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2, ShieldAlert, Trash2 } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2, ShieldAlert, Trash2, Megaphone, CalendarX, CrownIcon } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -62,11 +62,24 @@ interface AdminCleanupActivity {
   created_at: string;
 }
 
+interface AdEvent {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: null;
+  role: string;
+  event: 'ad_rental' | 'ad_expired' | 'role_expired';
+  title: string;
+  amount: number | null;
+  created_at: string;
+}
+
 type FeedItem =
   | ({ kind: "panel" } & PanelActivity)
   | ({ kind: "signup" } & SignupActivity)
   | ({ kind: "upgrade" } & UpgradeActivity)
-  | ({ kind: "admin_cleanup" } & AdminCleanupActivity);
+  | ({ kind: "admin_cleanup" } & AdminCleanupActivity)
+  | ({ kind: "ad" } & AdEvent);
 
 const formatSpec = (n: number) => (n === 0 ? "Unlimited" : `${n}`);
 
@@ -100,18 +113,20 @@ const Activity = () => {
   const [signups, setSignups] = useState<SignupActivity[]>([]);
   const [upgrades, setUpgrades] = useState<UpgradeActivity[]>([]);
   const [cleanups, setCleanups] = useState<AdminCleanupActivity[]>([]);
+  const [ads, setAds] = useState<AdEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
-  const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "admin">("panel");
+  const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "admin" | "ads">("panel");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const [page, setPage] = useState(1);
-  const [totalCounts, setTotalCounts] = useState<{ panel: number; signup: number; upgrade: number; admin: number }>({
+  const [totalCounts, setTotalCounts] = useState<{ panel: number; signup: number; upgrade: number; admin: number; ads: number }>({
     panel: 0,
     signup: 0,
     upgrade: 0,
     admin: 0,
+    ads: 0,
   });
   const PAGE_SIZE = 50;
 
@@ -125,7 +140,7 @@ const Activity = () => {
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes, adsRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_upgrade_activity", { _limit: 500 }),
@@ -136,6 +151,12 @@ const Activity = () => {
         .eq("kind", "admin_cleanup")
         .order("created_at", { ascending: false })
         .limit(200),
+      supabase
+        .from("activity_events")
+        .select("id, kind, actor_user_id, actor_name, actor_role, detail, amount, created_at")
+        .in("kind", ["ad_rental", "ad_expired", "role_expired"])
+        .order("created_at", { ascending: false })
+        .limit(300),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
@@ -150,12 +171,14 @@ const Activity = () => {
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "signup"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "upgrade"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "admin_cleanup"),
-    ]).then(([pc, sc, uc, ac]) => {
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).in("kind", ["ad_rental","ad_expired","role_expired"]),
+    ]).then(([pc, sc, uc, ac, adc]) => {
       setTotalCounts({
         panel: pc.count ?? (panelRes.data?.length ?? 0),
         signup: sc.count ?? (signupRes.data?.length ?? 0),
         upgrade: uc.count ?? (upgradeRes.data?.length ?? 0),
         admin: ac.count ?? 0,
+        ads: adc.count ?? 0,
       });
     }).catch((e) => console.error("Count fetch failed:", e));
     if (!cleanupRes.error && cleanupRes.data) {
@@ -176,6 +199,19 @@ const Activity = () => {
           created_at: r.created_at,
         };
       }));
+    }
+    if (!adsRes.error && adsRes.data) {
+      setAds((adsRes.data as any[]).map((r) => ({
+        id: r.id,
+        user_id: r.actor_user_id || "",
+        full_name: r.actor_name,
+        avatar_url: null,
+        role: r.actor_role || "free",
+        event: r.kind,
+        title: r.detail || (r.kind === 'role_expired' ? 'Reseller' : 'Iklan'),
+        amount: r.amount,
+        created_at: r.created_at,
+      })));
     }
     if (!usersRes.error && usersRes.data) {
       const map: Record<string, { plan: string | null; permanent: boolean }> = {};
@@ -250,8 +286,11 @@ const Activity = () => {
     if (tab === "admin") {
       return cleanups.map((c) => ({ kind: "admin_cleanup" as const, ...c }));
     }
+    if (tab === "ads") {
+      return ads.map((a) => ({ kind: "ad" as const, ...a }));
+    }
     return signups.map((s) => ({ kind: "signup" as const, ...s }));
-  }, [tab, panels, signups, upgrades, cleanups]);
+  }, [tab, panels, signups, upgrades, cleanups, ads]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -261,6 +300,7 @@ const Activity = () => {
       if (a.kind === "panel") fields.push(a.username, a.server_name, a.server_domain);
       if (a.kind === "upgrade") fields.push(a.plan, String(a.amount));
       if (a.kind === "admin_cleanup") fields.push(a.server_name, String(a.count));
+      if (a.kind === "ad") fields.push(a.title, a.event);
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
   }, [current, search]);
