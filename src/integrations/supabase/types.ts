@@ -843,6 +843,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      expire_ad_rentals_and_roles: { Args: never; Returns: Json }
       get_active_ads: {
         Args: never
         Returns: {
