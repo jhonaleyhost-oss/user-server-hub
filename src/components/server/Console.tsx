@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Play, Square, RotateCcw, Zap, Send } from 'lucide-react';
 import type { ServerStats } from './StatsCards';
+import { usePteroProxy } from '@/hooks/usePteroProxy';
 
 interface Props {
   panelId: string;
@@ -14,29 +14,18 @@ interface Props {
   onState?: (s: string) => void;
 }
 
-type WsTokenResponse = {
-  success: boolean;
-  token?: string;
-  socket?: string;
-  error?: string;
-  status?: number;
-  retryAfterMs?: number;
-};
-
-const WS_TOKEN_TTL_MS = 8 * 60 * 1000;
-const wsTokenCache = new Map<string, { token: string; socket: string; exp: number }>();
-const wsCooldownCache = new Map<string, number>();
-const wsTokenInflight = new Map<string, Promise<WsTokenResponse>>();
+const STATS_INTERVAL_MS = 3000;
+const LOGS_INTERVAL_MS = 3000;
+const LOG_FILE = '/logs/latest.log';
 
 export default function ServerConsole({ panelId, onStats, onState }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-  const retryRef = useRef(0);
   const [connected, setConnected] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+  const [logsAvailable, setLogsAvailable] = useState<boolean | null>(null);
   const [cmd, setCmd] = useState('');
+  const { call } = usePteroProxy(panelId);
 
   // Keep latest callbacks in refs so the WS effect doesn't re-run on every render
   const onStatsRef = useRef(onStats);
@@ -71,176 +60,101 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
     };
   }, []);
 
-  // connect WS
+  // Polling stats + logs via REST (PLTC API key)
   useEffect(() => {
     let cancelled = false;
-    let ws: WebSocket | null = null;
-    let reconnectTimer: any = null;
-    let statsInterval: any = null;
-
-    const clearTokenCache = () => wsTokenCache.delete(panelId);
-
-    const fetchToken = async (forceFresh = false): Promise<WsTokenResponse> => {
-      const cached = wsTokenCache.get(panelId);
-      if (!forceFresh && cached && cached.exp > Date.now()) {
-        return { success: true, token: cached.token, socket: cached.socket };
-      }
-
-      const cooldownUntil = wsCooldownCache.get(panelId) || 0;
-      if (cooldownUntil > Date.now()) {
-        return {
-          success: false,
-          status: 429,
-          retryAfterMs: cooldownUntil - Date.now(),
-          error: 'Console sedang cooldown karena rate limit. Tunggu sebentar.',
-        };
-      }
-
-      const inflight = wsTokenInflight.get(panelId);
-      if (inflight) return inflight;
-
-      const request = (async () => {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData.session?.access_token;
-        if (!accessToken) return { success: false, error: 'Sesi login tidak ditemukan' };
-
-        const resp = await fetch(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-token`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ panelId }),
-        });
-        const data = await resp.json().catch(() => ({ success: false, error: 'Gagal membaca response token WS' })) as WsTokenResponse;
-        if (data.success && data.token && data.socket) {
-          wsTokenCache.set(panelId, { token: data.token, socket: data.socket, exp: Date.now() + WS_TOKEN_TTL_MS });
-        }
-        if (data.status === 429 || resp.status === 429) {
-          wsCooldownCache.set(panelId, Date.now() + Math.max(data.retryAfterMs || 120_000, 120_000));
-        }
-        return data;
-      })().finally(() => wsTokenInflight.delete(panelId));
-
-      wsTokenInflight.set(panelId, request);
-      return request;
-    };
+    let statsTimer: any = null;
+    let logsTimer: any = null;
+    let lastLogLen = 0;
+    let logsOk = true;
+    let firstLog = true;
 
     const writeLine = (txt: string) => termRef.current?.writeln(txt);
 
-    const connect = async () => {
+    const pollStats = async () => {
       if (cancelled) return;
-      try {
-        if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
-        setConnecting(true);
-        const t = await fetchToken();
-        if (cancelled) {
-          setConnecting(false);
-          return;
-        }
-        if (!t?.success || !t.token || !t.socket) {
-          setConnecting(false);
-          writeLine(`\x1b[31m[error] ${t?.error || 'gagal ambil token WS'}\x1b[0m`);
-          const delay = t?.status === 429 ? Math.max(t.retryAfterMs || 120_000, 120_000) : Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-          if (!cancelled) reconnectTimer = setTimeout(connect, delay);
-          return;
-        }
-        ws = new WebSocket(t.socket);
-        wsRef.current = ws;
-        ws.onopen = () => {
-          if (cancelled) {
-            try { ws?.close(); } catch {}
-            return;
-          }
-          setConnecting(false);
-          setConnected(true);
-          ws?.send(JSON.stringify({ event: 'auth', args: [t.token] }));
+      const r = await call<any>('resources');
+      if (cancelled) return;
+      if (r.success) {
+        setConnected(true);
+        const a = r.data?.attributes;
+        const res = a?.resources || {};
+        const stats: ServerStats = {
+          state: a?.current_state,
+          cpu_absolute: res.cpu_absolute,
+          memory_bytes: res.memory_bytes,
+          disk_bytes: res.disk_bytes,
+          network: { rx_bytes: res.network_rx_bytes, tx_bytes: res.network_tx_bytes },
+          uptime: res.uptime,
         };
-        ws.onmessage = (ev) => {
-          let msg: any; try { msg = JSON.parse(ev.data); } catch { return; }
-          const e = msg?.event; const args = msg?.args || [];
-          switch (e) {
-            case 'auth success':
-              retryRef.current = 0;
-              ws?.send(JSON.stringify({ event: 'send logs', args: [] }));
-              ws?.send(JSON.stringify({ event: 'send stats', args: [] }));
-              statsInterval = setInterval(() => {
-                try { ws?.send(JSON.stringify({ event: 'send stats', args: [] })); } catch {}
-              }, 2000);
-              writeLine('\x1b[32m[connected]\x1b[0m');
-              break;
-            case 'console output':
-              if (args[0]) termRef.current?.writeln(args[0]);
-              break;
-            case 'status':
-              if (args[0]) onStateRef.current?.(args[0]);
-              break;
-            case 'stats':
-              try {
-                const s = JSON.parse(args[0]);
-                onStatsRef.current?.(s);
-                if (s?.state) onStateRef.current?.(s.state);
-              } catch {}
-              break;
-            case 'token expiring':
-            case 'token expired': {
-              clearTokenCache();
-              fetchToken().then((tk) => {
-                if (tk?.token) ws?.send(JSON.stringify({ event: 'auth', args: [tk.token] }));
-              });
-              break;
-            }
-            case 'jwt error':
-              clearTokenCache();
-              if (args[0]) writeLine(`\x1b[33m${args[0]}\x1b[0m`);
-              break;
-            case 'daemon error':
-            case 'daemon message':
-              if (args[0]) writeLine(`\x1b[33m${args[0]}\x1b[0m`);
-              break;
-          }
-        };
-        ws.onclose = () => {
-          wsRef.current = null;
-          setConnecting(false);
-          setConnected(false);
-          if (statsInterval) clearInterval(statsInterval);
-          if (cancelled) return;
-          const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-          writeLine(`\x1b[31m[disconnected — reconnecting in ${Math.round(delay / 1000)}s]\x1b[0m`);
-          if (!cancelled) reconnectTimer = setTimeout(connect, delay);
-        };
-        ws.onerror = () => { writeLine('\x1b[31m[ws error]\x1b[0m'); };
-      } catch (err: any) {
-        setConnecting(false);
-        writeLine(`\x1b[31m${err?.message || err}\x1b[0m`);
-        const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        if (!cancelled) reconnectTimer = setTimeout(connect, delay);
+        onStatsRef.current?.(stats);
+        if (a?.current_state) onStateRef.current?.(a.current_state);
+      } else {
+        setConnected(false);
       }
     };
 
-    connect();
+    const pollLogs = async () => {
+      if (cancelled || !logsOk) return;
+      const r = await call<any>('files/contents', { query: { file: LOG_FILE } });
+      if (cancelled) return;
+      if (!r.success) {
+        if (r.status === 404 || r.status === 500) {
+          logsOk = false;
+          setLogsAvailable(false);
+          writeLine('\x1b[33m[info] File log realtime tidak tersedia di panel ini. Stats & tombol tetap berjalan.\x1b[0m');
+        }
+        return;
+      }
+      setLogsAvailable(true);
+      const content = typeof r.data === 'string' ? r.data : (r.data?.toString?.() || '');
+      if (firstLog) {
+        // Print last ~100 lines on first load
+        const lines = content.split('\n');
+        const tail = lines.slice(-100).join('\n');
+        tail.split('\n').forEach((l) => l && writeLine(l));
+        lastLogLen = content.length;
+        firstLog = false;
+      } else if (content.length > lastLogLen) {
+        const fresh = content.slice(lastLogLen);
+        fresh.split('\n').forEach((l) => l && writeLine(l));
+        lastLogLen = content.length;
+      } else if (content.length < lastLogLen) {
+        // log rotated
+        lastLogLen = 0;
+      }
+    };
+
+    writeLine('\x1b[32m[mode: REST polling tiap 3 detik]\x1b[0m');
+    pollStats();
+    pollLogs();
+    statsTimer = setInterval(pollStats, STATS_INTERVAL_MS);
+    logsTimer = setInterval(pollLogs, LOGS_INTERVAL_MS);
+
     return () => {
       cancelled = true;
-      if (reconnectTimer) clearTimeout(reconnectTimer);
-      if (statsInterval) clearInterval(statsInterval);
-      try { ws?.close(); } catch {}
-      wsRef.current = null;
+      if (statsTimer) clearInterval(statsTimer);
+      if (logsTimer) clearInterval(logsTimer);
     };
-  }, [panelId]);
+  }, [panelId, call]);
 
-  const send = (raw: string) => {
-    if (!cmd.trim() && !raw) return;
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    const c = raw || cmd;
-    wsRef.current?.send(JSON.stringify({ event: 'send command', args: [c] }));
+  const send = async (raw: string) => {
+    const c = (raw || cmd).trim();
+    if (!c) return;
     if (!raw) setCmd('');
+    const r = await call('command', { method: 'POST', body: { command: c } });
+    if (!r.success) {
+      termRef.current?.writeln(`\x1b[31m[command error] ${r.error || r.status}\x1b[0m`);
+    }
   };
 
-  const power = (state: 'start' | 'stop' | 'restart' | 'kill') => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-    wsRef.current?.send(JSON.stringify({ event: 'set state', args: [state] }));
+  const power = async (signal: 'start' | 'stop' | 'restart' | 'kill') => {
+    const r = await call('power', { method: 'POST', body: { signal } });
+    if (!r.success) {
+      termRef.current?.writeln(`\x1b[31m[power error] ${r.error || r.status}\x1b[0m`);
+    } else {
+      termRef.current?.writeln(`\x1b[36m[power ${signal} dikirim]\x1b[0m`);
+    }
   };
 
   return (
@@ -260,7 +174,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         </Button>
         <div className="ml-auto text-xs flex items-center gap-2 text-muted-foreground">
           <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald animate-pulse-slow' : 'bg-rose-400'}`} />
-          {connected ? 'Terhubung' : connecting ? 'Menghubungkan…' : 'Tidak terhubung'}
+          {connected ? `REST · ${logsAvailable === false ? 'logs N/A' : 'polling 3s'}` : 'Tidak terhubung'}
         </div>
       </div>
       <div
@@ -278,7 +192,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           onChange={(e) => setCmd(e.target.value)}
           className="font-mono"
         />
-        <Button type="submit" disabled={!connected}>
+        <Button type="submit">
           <Send className="w-4 h-4 mr-1" /> Kirim
         </Button>
       </form>
