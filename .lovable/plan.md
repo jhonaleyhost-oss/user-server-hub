@@ -1,86 +1,92 @@
-# Halaman Sewa & Beriklan
 
-Bangun fitur penyewaan slot iklan website. User bayar Rp50.000/bulan untuk menampilkan popup promo mereka sendiri di semua halaman. Slot terbatas 2 per bulan. Admin punya akses unlimited tanpa hitung slot.
+# Custom Server Panel — `/server/:id`
 
-## Alur Pengguna
+Membangun halaman panel server full-featured ala Pterodactyl di domain utama, dengan tema Jhonaley Store. User klik tombol **View Server** di halaman Panels → otomatis di-login → akses console, files, dll tanpa pernah melihat URL panel asli.
 
-**Sebelum beli (semua role kecuali admin):**
+## Arsitektur
 
-- Halaman marketing: hero, benefit list, harga (Rp50.000/bulan), info slot tersedia (X/2 bulan ini), FAQ, tombol "Sewa Sekarang"
-- Tombol bayar via QRIS (pakai edge function `create-qris` yang sudah ada, mirip flow upgrade reseller)
-- Jika slot bulan ini penuh → tombol disabled + pesan "Slot bulan ini penuh, coba lagi bulan depan"
+```text
+User klik "View Server" di /panels
+        │
+        ▼
+[edge: panel-session]  ── ambil/buat Client API key user di Pterodactyl,
+                          simpan encrypted di Vault, return server identifier
+        │
+        ▼
+Redirect ke /server/:identifier
+        │
+        ▼
+[Halaman /server/:id]  ── semua aksi via edge functions yang proxy
+                          ke Pterodactyl Client API + Wings WebSocket
+```
 
-**Setelah bayar (penyewa aktif):**
+URL panel asli tidak pernah muncul di frontend. Semua request keluar dari edge function kita.
 
-- Halaman menampilkan: badge status aktif, sisa durasi (countdown hari), tombol "Edit Iklan"
-- Form editor mirip Admin Popup Manager: title, content (markdown sederhana), image upload, buttons (label + url, multiple), preview live
-- Pengiklan reseller/admin: popup mereka tetap punya checkbox "Jangan tampilkan lagi" untuk audience reseller/admin (sesuai logic `PromoPopup` saat ini)
-- Tombol "Nonaktifkan sementara" (tidak refund, hanya hide)
+## Database (1 migration)
 
-**Admin:**
+Tabel baru `user_panel_credentials`:
+- `user_id`, `panel_id` (FK ke `user_panels`)
+- `ptero_client_key_vault_id` (uuid → Vault) — menyimpan `ptlc_...` per-user
+- `server_identifier` (string pendek Pterodactyl, dipakai di URL `/server/:id`)
+- RLS: hanya owner & admin yang bisa SELECT; semua write via edge function (service role).
 
-- Langsung lihat form editor tanpa wajib bayar
-- Durasi unlimited, tidak makan slot bulanan
-- Bisa kelola/hapus iklan user lain dari Admin panel (tab baru "Iklan Sewa")
+Fungsi RPC `get_my_panel_credential(_panel_id)` — return server_identifier saja (key tetap di server).
 
-## Rendering Popup
+## Edge Functions (baru)
 
-Update `PromoPopup.tsx`:
+Semua pakai pattern existing: native fetch, verify JWT user, ambil PLTA admin key dari Vault untuk operasi setup, lalu pakai per-user PLTC key untuk operasi runtime.
 
-- Query: ambil semua iklan aktif (`ad_rentals` status='active' & belum expired) DAN popup admin default
-- Rotasi: pilih random 1 yang belum di-dismiss user (localStorage per id)
-- Source bisa dari `popup_settings` (existing admin) ATAU `ad_rentals` (user-generated) — gabung dengan union/serial query
-- Tetap respect `canHide` checkbox untuk reseller/admin
+1. **`panel-session`** — POST `{ panelId }`. Cek ownership → jika belum punya client key, login ke Pterodactyl pakai PLTA + buat API key untuk user itu via endpoint `/api/application/users/:id/api-keys` (atau bila tidak tersedia, fallback: generate dari sisi server menggunakan endpoint client `/api/client/account/api-keys` dengan basic auth password user) → simpan di Vault → return `{ identifier }`.
 
-## Skema Database
+2. **`ptero-proxy`** — POST `{ panelId, path, method, body }`. Validasi path whitelist (`/api/client/servers/:id/*`), pakai client key user, forward ke panel asli, return raw response. Ini handler tunggal untuk: power, stats, files list/read/write/delete/upload signed url, startup, schedules, backups.
 
-Tabel baru `ad_rentals`:
+3. **`ptero-ws-token`** — POST `{ panelId }`. Panggil `/api/client/servers/:id/websocket` untuk dapat `{ token, socket }` Wings. Return ke client supaya bisa konek langsung ke wings (IP wings akan terlihat — sesuai pilihan user, ini OK).
 
-- `user_id` (uuid → auth.users)
-- `order_id` (text, dari pakasir/QRIS) — nullable untuk admin
-- `status` (text: pending|active|expired|disabled)
-- `amount` (int) — nullable untuk admin
-- `starts_at`, `expires_at` (timestamptz) — admin: `expires_at` NULL = unlimited
-- `is_admin_slot` (bool default false) — true = tidak hitung slot
-- Konten popup: `title`, `content`, `image_url`, `buttons` (jsonb)
-- `paid_at` (timestamptz)
-- RLS: user lihat & edit milik sendiri; admin lihat/edit semua; anon SELECT untuk popup aktif (filter status & expires)
-- Function `get_ad_slot_availability()` → return `{used, total: 2, available}` untuk bulan berjalan (count `is_admin_slot=false AND status='active'`)
-- Trigger: saat insert active non-admin, validasi slot < 2
+## Frontend
 
-Edge function update `pakasir-webhook`: tambah handler `kind='ad_rental'` untuk activate iklan (mirip activate_reseller).
+### Halaman `/panels` — tombol View Server
+Tambah button hijau **"View Server"** di setiap kartu panel (sebelah Kirim/Hapus). Saat klik:
+- Panggil `panel-session` → dapat `identifier`
+- `navigate('/server/' + identifier + '?p=' + panelId)`
 
-Edge function baru `create-ad-rental-order`: bikin order QRIS dengan metadata kind='ad_rental'.
+### Halaman baru `/server/:identifier`
+Layout: sidebar kiri (tab) + main content. Tema amoled glassmorphism khas project.
 
-## File yang Dibuat/Diubah
+**Tabs (sidebar):**
+- **Console** — terminal xterm.js, konek WS pakai token dari `ptero-ws-token`. Input command, tombol Start/Stop/Restart/Kill.
+- **Stats** — kartu CPU / RAM / Disk / Uptime realtime dari WS stats event.
+- **Files** — file tree (list folder), klik file → editor Monaco (text) atau download (binary), tombol Upload, New File, New Folder, Rename, Delete. Breadcrumb path.
+- **Startup** — list variable startup (env vars Pterodactyl), edit value, tombol Save.
+- **Schedules** — list cron schedules, create/edit/delete schedule + tasks.
+- **Backups** — list backup, tombol Create Backup, Download, Restore, Delete.
 
-**Baru:**
+### Komponen baru
+- `src/pages/ServerPanel.tsx` — shell + tabs
+- `src/components/server/Console.tsx` (xterm.js)
+- `src/components/server/Files.tsx` (Monaco editor)
+- `src/components/server/Startup.tsx`
+- `src/components/server/Schedules.tsx`
+- `src/components/server/Backups.tsx`
+- `src/components/server/StatsCards.tsx`
+- `src/hooks/usePteroProxy.ts` — wrapper `supabase.functions.invoke('ptero-proxy', ...)`
 
-- `src/pages/AdsRental.tsx` — halaman utama (route `/sewa-iklan`)
-- `src/components/AdEditor.tsx` — form editor popup (shared dgn admin)
-- `src/components/AdminAdRentals.tsx` — tab admin
-- `supabase/functions/create-ad-rental-order/index.ts`
-- Migration: tabel `ad_rentals` + RLS + GRANT + function slot availability
+### Route
+Tambah route `<Route path="/server/:identifier" element={<ServerPanel />} />` di `AnimatedRoutes.tsx`. Route protected — cek `panel-session` mengembalikan identifier valid; kalau bukan owner → redirect ke `/panels`.
 
-**Diubah:**
+## Dependensi baru
+- `xterm` + `xterm-addon-fit` — terminal console
+- `@monaco-editor/react` — file editor
 
-- `src/components/AppSidebar.tsx` — menu "Sewa & Beriklan"
-- `src/components/AnimatedRoutes.tsx` — route baru
-- `src/components/PromoPopup.tsx` — gabungkan source ad_rentals
-- `src/pages/Admin.tsx` — tab baru
-- `supabase/functions/pakasir-webhook/index.ts` — handler ad_rental
+## Catatan keamanan
+- PLTC client key disimpan terenkripsi di Supabase Vault, tidak pernah dikirim ke browser.
+- Semua request Pterodactyl di-proxy via edge function, jadi user tidak pernah lihat domain panel asli.
+- Pteorodactyl Wings WebSocket: koneksi WS langsung ke node (sesuai pilihan user — IP node bisa terlihat di DevTools, tapi panel URL tetap tersembunyi).
+- Path whitelist di `ptero-proxy` untuk mencegah penyalahgunaan.
 
-## Konfirmasi Sebelum Lanjut
+## Yang TIDAK dilakukan di fase ini
+- Tidak menyentuh logic create-panel / delete-panel / RLS lama.
+- Tidak mengubah halaman lain (Dashboard, Admin, Chat, dll).
+- Tidak membuat subdomain baru.
 
-1. **Pembayaran**: pakai QRIS Pakasir yang sudah ada (sama seperti upgrade reseller)? **Ya**
-2. **Slot 2/bulan**: dihitung per bulan kalender (Jan, Feb, dst) atau rolling 30 hari? **kalender bulan**.
-3. **Konten iklan**: **langsung live** (admin bisa nonaktifkan kalau melanggar).
-4. **Frekuensi popup**: Sekali per session jadi kalo refresh bakal muncul, untuk hide (reseller yang sudah centang) pop up akan muncul lagi setiap hari jam 7 seperti warning (jelaskan ini juga di halaman agar pengguna tahu sebelum beli) 
-
-**Tampilan Iklan**
-
-1. Kasih tulisan kecil di pojok Kanan atas atau di manapun yang menandakan bahwa itu iklan  (kasih note join resellerr untuk menghapus iklan )
-2. Sediakan Nama user yang sedang beriklan / yang menerbitkan 
-3. Pembelian iklan/penyewaan akan di tampilkan pada pop up notifikasi di dashboard 
-
-NOTE : SEDIAKAN NOTE / TOS IKLAN CONTOHNYA TIDAK DIGUNAKAN UNTUK IKLAN ILEGAL, MERUGIKAN DAN MENYESATKAN, SERTA PENIPUAN ATAU CARI AJA CONTOH TOS YANG SEPROFESIONAL MUNGKIN 
+## Estimasi
+Banyak file & 1 migration. Akan saya kirim secara bertahap dalam beberapa pesan — mulai dari migration + edge functions + halaman shell + Console & Stats dulu, lalu fitur Files, Startup, Schedules, Backups berikutnya. Saya konfirmasi setelah tiap milestone sebelum lanjut.

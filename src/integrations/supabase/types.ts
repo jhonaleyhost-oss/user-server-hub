@@ -695,6 +695,7 @@ export type Database = {
           login_url: string
           panel_type: string
           password: string
+          ptero_identifier: string | null
           ptero_server_id: number | null
           ptero_user_id: number | null
           ram: number
@@ -713,6 +714,7 @@ export type Database = {
           login_url: string
           panel_type?: string
           password: string
+          ptero_identifier?: string | null
           ptero_server_id?: number | null
           ptero_user_id?: number | null
           ram: number
@@ -731,6 +733,7 @@ export type Database = {
           login_url?: string
           panel_type?: string
           password?: string
+          ptero_identifier?: string | null
           ptero_server_id?: number | null
           ptero_user_id?: number | null
           ram?: number
