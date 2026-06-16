@@ -23,6 +23,10 @@ type WsTokenResponse = {
   retryAfterMs?: number;
 };
 
+const WS_TOKEN_TTL_MS = 8 * 60 * 1000;
+const wsTokenCache = new Map<string, { token: string; socket: string; exp: number }>();
+const wsCooldownCache = new Map<string, number>();
+
 export default function ServerConsole({ panelId, onStats, onState }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<XTerm | null>(null);
@@ -73,10 +77,45 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
     let reconnectTimer: any = null;
     let statsInterval: any = null;
 
-    const fetchToken = async (): Promise<WsTokenResponse> => {
-      const { data, error } = await supabase.functions.invoke('ptero-ws-token', { body: { panelId } });
-      if (error) return { success: false, error: error.message };
-      return data as WsTokenResponse;
+    const clearTokenCache = () => wsTokenCache.delete(panelId);
+
+    const fetchToken = async (forceFresh = false): Promise<WsTokenResponse> => {
+      const cached = wsTokenCache.get(panelId);
+      if (!forceFresh && cached && cached.exp > Date.now()) {
+        return { success: true, token: cached.token, socket: cached.socket };
+      }
+
+      const cooldownUntil = wsCooldownCache.get(panelId) || 0;
+      if (!forceFresh && cooldownUntil > Date.now()) {
+        return {
+          success: false,
+          status: 429,
+          retryAfterMs: cooldownUntil - Date.now(),
+          error: 'Console sedang cooldown karena rate limit. Tunggu sebentar.',
+        };
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return { success: false, error: 'Sesi login tidak ditemukan' };
+
+      const resp = await fetch(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-token`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ panelId }),
+      });
+      const data = await resp.json().catch(() => ({ success: false, error: 'Gagal membaca response token WS' })) as WsTokenResponse;
+      if (data.success && data.token && data.socket) {
+        wsTokenCache.set(panelId, { token: data.token, socket: data.socket, exp: Date.now() + WS_TOKEN_TTL_MS });
+      }
+      if (data.status === 429 || resp.status === 429) {
+        wsCooldownCache.set(panelId, Date.now() + Math.max(data.retryAfterMs || 60_000, 60_000));
+      }
+      return data;
     };
 
     const writeLine = (txt: string) => termRef.current?.writeln(txt);
@@ -94,7 +133,6 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           if (!cancelled) reconnectTimer = setTimeout(connect, delay);
           return;
         }
-        retryRef.current = 0;
         ws = new WebSocket(t.socket);
         wsRef.current = ws;
         ws.onopen = () => {
@@ -107,6 +145,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           const e = msg?.event; const args = msg?.args || [];
           switch (e) {
             case 'auth success':
+              retryRef.current = 0;
               ws?.send(JSON.stringify({ event: 'send logs', args: [] }));
               ws?.send(JSON.stringify({ event: 'send stats', args: [] }));
               statsInterval = setInterval(() => {
@@ -129,12 +168,16 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
               break;
             case 'token expiring':
             case 'token expired': {
-              fetchToken().then((tk) => {
+              clearTokenCache();
+              fetchToken(true).then((tk) => {
                 if (tk?.token) ws?.send(JSON.stringify({ event: 'auth', args: [tk.token] }));
               });
               break;
             }
             case 'jwt error':
+              clearTokenCache();
+              if (args[0]) writeLine(`\x1b[33m${args[0]}\x1b[0m`);
+              break;
             case 'daemon error':
             case 'daemon message':
               if (args[0]) writeLine(`\x1b[33m${args[0]}\x1b[0m`);
@@ -146,7 +189,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           setConnecting(false);
           setConnected(false);
           if (statsInterval) clearInterval(statsInterval);
-          const delay = Math.min(30_000, 3000 * 2 ** retryRef.current++);
+          const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
           writeLine(`\x1b[31m[disconnected — reconnecting in ${Math.round(delay / 1000)}s]\x1b[0m`);
           if (!cancelled) reconnectTimer = setTimeout(connect, delay);
         };
