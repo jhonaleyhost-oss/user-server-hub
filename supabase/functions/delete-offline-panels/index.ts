@@ -97,6 +97,28 @@ serve(async (req) => {
         amount: deleted,
       });
       log(`Aktivitas dicatat: ${actorName} membersihkan ${deleted} panel offline di ${serverName}`);
+
+      // Kirim notifikasi ke setiap user yang panelnya dihapus
+      const perUser = new Map<string, string[]>();
+      for (const p of (panels || [])) {
+        if (!p.user_id) continue;
+        const arr = perUser.get(p.user_id) || [];
+        arr.push(p.username);
+        perUser.set(p.user_id, arr);
+      }
+      const notifRows = Array.from(perUser.entries()).map(([uid, usernames]) => ({
+        title: '⚠️ Panel offline kamu dihapus',
+        body: `Admin menghapus ${usernames.length} panel offline kamu (${usernames.join(', ')}) di server ${serverName}. Silakan buat panel baru bila masih dibutuhkan.`,
+        audience: 'all' as const,
+        target_user_id: uid,
+        created_by: user.id,
+        link_url: '/dashboard',
+      }));
+      if (notifRows.length > 0) {
+        const { error: notifErr } = await supabase.from('notifications').insert(notifRows);
+        if (notifErr) log(`Gagal kirim notifikasi: ${notifErr.message}`);
+        else log(`Notifikasi terkirim ke ${notifRows.length} user`);
+      }
     }
 
     return new Response(JSON.stringify({

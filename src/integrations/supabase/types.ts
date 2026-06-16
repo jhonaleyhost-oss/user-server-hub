@@ -404,6 +404,7 @@ export type Database = {
           created_by: string | null
           id: string
           link_url: string | null
+          target_user_id: string | null
           title: string
         }
         Insert: {
@@ -414,6 +415,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           link_url?: string | null
+          target_user_id?: string | null
           title: string
         }
         Update: {
@@ -424,6 +426,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           link_url?: string | null
+          target_user_id?: string | null
           title?: string
         }
         Relationships: []
