@@ -135,6 +135,10 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
         setConnecting(true);
         const t = await fetchToken();
+        if (cancelled) {
+          setConnecting(false);
+          return;
+        }
         if (!t?.success || !t.token || !t.socket) {
           setConnecting(false);
           writeLine(`\x1b[31m[error] ${t?.error || 'gagal ambil token WS'}\x1b[0m`);
@@ -145,6 +149,10 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         ws = new WebSocket(t.socket);
         wsRef.current = ws;
         ws.onopen = () => {
+          if (cancelled) {
+            try { ws?.close(); } catch {}
+            return;
+          }
           setConnecting(false);
           setConnected(true);
           ws?.send(JSON.stringify({ event: 'auth', args: [t.token] }));
@@ -198,6 +206,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           setConnecting(false);
           setConnected(false);
           if (statsInterval) clearInterval(statsInterval);
+          if (cancelled) return;
           const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
           writeLine(`\x1b[31m[disconnected — reconnecting in ${Math.round(delay / 1000)}s]\x1b[0m`);
           if (!cancelled) reconnectTimer = setTimeout(connect, delay);
