@@ -1008,8 +1008,8 @@ const Admin = () => {
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             {/* Scrollable tab nav */}
-            <div className="relative -mx-4 sm:-mx-6 mb-6 px-4 sm:px-6 border-b border-border/50">
-              <TabsList className="h-auto p-0 bg-transparent flex w-max gap-1 overflow-x-auto scrollbar-none">
+            <div className="relative -mx-4 sm:-mx-6 mb-6 border-b border-border/50 overflow-x-auto scrollbar-none touch-pan-x overscroll-x-contain">
+              <TabsList className="h-auto p-0 bg-transparent inline-flex w-max gap-1 px-4 sm:px-6">
                 {[
                   { value: 'users', icon: Users, label: 'Pengguna', count: filteredUsers.length },
                   { value: 'servers', icon: Server, label: 'Server', count: filteredServers.length },
