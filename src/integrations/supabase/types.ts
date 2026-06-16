@@ -453,6 +453,44 @@ export type Database = {
         }
         Relationships: []
       }
+      ptero_ws_token_cache: {
+        Row: {
+          expires_at: string | null
+          last_error: string | null
+          panel_id: string
+          socket: string | null
+          throttled_until: string | null
+          token: string | null
+          updated_at: string
+        }
+        Insert: {
+          expires_at?: string | null
+          last_error?: string | null
+          panel_id: string
+          socket?: string | null
+          throttled_until?: string | null
+          token?: string | null
+          updated_at?: string
+        }
+        Update: {
+          expires_at?: string | null
+          last_error?: string | null
+          panel_id?: string
+          socket?: string | null
+          throttled_until?: string | null
+          token?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ptero_ws_token_cache_panel_id_fkey"
+            columns: ["panel_id"]
+            isOneToOne: true
+            referencedRelation: "user_panels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pterodactyl_servers: {
         Row: {
           created_at: string
@@ -695,6 +733,7 @@ export type Database = {
           login_url: string
           panel_type: string
           password: string
+          ptero_identifier: string | null
           ptero_server_id: number | null
           ptero_user_id: number | null
           ram: number
@@ -713,6 +752,7 @@ export type Database = {
           login_url: string
           panel_type?: string
           password: string
+          ptero_identifier?: string | null
           ptero_server_id?: number | null
           ptero_user_id?: number | null
           ram: number
@@ -731,6 +771,7 @@ export type Database = {
           login_url?: string
           panel_type?: string
           password?: string
+          ptero_identifier?: string | null
           ptero_server_id?: number | null
           ptero_user_id?: number | null
           ram?: number
