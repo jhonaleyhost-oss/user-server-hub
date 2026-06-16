@@ -6,10 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// In-memory cache for WS tokens (per panel). Pterodactyl tokens last ~15 min.
-// Cache for 8 minutes to dodge rate-limit while staying safely fresh.
+// In-memory cache for WS tokens (per panel). Current Pterodactyl WS JWTs last ~15 min,
+// so cache briefly and never let a 429 become a thrown Edge Function runtime error.
 const TOKEN_TTL_MS = 8 * 60 * 1000;
 const tokenCache = new Map<string, { token: string; socket: string; exp: number }>();
+const throttleCache = new Map<string, number>();
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
@@ -49,6 +50,16 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    const throttledUntil = throttleCache.get(cacheKey) || 0;
+    if (throttledUntil > Date.now()) {
+      return new Response(JSON.stringify({
+        success: false,
+        status: 429,
+        retryAfterMs: throttledUntil - Date.now(),
+        error: 'Pterodactyl sedang membatasi request token console. Tunggu sebentar lalu coba lagi.',
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const resp = await fetch(`${srv.domain}/api/client/servers/${panel.ptero_identifier}/websocket`, {
       headers: {
         'Authorization': `Bearer ${srv.pltc_key}`,
@@ -61,6 +72,15 @@ serve(async (req) => {
       if (resp.status === 429 && cached) {
         return new Response(JSON.stringify({
           success: true, token: cached.token, socket: cached.socket, stale: true,
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      if (resp.status === 429) {
+        throttleCache.set(cacheKey, Date.now() + 60_000);
+        return new Response(JSON.stringify({
+          success: false,
+          status: 429,
+          retryAfterMs: 60_000,
+          error: 'Pterodactyl sedang membatasi request token console. Tunggu ±1 menit lalu refresh halaman server.',
         }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
       throw new Error(`WS token error ${resp.status}: ${txt.slice(0,200)}`);
