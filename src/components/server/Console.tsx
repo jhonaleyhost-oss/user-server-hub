@@ -149,25 +149,21 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       if (cancelled) return;
       if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
       setConnecting(true);
-      const t = await fetchToken();
-      if (cancelled) { setConnecting(false); return; }
-      if (!t.success || !t.token || !t.socket) {
+      const { data: sd } = await supabase.auth.getSession();
+      const at = sd.session?.access_token;
+      if (!at) {
         setConnecting(false);
-        const delay = t.status === 429
-          ? Math.max(t.retryAfterMs || 120_000, 120_000)
-          : Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        writeLine(`\x1b[33m[live console offline — retry ${Math.round(delay / 1000)}s] ${t.error || ''}\x1b[0m`);
-        reconnectTimer = setTimeout(connectWs, delay);
+        writeLine('\x1b[33m[live console offline — session login kosong]\x1b[0m');
         return;
       }
-      const bridgeSocket = `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-bridge?panelId=${encodeURIComponent(panelId)}`;
+      if (cancelled) { setConnecting(false); return; }
+      const bridgeSocket = `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-bridge?panelId=${encodeURIComponent(panelId)}&auth=${encodeURIComponent(at)}`;
       ws = new WebSocket(bridgeSocket);
       wsRef.current = ws;
       ws.onopen = () => {
         if (cancelled) { try { ws?.close(); } catch {} return; }
         setConnecting(false);
         setConnected(true);
-        ws?.send(JSON.stringify({ event: 'auth', args: [t.token] }));
       };
       ws.onmessage = (ev) => {
         let msg: any;
