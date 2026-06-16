@@ -22,6 +22,12 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
   const [connected, setConnected] = useState(false);
   const [cmd, setCmd] = useState('');
 
+  // Keep latest callbacks in refs so the WS effect doesn't re-run on every render
+  const onStatsRef = useRef(onStats);
+  const onStateRef = useRef(onState);
+  useEffect(() => { onStatsRef.current = onStats; }, [onStats]);
+  useEffect(() => { onStateRef.current = onState; }, [onState]);
+
   // init xterm once
   useEffect(() => {
     if (!containerRef.current) return;
@@ -93,13 +99,13 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
               if (args[0]) termRef.current?.writeln(args[0]);
               break;
             case 'status':
-              if (args[0]) onState?.(args[0]);
+              if (args[0]) onStateRef.current?.(args[0]);
               break;
             case 'stats':
               try {
                 const s = JSON.parse(args[0]);
-                onStats?.(s);
-                if (s?.state) onState?.(s.state);
+                onStatsRef.current?.(s);
+                if (s?.state) onStateRef.current?.(s.state);
               } catch {}
               break;
             case 'token expiring':
@@ -137,7 +143,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       try { ws?.close(); } catch {}
       wsRef.current = null;
     };
-  }, [panelId, onStats, onState]);
+  }, [panelId]);
 
   const send = (raw: string) => {
     if (!cmd.trim() && !raw) return;
