@@ -26,6 +26,7 @@ type WsTokenResponse = {
 const WS_TOKEN_TTL_MS = 8 * 60 * 1000;
 const wsTokenCache = new Map<string, { token: string; socket: string; exp: number }>();
 const wsCooldownCache = new Map<string, number>();
+const wsTokenInflight = new Map<string, Promise<WsTokenResponse>>();
 
 export default function ServerConsole({ panelId, onStats, onState }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -86,7 +87,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       }
 
       const cooldownUntil = wsCooldownCache.get(panelId) || 0;
-      if (!forceFresh && cooldownUntil > Date.now()) {
+      if (cooldownUntil > Date.now()) {
         return {
           success: false,
           status: 429,
@@ -95,27 +96,35 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         };
       }
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (!accessToken) return { success: false, error: 'Sesi login tidak ditemukan' };
+      const inflight = wsTokenInflight.get(panelId);
+      if (inflight) return inflight;
 
-      const resp = await fetch(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-token`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ panelId }),
-      });
-      const data = await resp.json().catch(() => ({ success: false, error: 'Gagal membaca response token WS' })) as WsTokenResponse;
-      if (data.success && data.token && data.socket) {
-        wsTokenCache.set(panelId, { token: data.token, socket: data.socket, exp: Date.now() + WS_TOKEN_TTL_MS });
-      }
-      if (data.status === 429 || resp.status === 429) {
-        wsCooldownCache.set(panelId, Date.now() + Math.max(data.retryAfterMs || 60_000, 60_000));
-      }
-      return data;
+      const request = (async () => {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) return { success: false, error: 'Sesi login tidak ditemukan' };
+
+        const resp = await fetch(`https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-token`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ panelId }),
+        });
+        const data = await resp.json().catch(() => ({ success: false, error: 'Gagal membaca response token WS' })) as WsTokenResponse;
+        if (data.success && data.token && data.socket) {
+          wsTokenCache.set(panelId, { token: data.token, socket: data.socket, exp: Date.now() + WS_TOKEN_TTL_MS });
+        }
+        if (data.status === 429 || resp.status === 429) {
+          wsCooldownCache.set(panelId, Date.now() + Math.max(data.retryAfterMs || 120_000, 120_000));
+        }
+        return data;
+      })().finally(() => wsTokenInflight.delete(panelId));
+
+      wsTokenInflight.set(panelId, request);
+      return request;
     };
 
     const writeLine = (txt: string) => termRef.current?.writeln(txt);
@@ -129,7 +138,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         if (!t?.success || !t.token || !t.socket) {
           setConnecting(false);
           writeLine(`\x1b[31m[error] ${t?.error || 'gagal ambil token WS'}\x1b[0m`);
-          const delay = t?.status === 429 ? Math.max(t.retryAfterMs || 60_000, 60_000) : Math.min(30_000, 5000 * 2 ** retryRef.current++);
+          const delay = t?.status === 429 ? Math.max(t.retryAfterMs || 120_000, 120_000) : Math.min(60_000, 10_000 * 2 ** retryRef.current++);
           if (!cancelled) reconnectTimer = setTimeout(connect, delay);
           return;
         }
@@ -169,7 +178,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
             case 'token expiring':
             case 'token expired': {
               clearTokenCache();
-              fetchToken(true).then((tk) => {
+              fetchToken().then((tk) => {
                 if (tk?.token) ws?.send(JSON.stringify({ event: 'auth', args: [tk.token] }));
               });
               break;
@@ -197,7 +206,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       } catch (err: any) {
         setConnecting(false);
         writeLine(`\x1b[31m${err?.message || err}\x1b[0m`);
-        const delay = Math.min(30_000, 5000 * 2 ** retryRef.current++);
+        const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
         if (!cancelled) reconnectTimer = setTimeout(connect, delay);
       }
     };
