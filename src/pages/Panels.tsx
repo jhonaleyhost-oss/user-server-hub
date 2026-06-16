@@ -11,6 +11,7 @@ import {
   Plus,
   Ghost,
   ExternalLink,
+  ServerCog,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
