@@ -15,7 +15,6 @@ import Activity from '@/pages/Activity';
 import NotFound from '@/pages/NotFound';
 import Support from '@/pages/Support';
 import AdsRental from '@/pages/AdsRental';
-import Server from '@/pages/Server';
 
 export const AnimatedRoutes = () => {
   const location = useLocation();
@@ -43,7 +42,6 @@ export const AnimatedRoutes = () => {
         <Route path="/activity" element={<Activity />} />
         <Route path="/support" element={<Support />} />
         <Route path="/sewa-iklan" element={<AdsRental />} />
-        <Route path="/server/:id" element={<Server />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
