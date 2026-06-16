@@ -66,7 +66,7 @@ serve(async (req) => {
       authed = true;
       clearTimeout(authTimer);
       queue.push(data);
-      upstream = new WebSocket(cached.socket, [], origin ? { headers: { Origin: origin } } as any : undefined);
+      upstream = new WebSocket(cached.socket, origin ? { headers: { Origin: origin } } as any : undefined);
       upstream.onopen = () => {
         while (queue.length && upstream?.readyState === WebSocket.OPEN) upstream.send(queue.shift()!);
       };
