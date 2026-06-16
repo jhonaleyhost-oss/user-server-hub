@@ -127,7 +127,7 @@ export default function AdminPromos() {
         title: `🎁 Promo baru: ${payload.code}`,
         body,
         banner_url: payload.banner_url,
-        link_url: "/promos",
+        link_url: "/promo",
         audience: "all",
         created_by: user?.id,
       });

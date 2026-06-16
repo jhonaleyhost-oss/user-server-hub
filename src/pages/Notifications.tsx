@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { RichText } from "@/components/RichText";
 
 export default function Notifications() {
   const { items, unread, loading, markAllRead, markOneRead } = useNotifications();
@@ -57,7 +58,9 @@ export default function Notifications() {
                           <img src={n.banner_url} alt="" className="w-full max-h-48 object-cover rounded-lg mb-3 border border-border" />
                         )}
                         <h3 className="text-base font-bold text-foreground mb-1">{n.title}</h3>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">{n.body}</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                          <RichText text={n.body} />
+                        </p>
                         <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                           <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: idLocale })}

@@ -7,6 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
+import { RichText } from "@/components/RichText";
 
 export default function NotificationBell() {
   const { items, unread, markAllRead, markOneRead } = useNotifications();
@@ -88,7 +89,7 @@ export default function NotificationBell() {
                         {n.title}
                       </p>
                       <p className="text-xs text-muted-foreground leading-snug line-clamp-3 mb-1.5 whitespace-pre-wrap">
-                        {n.body}
+                        <RichText text={n.body} />
                       </p>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
                         <span>{formatDistanceToNow(new Date(n.created_at), { addSuffix: true, locale: idLocale })}</span>

@@ -94,9 +94,12 @@ export default function Promos() {
                   <motion.div key={p.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
                     <GlassCard className="relative overflow-hidden group hover:border-primary/40 transition-all">
                       {p.banner_url && (
-                        <div className="relative h-32 w-full">
-                          <img src={p.banner_url} alt={p.code} className="absolute inset-0 w-full h-full object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/60 to-transparent" />
+                        <div className="relative w-full bg-secondary/30">
+                          <img
+                            src={p.banner_url}
+                            alt={p.code}
+                            className="block w-full h-auto max-h-72 object-contain"
+                          />
                         </div>
                       )}
                       <div className="p-5 relative">
