@@ -73,13 +73,20 @@ serve(async (req) => {
   console.log('ptero bridge upstream connect', { panelId, upstreamHost, origin });
   upstream = new WebSocket(upstreamSocket, origin ? { headers: { Origin: origin } } as any : undefined);
   upstream.onopen = () => {
+    console.log('ptero bridge upstream open', { panelId, upstreamHost });
     upstream.send(JSON.stringify({ event: 'auth', args: [upstreamToken] }));
     while (queue.length && upstream?.readyState === WebSocket.OPEN) upstream.send(queue.shift()!);
   };
   upstream.onmessage = (event: MessageEvent) => {
+    const preview = typeof event.data === 'string' ? event.data.slice(0, 80) : '[binary]';
+    console.log('ptero bridge upstream message', { panelId, preview });
     if (client.readyState === WebSocket.OPEN) client.send(event.data);
   };
-  upstream.onclose = (event: CloseEvent) => { closeBoth(client, null, event.code || 1000, event.reason || 'upstream closed'); releaseLifetime(); };
+  upstream.onclose = (event: CloseEvent) => {
+    console.log('ptero bridge upstream close', { panelId, code: event.code, reason: event.reason });
+    closeBoth(client, null, event.code || 1000, event.reason || 'upstream closed');
+    releaseLifetime();
+  };
   upstream.onerror = (event: any) => {
     console.error('ptero bridge upstream error', {
       type: event?.type,
@@ -98,8 +105,9 @@ serve(async (req) => {
     if (upstream?.readyState === WebSocket.OPEN) upstream.send(data);
     else queue.push(data);
   };
-  client.onclose = () => { closeBoth(null, upstream); releaseLifetime(); };
-  client.onerror = () => { closeBoth(client, upstream, 1011, 'client error'); releaseLifetime(); };
+  client.onopen = () => console.log('ptero bridge client open', { panelId });
+  client.onclose = (event) => { console.log('ptero bridge client close', { panelId, code: event.code, reason: event.reason }); closeBoth(null, upstream); releaseLifetime(); };
+  client.onerror = () => { console.error('ptero bridge client error', { panelId }); closeBoth(client, upstream, 1011, 'client error'); releaseLifetime(); };
 
   return response;
 });

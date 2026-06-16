@@ -147,12 +147,12 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       return req;
     };
 
-    const connectWs = async (mode: 'direct' | 'bridge' = 'direct') => {
+    const connectWs = async (mode: 'direct' | 'bridge' = 'bridge') => {
       if (cancelled) return;
       if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
       activeMode = mode;
       setConnecting(true);
-      const t = mode === 'direct' ? await fetchToken(true) : lastToken;
+      const t = mode === 'direct' ? await fetchToken(true) : (lastToken || await fetchToken(true));
       if (cancelled) { setConnecting(false); return; }
       if (!t || !t.success || !t.token || !t.socket) {
         setConnecting(false);
@@ -239,15 +239,19 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           return;
         }
         const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        const hint = ev.code === 1006 ? ' — cek allowed_origins Wings untuk domain app' : '';
-        writeLine(`\x1b[31m[disconnected ${ev.code}${closeReason}${hint} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
+        const hint = ev.code === 1006
+          ? activeMode === 'direct'
+            ? ' — direct ditolak Origin Wings'
+            : ' — bridge backend putus, cek log ptero-ws-bridge'
+          : '';
+        writeLine(`\x1b[31m[${activeMode} disconnected ${ev.code}${closeReason}${hint} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
         reconnectTimer = setTimeout(() => connectWs(activeMode), delay);
       };
       ws.onerror = () => { writeLine('\x1b[31m[ws error]\x1b[0m'); };
     };
 
-    writeLine('\x1b[36m[mode: hybrid — WS live console + REST tombol/command]\x1b[0m');
-    connectWs();
+    writeLine('\x1b[36m[mode: live console bridge + REST tombol/command]\x1b[0m');
+    connectWs('bridge');
     pollStatsRest();
     statsRestTimer = setInterval(pollStatsRest, STATS_REST_MS);
 
