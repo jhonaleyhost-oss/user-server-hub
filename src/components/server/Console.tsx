@@ -30,6 +30,7 @@ const wsTokenCache = new Map<string, { token: string; socket: string; exp: numbe
 const wsCooldown = new Map<string, number>();
 const wsInflight = new Map<string, Promise<WsTokenResp>>();
 const STATS_REST_MS = 5000;
+const FRESH_TOKEN_CLOSE_CODES = new Set([1002, 1006, 4001, 4003, 4008]);
 
 export default function ServerConsole({ panelId, onStats, onState }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -128,7 +129,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
               apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ panelId }),
+            body: JSON.stringify({ panelId, forceFresh }),
           },
         );
         const data = (await resp.json().catch(() => ({ success: false, error: 'parse error' }))) as WsTokenResp;
@@ -218,8 +219,11 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         setConnected(false);
         if (wsStatsTimer) { clearInterval(wsStatsTimer); wsStatsTimer = null; }
         if (cancelled) return;
+        const closeReason = ev.reason ? ` ${ev.reason}` : '';
+        const needsFreshToken = FRESH_TOKEN_CLOSE_CODES.has(ev.code);
+        if (needsFreshToken) wsTokenCache.delete(panelId);
         const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        writeLine(`\x1b[31m[disconnected — reconnect ${Math.round(delay / 1000)}s]\x1b[0m`);
+        writeLine(`\x1b[31m[disconnected ${ev.code}${closeReason} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
         reconnectTimer = setTimeout(connectWs, delay);
       };
       ws.onerror = () => { writeLine('\x1b[31m[ws error]\x1b[0m'); };
