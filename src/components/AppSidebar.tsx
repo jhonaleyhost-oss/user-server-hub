@@ -23,6 +23,7 @@ import { Clock, Infinity as InfinityIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import NotificationBell from "@/components/NotificationBell";
 
 export function AppSidebar() {
   const { pathname } = useLocation();
@@ -266,6 +267,7 @@ export function AppSidebar() {
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </Button>
+              <NotificationBell />
               <ThemeToggle />
               <AccentColorPicker />
             </div>
