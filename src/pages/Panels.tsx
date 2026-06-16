@@ -69,6 +69,21 @@ const Panels = () => {
   const [processLogs, setProcessLogs] = useState<string[]>([]);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
   const [logDialogSuccess, setLogDialogSuccess] = useState(true);
+  const [opening, setOpening] = useState<string | null>(null);
+
+  const handleViewServer = async (panel: UserPanel) => {
+    setOpening(panel.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('panel-session', { body: { panelId: panel.id } });
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Gagal buka server');
+      navigate(`/server/${data.identifier}?p=${panel.id}`);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Gagal', description: e?.message || 'Tidak bisa membuka server' });
+    } finally {
+      setOpening(null);
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
