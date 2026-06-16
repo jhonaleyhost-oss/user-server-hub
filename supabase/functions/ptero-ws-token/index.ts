@@ -12,6 +12,11 @@ const TOKEN_TTL_MS = 8 * 60 * 1000;
 const tokenCache = new Map<string, { token: string; socket: string; exp: number }>();
 const throttleCache = new Map<string, number>();
 
+const jsonResponse = (body: Record<string, unknown>, status = 200) => new Response(JSON.stringify(body), {
+  status,
+  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+});
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
@@ -45,19 +50,45 @@ serve(async (req) => {
     const cacheKey = String(panel.id);
     const cached = tokenCache.get(cacheKey);
     if (cached && cached.exp > Date.now()) {
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: true, token: cached.token, socket: cached.socket, cached: true,
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      });
+    }
+
+    const { data: durableCached } = await supabase
+      .from('ptero_ws_token_cache')
+      .select('token, socket, expires_at, throttled_until, last_error')
+      .eq('panel_id', cacheKey)
+      .maybeSingle();
+
+    if (durableCached?.token && durableCached?.socket && durableCached?.expires_at && new Date(durableCached.expires_at).getTime() > Date.now()) {
+      tokenCache.set(cacheKey, { token: durableCached.token, socket: durableCached.socket, exp: new Date(durableCached.expires_at).getTime() });
+      return jsonResponse({
+        success: true, token: durableCached.token, socket: durableCached.socket, cached: true, durable: true,
+      });
+    }
+
+    const durableThrottleUntil = durableCached?.throttled_until ? new Date(durableCached.throttled_until).getTime() : 0;
+    if (durableThrottleUntil > Date.now()) {
+      return jsonResponse({
+        success: false,
+        status: 429,
+        retryAfterMs: durableThrottleUntil - Date.now(),
+        error: durableCached?.last_error || 'Pterodactyl sedang membatasi request token console. Tunggu sebentar lalu coba lagi.',
+        fallback: true,
+        durable: true,
+      });
     }
 
     const throttledUntil = throttleCache.get(cacheKey) || 0;
     if (throttledUntil > Date.now()) {
-      return new Response(JSON.stringify({
+      return jsonResponse({
         success: false,
         status: 429,
         retryAfterMs: throttledUntil - Date.now(),
         error: 'Pterodactyl sedang membatasi request token console. Tunggu sebentar lalu coba lagi.',
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        fallback: true,
+      });
     }
 
     const resp = await fetch(`${srv.domain}/api/client/servers/${panel.ptero_identifier}/websocket`, {
@@ -70,32 +101,61 @@ serve(async (req) => {
     if (!resp.ok) {
       // Serve stale cache on rate-limit if available
       if (resp.status === 429 && cached) {
-        return new Response(JSON.stringify({
+        return jsonResponse({
           success: true, token: cached.token, socket: cached.socket, stale: true,
-        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        });
+      }
+      if (resp.status === 429 && durableCached?.token && durableCached?.socket) {
+        throttleCache.set(cacheKey, Date.now() + 120_000);
+        await supabase.from('ptero_ws_token_cache').upsert({
+          panel_id: cacheKey,
+          token: durableCached.token,
+          socket: durableCached.socket,
+          expires_at: durableCached.expires_at,
+          throttled_until: new Date(Date.now() + 120_000).toISOString(),
+          last_error: 'Pterodactyl sedang membatasi request token console.',
+        });
+        return jsonResponse({
+          success: true, token: durableCached.token, socket: durableCached.socket, stale: true, durable: true,
+        });
       }
       if (resp.status === 429) {
-        throttleCache.set(cacheKey, Date.now() + 60_000);
-        return new Response(JSON.stringify({
+        throttleCache.set(cacheKey, Date.now() + 120_000);
+        await supabase.from('ptero_ws_token_cache').upsert({
+          panel_id: cacheKey,
+          throttled_until: new Date(Date.now() + 120_000).toISOString(),
+          last_error: 'Pterodactyl sedang membatasi request token console. Tunggu ±2 menit tanpa refresh halaman server.',
+        });
+        return jsonResponse({
           success: false,
           status: 429,
-          retryAfterMs: 60_000,
-          error: 'Pterodactyl sedang membatasi request token console. Tunggu ±1 menit lalu refresh halaman server.',
-        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          retryAfterMs: 120_000,
+          error: 'Pterodactyl sedang membatasi request token console. Tunggu ±2 menit tanpa refresh halaman server.',
+          fallback: true,
+        });
       }
-      throw new Error(`WS token error ${resp.status}: ${txt.slice(0,200)}`);
+      return jsonResponse({ success: false, status: resp.status, error: `WS token error ${resp.status}: ${txt.slice(0,200)}` });
     }
     const j = JSON.parse(txt);
     const tok = j?.data?.token; const sock = j?.data?.socket;
-    if (tok && sock) tokenCache.set(cacheKey, { token: tok, socket: sock, exp: Date.now() + TOKEN_TTL_MS });
-    return new Response(JSON.stringify({
+    if (tok && sock) {
+      const expiresAt = new Date(Date.now() + TOKEN_TTL_MS).toISOString();
+      tokenCache.set(cacheKey, { token: tok, socket: sock, exp: Date.now() + TOKEN_TTL_MS });
+      await supabase.from('ptero_ws_token_cache').upsert({
+        panel_id: cacheKey,
+        token: tok,
+        socket: sock,
+        expires_at: expiresAt,
+        throttled_until: null,
+        last_error: null,
+      });
+    }
+    return jsonResponse({
       success: true,
       token: tok,
       socket: sock,
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ success: false, error: e?.message || 'error' }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+  } catch (e: any) {
+    return jsonResponse({ success: false, error: e?.message || 'error' });
   }
 });
