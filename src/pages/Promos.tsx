@@ -6,6 +6,7 @@ import GlassCard from "@/components/GlassCard";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import { toast } from "sonner";
+import { RichText } from "@/components/RichText";
 
 interface Promo {
   id: string;
