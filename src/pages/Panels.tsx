@@ -280,6 +280,15 @@ Login URL: ${panel.login_url}
                         className="border-t border-border/30"
                       >
                         <div className="p-4 space-y-3">
+                          {/* Quick action: View Server */}
+                          <Button
+                            onClick={() => navigate(`/server/${panel.id}`)}
+                            className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 text-primary-foreground font-semibold h-11"
+                          >
+                            <PlayCircle className="w-5 h-5 mr-2" />
+                            Buka Server
+                          </Button>
+
                           {/* Info Grid */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {/* Login URL */}
