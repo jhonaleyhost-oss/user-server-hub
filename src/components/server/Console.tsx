@@ -82,6 +82,8 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
     let reconnectTimer: any = null;
     let statsRestTimer: any = null;
     let wsStatsTimer: any = null;
+    let lastToken: WsTokenResp | null = null;
+    let activeMode: 'direct' | 'bridge' = 'direct';
 
     const writeLine = (txt: string) => termRef.current?.writeln(txt);
 
@@ -145,27 +147,36 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       return req;
     };
 
-    const connectWs = async () => {
+    const connectWs = async (mode: 'direct' | 'bridge' = 'direct') => {
       if (cancelled) return;
       if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
+      activeMode = mode;
       setConnecting(true);
-      const t = await fetchToken(true);
+      const t = mode === 'direct' ? await fetchToken(true) : lastToken;
       if (cancelled) { setConnecting(false); return; }
-      if (!t.success || !t.token || !t.socket) {
+      if (!t || !t.success || !t.token || !t.socket) {
         setConnecting(false);
-        const delay = t.status === 429
+        const delay = t?.status === 429
           ? Math.max(t.retryAfterMs || 120_000, 120_000)
           : Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        writeLine(`\x1b[33m[live console offline — retry ${Math.round(delay / 1000)}s] ${t.error || ''}\x1b[0m`);
-        reconnectTimer = setTimeout(connectWs, delay);
+        writeLine(`\x1b[33m[live console offline — retry ${Math.round(delay / 1000)}s] ${t?.error || ''}\x1b[0m`);
+        reconnectTimer = setTimeout(() => connectWs(mode), delay);
         return;
       }
-      ws = new WebSocket(t.socket);
+      lastToken = t;
+      if (mode === 'bridge') {
+        const { data: sd } = await supabase.auth.getSession();
+        const at = sd.session?.access_token;
+        if (!at) { setConnecting(false); writeLine('\x1b[33m[bridge offline — session login kosong]\x1b[0m'); return; }
+        ws = new WebSocket(`wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-bridge?panelId=${encodeURIComponent(panelId)}&auth=${encodeURIComponent(at)}`);
+      } else {
+        ws = new WebSocket(t.socket);
+      }
       wsRef.current = ws;
       ws.onopen = () => {
         if (cancelled) { try { ws?.close(); } catch {} return; }
         setConnecting(false);
-        ws?.send(JSON.stringify({ event: 'auth', args: [t.token] }));
+        if (activeMode === 'direct') ws?.send(JSON.stringify({ event: 'auth', args: [t.token] }));
       };
       ws.onmessage = (ev) => {
         let msg: any;
@@ -222,10 +233,15 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         const closeReason = ev.reason ? ` ${ev.reason}` : '';
         const needsFreshToken = FRESH_TOKEN_CLOSE_CODES.has(ev.code);
         if (needsFreshToken) wsTokenCache.delete(panelId);
+        if (activeMode === 'direct' && ev.code === 1006 && lastToken?.token) {
+          writeLine('\x1b[33m[direct WS diblokir origin — pindah ke bridge backend]\x1b[0m');
+          reconnectTimer = setTimeout(() => connectWs('bridge'), 500);
+          return;
+        }
         const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
         const hint = ev.code === 1006 ? ' — cek allowed_origins Wings untuk domain app' : '';
         writeLine(`\x1b[31m[disconnected ${ev.code}${closeReason}${hint} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
-        reconnectTimer = setTimeout(connectWs, delay);
+        reconnectTimer = setTimeout(() => connectWs(activeMode), delay);
       };
       ws.onerror = () => { writeLine('\x1b[31m[ws error]\x1b[0m'); };
     };
