@@ -453,6 +453,38 @@ export type Database = {
         }
         Relationships: []
       }
+      ptero_ws_token_cache: {
+        Row: {
+          expires_at: string
+          panel_id: string
+          socket: string
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          expires_at: string
+          panel_id: string
+          socket: string
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          expires_at?: string
+          panel_id?: string
+          socket?: string
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ptero_ws_token_cache_panel_id_fkey"
+            columns: ["panel_id"]
+            isOneToOne: true
+            referencedRelation: "user_panels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pterodactyl_servers: {
         Row: {
           created_at: string
