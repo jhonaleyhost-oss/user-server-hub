@@ -14,6 +14,15 @@ interface Props {
   onState?: (s: string) => void;
 }
 
+type WsTokenResponse = {
+  success: boolean;
+  token?: string;
+  socket?: string;
+  error?: string;
+  status?: number;
+  retryAfterMs?: number;
+};
+
 export default function ServerConsole({ panelId, onStats, onState }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<XTerm | null>(null);
@@ -64,10 +73,10 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
     let reconnectTimer: any = null;
     let statsInterval: any = null;
 
-    const fetchToken = async () => {
+    const fetchToken = async (): Promise<WsTokenResponse> => {
       const { data, error } = await supabase.functions.invoke('ptero-ws-token', { body: { panelId } });
       if (error) return { success: false, error: error.message };
-      return data as { success: boolean; token?: string; socket?: string; error?: string; status?: number; retryAfterMs?: number };
+      return data as WsTokenResponse;
     };
 
     const writeLine = (txt: string) => termRef.current?.writeln(txt);
@@ -75,10 +84,11 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
     const connect = async () => {
       if (cancelled) return;
       try {
-        if (wsRef.current && [WebSocket.OPEN, WebSocket.CONNECTING].includes(wsRef.current.readyState)) return;
+        if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
         setConnecting(true);
         const t = await fetchToken();
         if (!t?.success || !t.token || !t.socket) {
+          setConnecting(false);
           writeLine(`\x1b[31m[error] ${t?.error || 'gagal ambil token WS'}\x1b[0m`);
           const delay = t?.status === 429 ? Math.max(t.retryAfterMs || 60_000, 60_000) : Math.min(30_000, 5000 * 2 ** retryRef.current++);
           if (!cancelled) reconnectTimer = setTimeout(connect, delay);
