@@ -141,9 +141,18 @@ export default function AdminPromos() {
 
   const remove = async (id: string) => {
     if (!confirm("Hapus promo ini?")) return;
+    const target = items.find(x => x.id === id);
     const { error } = await supabase.from("promo_codes").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Dihapus");
+    if (target) {
+      // Hapus juga notifikasi promo terkait (yang dibuat saat promo ini dipublish)
+      await supabase
+        .from("notifications")
+        .delete()
+        .eq("title", `🎁 Promo baru: ${target.code}`)
+        .eq("link_url", "/promo");
+    }
+    toast.success("Promo & notifikasi terkait dihapus");
     fetchAll();
   };
 
