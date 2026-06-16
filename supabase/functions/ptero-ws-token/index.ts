@@ -30,7 +30,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error('Unauthorized');
 
-    const { panelId } = await req.json();
+    const { panelId, forceFresh } = await req.json();
     if (!panelId) throw new Error('panelId required');
 
     const { data: isAdminData } = await supabase.rpc('is_admin', { _user_id: user.id });
@@ -49,7 +49,7 @@ serve(async (req) => {
 
     const cacheKey = String(panel.id);
     const cached = tokenCache.get(cacheKey);
-    if (cached && cached.exp > Date.now()) {
+    if (!forceFresh && cached && cached.exp > Date.now()) {
       return jsonResponse({
         success: true, token: cached.token, socket: cached.socket, cached: true,
       });
@@ -61,7 +61,7 @@ serve(async (req) => {
       .eq('panel_id', cacheKey)
       .maybeSingle();
 
-    if (durableCached?.token && durableCached?.socket && durableCached?.expires_at && new Date(durableCached.expires_at).getTime() > Date.now()) {
+    if (!forceFresh && durableCached?.token && durableCached?.socket && durableCached?.expires_at && new Date(durableCached.expires_at).getTime() > Date.now()) {
       tokenCache.set(cacheKey, { token: durableCached.token, socket: durableCached.socket, exp: new Date(durableCached.expires_at).getTime() });
       return jsonResponse({
         success: true, token: durableCached.token, socket: durableCached.socket, cached: true, durable: true,
