@@ -11,6 +11,7 @@ import GlassCard from "@/components/GlassCard";
 import { toast } from "sonner";
 import { Plus, Trash2, Edit, Tag, Percent, DollarSign, Calendar, Users as UsersIcon, Copy } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { RichText } from "@/components/RichText";
 
 interface Promo {
   id: string;
@@ -199,7 +200,11 @@ export default function AdminPromos() {
                   {p.discount_type === "percent" ? `${p.discount_value}% OFF` : `${fmt(p.discount_value)} OFF`}
                   {p.max_discount && p.discount_type === "percent" ? ` (maks ${fmt(p.max_discount)})` : ""}
                 </p>
-                {p.description && <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">{p.description}</p>}
+                {p.description && (
+                  <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2">
+                    <RichText text={p.description} />
+                  </p>
+                )}
                 <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
                   {p.min_amount > 0 && <span>Min: {fmt(p.min_amount)}</span>}
                   <span>Dipakai: {p.used_count}{p.quota ? `/${p.quota}` : ""}</span>
@@ -224,6 +229,9 @@ export default function AdminPromos() {
             <div>
               <Label>Deskripsi</Label>
               <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} placeholder="Diskon spesial..." />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Format: <code className="text-primary">**tebal**</code>, <code className="text-primary">*miring*</code>, <code className="text-primary">__garis bawah__</code>
+              </p>
             </div>
             <div>
               <Label>Banner URL (opsional)</Label>
