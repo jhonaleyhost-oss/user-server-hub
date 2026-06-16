@@ -29,6 +29,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import qrisLogo from '@/assets/qris-logo.png';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import PromoInput, { AppliedPromo } from '@/components/PromoInput';
 
 interface PopupButton {
   label: string;
@@ -123,6 +124,7 @@ const Upgrade = () => {
   const [fullName, setFullName] = useState('Pengguna');
   const [manualChecking, setManualChecking] = useState<string | null>(null);
   const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
   const [status, setStatus] = useState<{
     is_reseller: boolean;
     permanent: boolean;
@@ -131,6 +133,7 @@ const Upgrade = () => {
   } | null>(null);
 
   const plan = useMemo(() => PLANS.find((p) => p.key === selected)!, [selected]);
+  const payAmount = appliedPromo?.final_amount ?? plan.amount;
   const isAlreadyReseller = role === 'reseller' || role === 'admin';
   const isPermanent = !!status?.permanent || role === 'admin';
 
@@ -289,7 +292,7 @@ const Upgrade = () => {
   // Poll Pakasir until paid
   useEffect(() => {
     if (!pollingOid) return;
-    const amt = plan.amount;
+    const amt = payAmount;
     let stopped = false;
     const startedAt = Date.now();
     const interval = setInterval(async () => {
@@ -307,6 +310,16 @@ const Upgrade = () => {
           toast.success('Pembayaran berhasil! Role Reseller aktif 🎉');
           setPollingOid(null);
           setPaid(true);
+          if (appliedPromo && user) {
+            await supabase.from('promo_redemptions').insert({
+              promo_id: appliedPromo.promo_id,
+              user_id: user.id,
+              order_ref: pollingOid,
+              scope: 'reseller',
+              discount_applied: appliedPromo.discount,
+            });
+            setAppliedPromo(null);
+          }
           await refetch();
           if (user) localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
           clearInterval(interval);
@@ -319,7 +332,7 @@ const Upgrade = () => {
       stopped = true;
       clearInterval(interval);
     };
-  }, [pollingOid, plan.amount, refetch, user]);
+  }, [pollingOid, payAmount, refetch, user, appliedPromo]);
 
   const generateRef = () => {
     const stamp = Date.now().toString(36).toUpperCase();
@@ -346,7 +359,7 @@ const Upgrade = () => {
     setPaid(false);
     try {
       const { data, error } = await supabase.functions.invoke('create-qris', {
-        body: { amount: plan.amount, order_id: oid },
+        body: { amount: payAmount, order_id: oid },
       });
       if (error || !data?.qris) {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
@@ -358,7 +371,7 @@ const Upgrade = () => {
         username: fullName,
         plan: plan.key,
         duration_days: plan.durationDays,
-        amount: plan.amount,
+        amount: payAmount,
         order_id: oid,
         status: 'pending',
       });
@@ -779,9 +792,18 @@ const Upgrade = () => {
                     : isPermanent
                     ? 'Sudah Permanen'
                     : isAlreadyReseller
-                    ? `Perpanjang ${plan.label} • Rp ${plan.amount.toLocaleString('id-ID')}`
-                    : `Bayar Rp ${plan.amount.toLocaleString('id-ID')} via QRIS`}
+                    ? `Perpanjang ${plan.label} • Rp ${payAmount.toLocaleString('id-ID')}`
+                    : `Bayar Rp ${payAmount.toLocaleString('id-ID')} via QRIS`}
                 </Button>
+                <div className="mt-3">
+                  <PromoInput scope="reseller" amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
+                </div>
+                {appliedPromo && (
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Harga normal:</span>
+                    <span className="line-through text-muted-foreground">Rp {plan.amount.toLocaleString('id-ID')}</span>
+                  </div>
+                )}
                 <p className="text-[10px] text-muted-foreground text-center mt-2">
                   {isAlreadyReseller && !isPermanent
                     ? 'Masa aktif baru ditambahkan ke sisa hari yang ada.'

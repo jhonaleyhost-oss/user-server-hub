@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -19,10 +19,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useResellerStatus, formatResellerRemaining } from "@/hooks/useResellerStatus";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Clock, Infinity as InfinityIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import NotificationBell from "@/components/NotificationBell";
 
 export function AppSidebar() {
   const { pathname } = useLocation();
@@ -31,6 +33,7 @@ export function AppSidebar() {
   const { role } = useUserRole();
   const { status: resellerStatus } = useResellerStatus();
   const unread = useUnreadCounts();
+  const { unread: unreadNotif } = useNotifications();
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState<string | null>(null);
@@ -65,6 +68,8 @@ export function AppSidebar() {
     { title: "Aktivitas", url: "/activity", icon: ActivityIcon },
     { title: "Rating & Feedback", url: "/feedback", icon: Star },
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
+    { title: "Promo & Kupon", url: "/promo", icon: Tag },
+    { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
     ...(isAdmin
       ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
@@ -266,6 +271,7 @@ export function AppSidebar() {
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </Button>
+              <NotificationBell />
               <ThemeToggle />
               <AccentColorPicker />
             </div>
