@@ -213,7 +213,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
             break;
         }
       };
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         wsRef.current = null;
         setConnecting(false);
         setConnected(false);
