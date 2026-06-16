@@ -239,8 +239,12 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           return;
         }
         const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        const hint = ev.code === 1006 ? ' — cek allowed_origins Wings untuk domain app' : '';
-        writeLine(`\x1b[31m[disconnected ${ev.code}${closeReason}${hint} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
+        const hint = ev.code === 1006
+          ? activeMode === 'direct'
+            ? ' — direct ditolak Origin Wings'
+            : ' — bridge backend putus, cek log ptero-ws-bridge'
+          : '';
+        writeLine(`\x1b[31m[${activeMode} disconnected ${ev.code}${closeReason}${hint} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
         reconnectTimer = setTimeout(() => connectWs(activeMode), delay);
       };
       ws.onerror = () => { writeLine('\x1b[31m[ws error]\x1b[0m'); };
