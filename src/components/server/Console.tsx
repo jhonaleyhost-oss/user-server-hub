@@ -149,7 +149,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       if (cancelled) return;
       if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
       setConnecting(true);
-      const t = await fetchToken();
+      const t = await fetchToken(true);
       if (cancelled) { setConnecting(false); return; }
       if (!t.success || !t.token || !t.socket) {
         setConnecting(false);
@@ -160,13 +160,11 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         reconnectTimer = setTimeout(connectWs, delay);
         return;
       }
-      const bridgeSocket = `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-bridge?panelId=${encodeURIComponent(panelId)}`;
-      ws = new WebSocket(bridgeSocket);
+      ws = new WebSocket(t.socket);
       wsRef.current = ws;
       ws.onopen = () => {
         if (cancelled) { try { ws?.close(); } catch {} return; }
         setConnecting(false);
-        setConnected(true);
         ws?.send(JSON.stringify({ event: 'auth', args: [t.token] }));
       };
       ws.onmessage = (ev) => {
@@ -177,6 +175,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         switch (e) {
           case 'auth success':
             retryRef.current = 0;
+            setConnected(true);
             ws?.send(JSON.stringify({ event: 'send logs', args: [] }));
             ws?.send(JSON.stringify({ event: 'send stats', args: [] }));
             wsStatsTimer = setInterval(() => {
@@ -185,7 +184,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
             writeLine('\x1b[32m[live console connected]\x1b[0m');
             break;
           case 'console output':
-            if (args[0]) termRef.current?.writeln(args[0]);
+            if (args[0]) termRef.current?.write(args[0]);
             break;
           case 'status':
             if (args[0]) onStateRef.current?.(args[0]);
@@ -224,7 +223,8 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         const needsFreshToken = FRESH_TOKEN_CLOSE_CODES.has(ev.code);
         if (needsFreshToken) wsTokenCache.delete(panelId);
         const delay = Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        writeLine(`\x1b[31m[disconnected ${ev.code}${closeReason} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
+        const hint = ev.code === 1006 ? ' — cek allowed_origins Wings untuk domain app' : '';
+        writeLine(`\x1b[31m[disconnected ${ev.code}${closeReason}${hint} — reconnect ${Math.round(delay / 1000)}s${needsFreshToken ? ', token baru' : ''}]\x1b[0m`);
         reconnectTimer = setTimeout(connectWs, delay);
       };
       ws.onerror = () => { writeLine('\x1b[31m[ws error]\x1b[0m'); };
