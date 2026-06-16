@@ -933,82 +933,112 @@ const Admin = () => {
 
       <div className="w-full max-w-6xl mx-auto relative z-10">
         {/* Header */}
-        <GlassCard className="p-4 mb-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <GlassCard className="p-5 mb-5 overflow-hidden relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber/10 via-transparent to-primary/10 pointer-events-none" />
+          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber to-amber/50 flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-background" />
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber via-amber/80 to-amber/40 flex items-center justify-center shadow-lg shadow-amber/30">
+                  <Crown className="w-6 h-6 text-background" />
                 </div>
-                <div>
-                  <h1 className="font-bold text-lg">Admin Panel</h1>
-                  <p className="text-xs text-muted-foreground">Kelola pengguna & server</p>
-                </div>
+                <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-background" />
+                </span>
               </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h1 className="font-bold text-xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Admin Panel
+                  </h1>
+                  <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded-md bg-amber/15 text-amber border border-amber/30">
+                    v5.0
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                  <Activity className="w-3 h-3 text-emerald-500" />
+                  Pusat kontrol & manajemen sistem
+                </p>
+              </div>
+            </div>
+
+            {/* Stat badges */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 lg:gap-3 w-full lg:w-auto">
+              {[
+                { icon: Users, label: 'Pengguna', value: totalUsers, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+                { icon: Server, label: 'Server', value: totalServers, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+                { icon: HardDrive, label: 'Panel', value: totalPanels, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+                {
+                  icon: Wifi,
+                  label: 'Online',
+                  value: Object.values(serverStatuses).filter((s) => s.isOnline).length,
+                  color: 'text-amber',
+                  bg: 'bg-amber/10',
+                  border: 'border-amber/20',
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${stat.bg} ${stat.border} backdrop-blur-sm`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.bg} ${stat.color}`}>
+                    <stat.icon className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-base font-bold leading-tight">{stat.value}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{stat.label}</div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </GlassCard>
 
         {/* Tabs */}
-        <GlassCard className="p-6" delay={0.3}>
+        <GlassCard className="p-4 sm:p-6" delay={0.3}>
           {/* Search Bar */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <div className="relative mb-5">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Cari user, server, atau panel..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="input-glass pl-10"
+              className="input-glass pl-10 h-11"
             />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 bg-secondary/50 mb-6">
-              <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Users className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Pengguna</span> ({filteredUsers.length})
-              </TabsTrigger>
-              <TabsTrigger value="servers" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Server className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Server</span> ({filteredServers.length})
-              </TabsTrigger>
-              <TabsTrigger value="panels" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <HardDrive className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Panel</span> ({filteredPanels.length})
-              </TabsTrigger>
-              <TabsTrigger value="offline" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <WifiOff className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Offline</span>
-              </TabsTrigger>
-              <TabsTrigger value="devices" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Fingerprint className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Device</span>
-              </TabsTrigger>
-              <TabsTrigger value="popup" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Megaphone className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Popup</span>
-              </TabsTrigger>
-              <TabsTrigger value="ads" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Megaphone className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Iklan</span>
-              </TabsTrigger>
-              <TabsTrigger value="logs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Shield className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Log</span>
-              </TabsTrigger>
-              <TabsTrigger value="broadcast" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Megaphone className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Broadcast</span>
-              </TabsTrigger>
-              <TabsTrigger value="promos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Crown className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Promo</span>
-              </TabsTrigger>
-              <TabsTrigger value="revenue" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                <Shield className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Revenue</span>
-              </TabsTrigger>
-            </TabsList>
+            {/* Scrollable tab nav */}
+            <div className="relative -mx-4 sm:-mx-6 mb-6 px-4 sm:px-6 border-b border-border/50">
+              <TabsList className="h-auto p-0 bg-transparent flex w-max gap-1 overflow-x-auto scrollbar-none">
+                {[
+                  { value: 'users', icon: Users, label: 'Pengguna', count: filteredUsers.length },
+                  { value: 'servers', icon: Server, label: 'Server', count: filteredServers.length },
+                  { value: 'panels', icon: HardDrive, label: 'Panel', count: filteredPanels.length },
+                  { value: 'offline', icon: WifiOff, label: 'Offline' },
+                  { value: 'devices', icon: Fingerprint, label: 'Device' },
+                  { value: 'popup', icon: Megaphone, label: 'Popup' },
+                  { value: 'ads', icon: Sparkles, label: 'Iklan' },
+                  { value: 'broadcast', icon: Bell, label: 'Broadcast' },
+                  { value: 'promos', icon: Tag, label: 'Promo' },
+                  { value: 'revenue', icon: TrendingUp, label: 'Revenue' },
+                  { value: 'logs', icon: ScrollText, label: 'Log' },
+                ].map((t) => (
+                  <TabsTrigger
+                    key={t.value}
+                    value={t.value}
+                    className="relative shrink-0 h-10 px-3.5 rounded-none border-b-2 border-transparent bg-transparent text-muted-foreground hover:text-foreground hover:bg-secondary/30 data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:border-primary data-[state=active]:shadow-none transition-all"
+                  >
+                    <t.icon className="w-4 h-4 mr-2" />
+                    <span className="text-sm font-medium">{t.label}</span>
+                    {typeof t.count === 'number' && (
+                      <span className="ml-2 px-1.5 py-0.5 text-[10px] font-semibold rounded-md bg-secondary text-foreground/70 data-[state=active]:bg-primary/15 data-[state=active]:text-primary">
+                        {t.count}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
             {/* Users Tab */}
             <TabsContent value="users">
