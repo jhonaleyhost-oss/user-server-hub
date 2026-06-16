@@ -6,6 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// In-memory cache for WS tokens (per panel). Pterodactyl tokens last ~15 min.
+// Cache for 8 minutes to dodge rate-limit while staying safely fresh.
+const TOKEN_TTL_MS = 8 * 60 * 1000;
+const tokenCache = new Map<string, { token: string; socket: string; exp: number }>();
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
   try {
@@ -36,6 +41,14 @@ serve(async (req) => {
     if (!srv?.pltc_key || !srv?.domain) throw new Error('Server config kosong');
     if (!panel.ptero_identifier) throw new Error('Identifier belum siap');
 
+    const cacheKey = String(panel.id);
+    const cached = tokenCache.get(cacheKey);
+    if (cached && cached.exp > Date.now()) {
+      return new Response(JSON.stringify({
+        success: true, token: cached.token, socket: cached.socket, cached: true,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     const resp = await fetch(`${srv.domain}/api/client/servers/${panel.ptero_identifier}/websocket`, {
       headers: {
         'Authorization': `Bearer ${srv.pltc_key}`,
@@ -43,12 +56,22 @@ serve(async (req) => {
       },
     });
     const txt = await resp.text();
-    if (!resp.ok) throw new Error(`WS token error ${resp.status}: ${txt.slice(0,200)}`);
+    if (!resp.ok) {
+      // Serve stale cache on rate-limit if available
+      if (resp.status === 429 && cached) {
+        return new Response(JSON.stringify({
+          success: true, token: cached.token, socket: cached.socket, stale: true,
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      throw new Error(`WS token error ${resp.status}: ${txt.slice(0,200)}`);
+    }
     const j = JSON.parse(txt);
+    const tok = j?.data?.token; const sock = j?.data?.socket;
+    if (tok && sock) tokenCache.set(cacheKey, { token: tok, socket: sock, exp: Date.now() + TOKEN_TTL_MS });
     return new Response(JSON.stringify({
       success: true,
-      token: j?.data?.token,
-      socket: j?.data?.socket,
+      token: tok,
+      socket: sock,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   } catch (e: any) {
     return new Response(JSON.stringify({ success: false, error: e?.message || 'error' }), {
