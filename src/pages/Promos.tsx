@@ -118,7 +118,7 @@ export default function Promos() {
                           <span className="text-sm font-normal text-muted-foreground ml-1">OFF</span>
                         </p>
                         {p.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                          <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap break-words">
                             <RichText text={p.description} />
                           </p>
                         )}
