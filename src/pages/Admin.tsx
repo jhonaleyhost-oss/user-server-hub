@@ -26,6 +26,12 @@ import {
   Fingerprint,
   Globe,
   Megaphone,
+  Sparkles,
+  ScrollText,
+  Bell,
+  Tag,
+  TrendingUp,
+  Activity,
 } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
 import AdminPopupManager from '@/components/AdminPopupManager';
