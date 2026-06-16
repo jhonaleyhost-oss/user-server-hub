@@ -59,7 +59,7 @@ export default function Files({ panelId }: { panelId: string }) {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const r = await call<{ data: { attributes: FileEntry }[] }>('files/list', { query: { directory: path } });
+    const r = await call<any>('files/list', { query: { directory: path } });
     setLoading(false);
     if (!r.success) { toast({ variant: 'destructive', title: 'Gagal load files', description: r.data?.errors?.[0]?.detail || r.error }); return; }
     const arr = (r.data?.data || []).map((d: any) => d.attributes as FileEntry);
