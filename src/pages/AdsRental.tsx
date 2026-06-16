@@ -33,6 +33,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { toast } from 'sonner';
 import AdEditor, { AdRentalRow, AdButton } from '@/components/AdEditor';
 import { useNavigate } from 'react-router-dom';
+import PromoInput, { AppliedPromo } from '@/components/PromoInput';
 
 const QRIS_KEY = (uid: string) => `ad_rental_qris_${uid}`;
 
@@ -119,6 +120,7 @@ const AdsRental = () => {
   const [showQris, setShowQris] = useState(false);
   const [polling, setPolling] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
+  const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
   const activeRental = useMemo(
     () => myRentals.find((r) => r.status === 'active' && (!r.expires_at || new Date(r.expires_at) > new Date())),
@@ -201,6 +203,7 @@ const AdsRental = () => {
     if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
     if (activeRental) { toast.info('Kamu sudah punya iklan aktif.'); return; }
     const pkg = selectedPkg;
+    const payAmount = appliedPromo?.final_amount ?? pkg.price;
     setCreating(true);
     try {
       const stamp = Date.now().toString(36).toUpperCase();
@@ -212,7 +215,7 @@ const AdsRental = () => {
         user_id: user.id,
         order_id: oid,
         status: 'pending',
-        amount: pkg.price,
+        amount: payAmount,
         duration_days: pkg.days,
         title: 'Iklan Anda',
         content: '',
@@ -222,22 +225,33 @@ const AdsRental = () => {
 
       // 2) Get QRIS
       const { data, error } = await supabase.functions.invoke('create-qris', {
-        body: { amount: pkg.price, order_id: oid },
+        body: { amount: payAmount, order_id: oid },
       });
       if (error || !data?.qris) {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
         await supabase.from('ad_rentals').delete().eq('order_id', oid);
         return;
       }
+      // Save promo redemption (insert when payment completes — fire-and-forget on creation is safer to record only on success)
+      if (appliedPromo) {
+        await supabase.from('promo_redemptions').insert({
+          promo_id: appliedPromo.promo_id,
+          user_id: user.id,
+          order_ref: oid,
+          scope: 'ads',
+          discount_applied: appliedPromo.discount,
+        });
+      }
       setOrderId(oid);
       setQrisPayload(data.qris as string);
-      setQrisAmount(pkg.price);
+      setQrisAmount(payAmount);
       setShowQris(true);
       setPolling(oid);
       setPaid(false);
       try {
-        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, amount: pkg.price, savedAt: Date.now() }));
+        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, amount: payAmount, savedAt: Date.now() }));
       } catch {}
+      setAppliedPromo(null);
     } finally {
       setCreating(false);
     }
