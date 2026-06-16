@@ -59,6 +59,10 @@ serve(async (req) => {
         .eq('id', panelId)
         .maybeSingle();
       const origin = String((panel?.pterodactyl_servers as any)?.domain || '').replace(/\/+$/, '');
+      const upstreamHost = (() => {
+        try { return new URL(cached.socket).host; } catch { return 'invalid-socket-url'; }
+      })();
+      console.log('ptero bridge upstream connect', { panelId, upstreamHost, origin });
       authed = true;
       clearTimeout(authTimer);
       queue.push(data);
@@ -70,7 +74,17 @@ serve(async (req) => {
         if (client.readyState === WebSocket.OPEN) client.send(event.data);
       };
       upstream.onclose = (event: CloseEvent) => { closeBoth(client, null, event.code || 1000, event.reason || 'upstream closed'); releaseLifetime(); };
-      upstream.onerror = (event: Event) => { console.error('ptero bridge upstream error', event.type); closeBoth(client, upstream, 1011, 'upstream error'); releaseLifetime(); };
+      upstream.onerror = (event: any) => {
+        console.error('ptero bridge upstream error', {
+          type: event?.type,
+          message: event?.message,
+          error: event?.error?.message || String(event?.error || ''),
+          upstreamHost,
+          origin,
+        });
+        closeBoth(client, upstream, 1011, 'upstream error');
+        releaseLifetime();
+      };
       return;
     }
     if (upstream?.readyState === WebSocket.OPEN) upstream.send(data);
