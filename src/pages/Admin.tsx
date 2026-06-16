@@ -32,6 +32,9 @@ import AdminPopupManager from '@/components/AdminPopupManager';
 import AdminActivityLogs from '@/components/AdminActivityLogs';
 import AdminOfflinePanels from '@/components/AdminOfflinePanels';
 import AdminAdRentals from '@/components/AdminAdRentals';
+import AdminBroadcast from '@/components/AdminBroadcast';
+import AdminPromos from '@/components/AdminPromos';
+import AdminRevenue from '@/components/AdminRevenue';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
@@ -954,7 +957,7 @@ const Admin = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-8 bg-secondary/50 mb-6">
+            <TabsList className="grid w-full grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 bg-secondary/50 mb-6">
               <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Users className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Pengguna</span> ({filteredUsers.length})
@@ -986,6 +989,18 @@ const Admin = () => {
               <TabsTrigger value="logs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 <Shield className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Log</span>
+              </TabsTrigger>
+              <TabsTrigger value="broadcast" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Megaphone className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Broadcast</span>
+              </TabsTrigger>
+              <TabsTrigger value="promos" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Crown className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Promo</span>
+              </TabsTrigger>
+              <TabsTrigger value="revenue" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                <Shield className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Revenue</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1848,6 +1863,15 @@ const Admin = () => {
             {/* Activity Logs Tab */}
             <TabsContent value="logs">
               <AdminActivityLogs />
+            </TabsContent>
+            <TabsContent value="broadcast">
+              <AdminBroadcast />
+            </TabsContent>
+            <TabsContent value="promos">
+              <AdminPromos />
+            </TabsContent>
+            <TabsContent value="revenue">
+              <AdminRevenue />
             </TabsContent>
           </Tabs>
         </GlassCard>
