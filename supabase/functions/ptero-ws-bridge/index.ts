@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import WsClient from "npm:ws@8.18.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -30,7 +31,7 @@ serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
   const { socket: client, response } = Deno.upgradeWebSocket(req);
-  let upstream: WebSocket | null = null;
+  let upstream: any = null;
   const queue: string[] = [];
   let authed = false;
   const authTimer = setTimeout(() => closeBoth(client, upstream, 1008, 'bridge auth timeout'), 10_000);
@@ -50,18 +51,24 @@ serve(async (req) => {
       if (!cached?.token || !cached?.socket || cached.token !== bridgeToken || new Date(cached.expires_at).getTime() <= Date.now()) {
         return closeBoth(client, upstream, 1008, 'invalid bridge auth');
       }
+      const { data: panel } = await supabase
+        .from('user_panels')
+        .select('pterodactyl_servers ( domain )')
+        .eq('id', panelId)
+        .maybeSingle();
+      const origin = String((panel?.pterodactyl_servers as any)?.domain || '').replace(/\/+$/, '');
       authed = true;
       clearTimeout(authTimer);
       queue.push(data);
-      upstream = new WebSocket(cached.socket);
-      upstream.onopen = () => {
+      upstream = new WsClient(cached.socket, { origin: origin || undefined });
+      upstream.on('open', () => {
         while (queue.length && upstream?.readyState === WebSocket.OPEN) upstream.send(queue.shift()!);
-      };
-      upstream.onmessage = (event) => {
-        if (client.readyState === WebSocket.OPEN) client.send(event.data);
-      };
-      upstream.onclose = (event) => closeBoth(client, null, event.code || 1000, event.reason || 'upstream closed');
-      upstream.onerror = () => closeBoth(client, upstream, 1011, 'upstream error');
+      });
+      upstream.on('message', (message: unknown) => {
+        if (client.readyState === WebSocket.OPEN) client.send(message as string);
+      });
+      upstream.on('close', (code: number, reason: Uint8Array) => closeBoth(client, null, code || 1000, new TextDecoder().decode(reason) || 'upstream closed'));
+      upstream.on('error', () => closeBoth(client, upstream, 1011, 'upstream error'));
       return;
     }
     if (upstream?.readyState === WebSocket.OPEN) upstream.send(data);
