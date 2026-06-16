@@ -57,14 +57,26 @@ serve(async (req) => {
 
     const { data: durableCached } = await supabase
       .from('ptero_ws_token_cache')
-      .select('token, socket, expires_at')
+      .select('token, socket, expires_at, throttled_until, last_error')
       .eq('panel_id', cacheKey)
       .maybeSingle();
 
-    if (durableCached?.token && durableCached?.socket && new Date(durableCached.expires_at).getTime() > Date.now()) {
+    if (durableCached?.token && durableCached?.socket && durableCached?.expires_at && new Date(durableCached.expires_at).getTime() > Date.now()) {
       tokenCache.set(cacheKey, { token: durableCached.token, socket: durableCached.socket, exp: new Date(durableCached.expires_at).getTime() });
       return jsonResponse({
         success: true, token: durableCached.token, socket: durableCached.socket, cached: true, durable: true,
+      });
+    }
+
+    const durableThrottleUntil = durableCached?.throttled_until ? new Date(durableCached.throttled_until).getTime() : 0;
+    if (durableThrottleUntil > Date.now()) {
+      return jsonResponse({
+        success: false,
+        status: 429,
+        retryAfterMs: durableThrottleUntil - Date.now(),
+        error: durableCached?.last_error || 'Pterodactyl sedang membatasi request token console. Tunggu sebentar lalu coba lagi.',
+        fallback: true,
+        durable: true,
       });
     }
 
@@ -95,12 +107,25 @@ serve(async (req) => {
       }
       if (resp.status === 429 && durableCached?.token && durableCached?.socket) {
         throttleCache.set(cacheKey, Date.now() + 120_000);
+        await supabase.from('ptero_ws_token_cache').upsert({
+          panel_id: cacheKey,
+          token: durableCached.token,
+          socket: durableCached.socket,
+          expires_at: durableCached.expires_at,
+          throttled_until: new Date(Date.now() + 120_000).toISOString(),
+          last_error: 'Pterodactyl sedang membatasi request token console.',
+        });
         return jsonResponse({
           success: true, token: durableCached.token, socket: durableCached.socket, stale: true, durable: true,
         });
       }
       if (resp.status === 429) {
         throttleCache.set(cacheKey, Date.now() + 120_000);
+        await supabase.from('ptero_ws_token_cache').upsert({
+          panel_id: cacheKey,
+          throttled_until: new Date(Date.now() + 120_000).toISOString(),
+          last_error: 'Pterodactyl sedang membatasi request token console. Tunggu ±2 menit tanpa refresh halaman server.',
+        });
         return jsonResponse({
           success: false,
           status: 429,
@@ -121,6 +146,8 @@ serve(async (req) => {
         token: tok,
         socket: sock,
         expires_at: expiresAt,
+        throttled_until: null,
+        last_error: null,
       });
     }
     return jsonResponse({
