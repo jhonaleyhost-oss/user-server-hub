@@ -69,7 +69,7 @@ serve(async (req) => {
     }
 
     const durableThrottleUntil = durableCached?.throttled_until ? new Date(durableCached.throttled_until).getTime() : 0;
-    if (durableThrottleUntil > Date.now()) {
+    if (!forceFresh && durableThrottleUntil > Date.now()) {
       return jsonResponse({
         success: false,
         status: 429,
@@ -81,7 +81,7 @@ serve(async (req) => {
     }
 
     const throttledUntil = throttleCache.get(cacheKey) || 0;
-    if (throttledUntil > Date.now()) {
+    if (!forceFresh && throttledUntil > Date.now()) {
       return jsonResponse({
         success: false,
         status: 429,
