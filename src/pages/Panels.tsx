@@ -352,6 +352,14 @@ Login URL: ${panel.login_url}
 
                           {/* Actions */}
                           <div className="pt-3 mt-2 border-t border-border/50 flex flex-col sm:flex-row gap-3">
+                            <Button
+                              onClick={() => handleViewServer(panel)}
+                              disabled={opening === panel.id}
+                              className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                            >
+                              <ServerCog className="w-4 h-4 mr-2" />
+                              {opening === panel.id ? 'Membuka…' : 'View Server'}
+                            </Button>
                             <div className="flex-1 relative">
                               <Input
                                 type="tel"
