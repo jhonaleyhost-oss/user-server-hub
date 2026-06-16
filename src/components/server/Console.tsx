@@ -133,7 +133,6 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           if (!cancelled) reconnectTimer = setTimeout(connect, delay);
           return;
         }
-        retryRef.current = 0;
         ws = new WebSocket(t.socket);
         wsRef.current = ws;
         ws.onopen = () => {
@@ -146,6 +145,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           const e = msg?.event; const args = msg?.args || [];
           switch (e) {
             case 'auth success':
+              retryRef.current = 0;
               ws?.send(JSON.stringify({ event: 'send logs', args: [] }));
               ws?.send(JSON.stringify({ event: 'send stats', args: [] }));
               statsInterval = setInterval(() => {
