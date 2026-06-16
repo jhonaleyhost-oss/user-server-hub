@@ -109,6 +109,31 @@ export default function AdminPromos() {
       : await supabase.from("promo_codes").insert({ ...payload, created_by: user?.id });
     if (error) return toast.error(error.message);
     toast.success(editingId ? "Promo diperbarui" : "Promo dibuat");
+
+    // Broadcast notifikasi ke semua user saat promo BARU dibuat & aktif
+    if (!editingId && payload.active) {
+      const discountLabel = payload.discount_type === "percent"
+        ? `${payload.discount_value}%`
+        : fmt(payload.discount_value);
+      const scopeLabel = payload.scope === "reseller" ? "upgrade Reseller"
+        : payload.scope === "ads" ? "sewa Iklan"
+        : "upgrade Reseller & sewa Iklan";
+      const expiryNote = payload.expires_at
+        ? ` Berlaku sampai ${new Date(payload.expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}.`
+        : "";
+      const body = `Pakai kode ${payload.code} untuk diskon ${discountLabel} pada ${scopeLabel}.${payload.description ? ` ${payload.description}` : ""}${expiryNote}`;
+      const { error: notifErr } = await supabase.from("notifications").insert({
+        title: `🎁 Promo baru: ${payload.code}`,
+        body,
+        banner_url: payload.banner_url,
+        link_url: "/promos",
+        audience: "all",
+        created_by: user?.id,
+      });
+      if (notifErr) toast.error("Promo dibuat, tapi notifikasi gagal: " + notifErr.message);
+      else toast.success("Notifikasi promo dikirim ke semua user");
+    }
+
     setOpen(false);
     fetchAll();
   };
