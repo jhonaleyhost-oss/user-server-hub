@@ -160,7 +160,8 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         reconnectTimer = setTimeout(connectWs, delay);
         return;
       }
-      ws = new WebSocket(t.socket);
+      const bridgeSocket = `wss://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/ptero-ws-bridge?panelId=${encodeURIComponent(panelId)}`;
+      ws = new WebSocket(bridgeSocket, ['ptero-bridge', t.token]);
       wsRef.current = ws;
       ws.onopen = () => {
         if (cancelled) { try { ws?.close(); } catch {} return; }
