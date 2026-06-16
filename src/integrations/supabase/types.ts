@@ -369,6 +369,65 @@ export type Database = {
           },
         ]
       }
+      notification_reads: {
+        Row: {
+          notification_id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          notification_id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          notification_id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_reads_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          audience: Database["public"]["Enums"]["notification_audience"]
+          banner_url: string | null
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          link_url: string | null
+          title: string
+        }
+        Insert: {
+          audience?: Database["public"]["Enums"]["notification_audience"]
+          banner_url?: string | null
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link_url?: string | null
+          title: string
+        }
+        Update: {
+          audience?: Database["public"]["Enums"]["notification_audience"]
+          banner_url?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          link_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       popup_settings: {
         Row: {
           audience: string
@@ -452,6 +511,104 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          active: boolean
+          banner_url: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          description: string
+          discount_type: Database["public"]["Enums"]["promo_discount_type"]
+          discount_value: number
+          expires_at: string | null
+          id: string
+          max_discount: number | null
+          min_amount: number
+          quota: number | null
+          scope: Database["public"]["Enums"]["promo_scope"]
+          starts_at: string | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          active?: boolean
+          banner_url?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          discount_type?: Database["public"]["Enums"]["promo_discount_type"]
+          discount_value: number
+          expires_at?: string | null
+          id?: string
+          max_discount?: number | null
+          min_amount?: number
+          quota?: number | null
+          scope?: Database["public"]["Enums"]["promo_scope"]
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          active?: boolean
+          banner_url?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          discount_type?: Database["public"]["Enums"]["promo_discount_type"]
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          max_discount?: number | null
+          min_amount?: number
+          quota?: number | null
+          scope?: Database["public"]["Enums"]["promo_scope"]
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: []
+      }
+      promo_redemptions: {
+        Row: {
+          created_at: string
+          discount_applied: number
+          id: string
+          order_ref: string | null
+          promo_id: string
+          scope: Database["public"]["Enums"]["promo_scope"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          discount_applied: number
+          id?: string
+          order_ref?: string | null
+          promo_id: string
+          scope: Database["public"]["Enums"]["promo_scope"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          discount_applied?: number
+          id?: string
+          order_ref?: string | null
+          promo_id?: string
+          scope?: Database["public"]["Enums"]["promo_scope"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_redemptions_promo_id_fkey"
+            columns: ["promo_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ptero_ws_token_cache: {
         Row: {
@@ -862,6 +1019,13 @@ export type Database = {
           role: string
         }[]
       }
+      _user_matches_audience: {
+        Args: {
+          _aud: Database["public"]["Enums"]["notification_audience"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       activate_ad_rental: { Args: { _order_id: string }; Returns: Json }
       activate_reseller: { Args: { _order_id: string }; Returns: Json }
       can_send_feedback: { Args: never; Returns: boolean }
@@ -909,6 +1073,19 @@ export type Database = {
           used: number
         }[]
       }
+      get_my_notifications: {
+        Args: { _limit?: number }
+        Returns: {
+          audience: Database["public"]["Enums"]["notification_audience"]
+          banner_url: string
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          link_url: string
+          title: string
+        }[]
+      }
       get_my_reseller_status: {
         Args: never
         Returns: {
@@ -950,6 +1127,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_revenue_stats: { Args: { _days?: number }; Returns: Json }
       get_server_keys: {
         Args: { _server_id: string }
         Returns: {
@@ -989,6 +1167,7 @@ export type Database = {
           support_unread: number
         }[]
       }
+      get_unread_notification_count: { Args: never; Returns: number }
       get_upgrade_activity: {
         Args: { _limit?: number }
         Returns: {
@@ -1035,6 +1214,7 @@ export type Database = {
       }
       has_transacted: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      mark_all_notifications_read: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1056,9 +1236,20 @@ export type Database = {
         Args: { _plta_key: string; _pltc_key: string; _server_id: string }
         Returns: undefined
       }
+      validate_promo_code: {
+        Args: {
+          _amount: number
+          _code: string
+          _scope: Database["public"]["Enums"]["promo_scope"]
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "free" | "premium" | "reseller" | "admin"
+      notification_audience: "all" | "free" | "reseller" | "premium" | "admin"
+      promo_discount_type: "percent" | "amount"
+      promo_scope: "reseller" | "ads" | "both"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1187,6 +1378,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["free", "premium", "reseller", "admin"],
+      notification_audience: ["all", "free", "reseller", "premium", "admin"],
+      promo_discount_type: ["percent", "amount"],
+      promo_scope: ["reseller", "ads", "both"],
     },
   },
 } as const
