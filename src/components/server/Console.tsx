@@ -154,13 +154,13 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
       setConnecting(true);
       const t = mode === 'direct' ? await fetchToken(true) : lastToken;
       if (cancelled) { setConnecting(false); return; }
-      if (!t.success || !t.token || !t.socket) {
+      if (!t || !t.success || !t.token || !t.socket) {
         setConnecting(false);
-        const delay = t.status === 429
+        const delay = t?.status === 429
           ? Math.max(t.retryAfterMs || 120_000, 120_000)
           : Math.min(60_000, 10_000 * 2 ** retryRef.current++);
-        writeLine(`\x1b[33m[live console offline — retry ${Math.round(delay / 1000)}s] ${t.error || ''}\x1b[0m`);
-        reconnectTimer = setTimeout(connectWs, delay);
+        writeLine(`\x1b[33m[live console offline — retry ${Math.round(delay / 1000)}s] ${t?.error || ''}\x1b[0m`);
+        reconnectTimer = setTimeout(() => connectWs(mode), delay);
         return;
       }
       lastToken = t;
