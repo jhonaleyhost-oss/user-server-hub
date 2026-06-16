@@ -318,9 +318,6 @@ const Upgrade = () => {
               scope: 'reseller',
               discount_applied: appliedPromo.discount,
             });
-            await supabase.rpc as any;
-            // increment used_count via direct update (RLS allows admin only normally, but service trigger needed)
-            // Skip used_count bump here — handled in trigger or admin reconcile.
             setAppliedPromo(null);
           }
           await refetch();
