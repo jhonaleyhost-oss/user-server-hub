@@ -456,22 +456,28 @@ export type Database = {
       ptero_ws_token_cache: {
         Row: {
           expires_at: string
+          last_error: string | null
           panel_id: string
           socket: string
+          throttled_until: string | null
           token: string
           updated_at: string
         }
         Insert: {
           expires_at: string
+          last_error?: string | null
           panel_id: string
           socket: string
+          throttled_until?: string | null
           token: string
           updated_at?: string
         }
         Update: {
           expires_at?: string
+          last_error?: string | null
           panel_id?: string
           socket?: string
+          throttled_until?: string | null
           token?: string
           updated_at?: string
         }
