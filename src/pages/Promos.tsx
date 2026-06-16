@@ -113,7 +113,11 @@ export default function Promos() {
                           {p.discount_type === "percent" ? `${p.discount_value}%` : fmt(p.discount_value)}
                           <span className="text-sm font-normal text-muted-foreground ml-1">OFF</span>
                         </p>
-                        {p.description && <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{p.description}</p>}
+                        {p.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            <RichText text={p.description} />
+                          </p>
+                        )}
                         <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-secondary/40 border border-dashed border-primary/40">
                           <span className="font-mono text-base font-bold text-primary tracking-wider flex-1 truncate">{p.code}</span>
                           <button
