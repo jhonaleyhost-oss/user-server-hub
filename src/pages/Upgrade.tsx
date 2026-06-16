@@ -792,9 +792,18 @@ const Upgrade = () => {
                     : isPermanent
                     ? 'Sudah Permanen'
                     : isAlreadyReseller
-                    ? `Perpanjang ${plan.label} • Rp ${plan.amount.toLocaleString('id-ID')}`
-                    : `Bayar Rp ${plan.amount.toLocaleString('id-ID')} via QRIS`}
+                    ? `Perpanjang ${plan.label} • Rp ${payAmount.toLocaleString('id-ID')}`
+                    : `Bayar Rp ${payAmount.toLocaleString('id-ID')} via QRIS`}
                 </Button>
+                <div className="mt-3">
+                  <PromoInput scope="reseller" amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
+                </div>
+                {appliedPromo && (
+                  <div className="mt-2 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Harga normal:</span>
+                    <span className="line-through text-muted-foreground">Rp {plan.amount.toLocaleString('id-ID')}</span>
+                  </div>
+                )}
                 <p className="text-[10px] text-muted-foreground text-center mt-2">
                   {isAlreadyReseller && !isPermanent
                     ? 'Masa aktif baru ditambahkan ke sisa hari yang ada.'
