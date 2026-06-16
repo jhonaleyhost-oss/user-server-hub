@@ -455,30 +455,30 @@ export type Database = {
       }
       ptero_ws_token_cache: {
         Row: {
-          expires_at: string
+          expires_at: string | null
           last_error: string | null
           panel_id: string
-          socket: string
+          socket: string | null
           throttled_until: string | null
-          token: string
+          token: string | null
           updated_at: string
         }
         Insert: {
-          expires_at: string
+          expires_at?: string | null
           last_error?: string | null
           panel_id: string
-          socket: string
+          socket?: string | null
           throttled_until?: string | null
-          token: string
+          token?: string | null
           updated_at?: string
         }
         Update: {
-          expires_at?: string
+          expires_at?: string | null
           last_error?: string | null
           panel_id?: string
-          socket?: string
+          socket?: string | null
           throttled_until?: string | null
-          token?: string
+          token?: string | null
           updated_at?: string
         }
         Relationships: [
