@@ -19,7 +19,9 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
   const termRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const retryRef = useRef(0);
   const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [cmd, setCmd] = useState('');
 
   // Keep latest callbacks in refs so the WS effect doesn't re-run on every render
@@ -63,8 +65,9 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
     let statsInterval: any = null;
 
     const fetchToken = async () => {
-      const { data } = await supabase.functions.invoke('ptero-ws-token', { body: { panelId } });
-      return data as { success: boolean; token?: string; socket?: string; error?: string };
+      const { data, error } = await supabase.functions.invoke('ptero-ws-token', { body: { panelId } });
+      if (error) return { success: false, error: error.message };
+      return data as { success: boolean; token?: string; socket?: string; error?: string; status?: number; retryAfterMs?: number };
     };
 
     const writeLine = (txt: string) => termRef.current?.writeln(txt);
@@ -72,14 +75,20 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
     const connect = async () => {
       if (cancelled) return;
       try {
+        if (wsRef.current && [WebSocket.OPEN, WebSocket.CONNECTING].includes(wsRef.current.readyState)) return;
+        setConnecting(true);
         const t = await fetchToken();
         if (!t?.success || !t.token || !t.socket) {
           writeLine(`\x1b[31m[error] ${t?.error || 'gagal ambil token WS'}\x1b[0m`);
+          const delay = t?.status === 429 ? Math.max(t.retryAfterMs || 60_000, 60_000) : Math.min(30_000, 5000 * 2 ** retryRef.current++);
+          if (!cancelled) reconnectTimer = setTimeout(connect, delay);
           return;
         }
+        retryRef.current = 0;
         ws = new WebSocket(t.socket);
         wsRef.current = ws;
         ws.onopen = () => {
+          setConnecting(false);
           setConnected(true);
           ws?.send(JSON.stringify({ event: 'auth', args: [t.token] }));
         };
@@ -123,15 +132,20 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
           }
         };
         ws.onclose = () => {
+          wsRef.current = null;
+          setConnecting(false);
           setConnected(false);
           if (statsInterval) clearInterval(statsInterval);
-          writeLine('\x1b[31m[disconnected — reconnecting in 3s]\x1b[0m');
-          if (!cancelled) reconnectTimer = setTimeout(connect, 3000);
+          const delay = Math.min(30_000, 3000 * 2 ** retryRef.current++);
+          writeLine(`\x1b[31m[disconnected — reconnecting in ${Math.round(delay / 1000)}s]\x1b[0m`);
+          if (!cancelled) reconnectTimer = setTimeout(connect, delay);
         };
         ws.onerror = () => { writeLine('\x1b[31m[ws error]\x1b[0m'); };
       } catch (err: any) {
+        setConnecting(false);
         writeLine(`\x1b[31m${err?.message || err}\x1b[0m`);
-        if (!cancelled) reconnectTimer = setTimeout(connect, 3000);
+        const delay = Math.min(30_000, 5000 * 2 ** retryRef.current++);
+        if (!cancelled) reconnectTimer = setTimeout(connect, delay);
       }
     };
 
@@ -147,12 +161,14 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
 
   const send = (raw: string) => {
     if (!cmd.trim() && !raw) return;
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     const c = raw || cmd;
     wsRef.current?.send(JSON.stringify({ event: 'send command', args: [c] }));
     if (!raw) setCmd('');
   };
 
   const power = (state: 'start' | 'stop' | 'restart' | 'kill') => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
     wsRef.current?.send(JSON.stringify({ event: 'set state', args: [state] }));
   };
 
@@ -173,7 +189,7 @@ export default function ServerConsole({ panelId, onStats, onState }: Props) {
         </Button>
         <div className="ml-auto text-xs flex items-center gap-2 text-muted-foreground">
           <span className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald animate-pulse-slow' : 'bg-rose-400'}`} />
-          {connected ? 'Terhubung' : 'Tidak terhubung'}
+          {connected ? 'Terhubung' : connecting ? 'Menghubungkan…' : 'Tidak terhubung'}
         </div>
       </div>
       <div
