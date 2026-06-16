@@ -486,8 +486,17 @@ const AdsRental = () => {
                     {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-5 h-5" />}
                     {slot.available <= 0
                       ? 'Slot Penuh, Tunggu Ada Expired'
-                      : `Sewa ${selectedPkg.label} — Rp ${selectedPkg.price.toLocaleString('id-ID')}`}
+                      : `Sewa ${selectedPkg.label} — Rp ${(appliedPromo?.final_amount ?? selectedPkg.price).toLocaleString('id-ID')}`}
                   </Button>
+                  <div className="mt-3 max-w-md">
+                    <PromoInput scope="ads" amount={selectedPkg.price} applied={appliedPromo} onApply={setAppliedPromo} />
+                    {appliedPromo && (
+                      <div className="mt-2 flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Harga normal:</span>
+                        <span className="line-through text-muted-foreground">Rp {selectedPkg.price.toLocaleString('id-ID')}</span>
+                      </div>
+                    )}
+                  </div>
                   {slot.available <= 0 && (
                     <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3.5 h-3.5" />
