@@ -169,7 +169,7 @@ export function AppSidebar() {
 
         </div>
 
-        <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto">
           <SidebarGroup>
             <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
             <SidebarGroupContent>
