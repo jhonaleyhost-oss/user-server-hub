@@ -122,43 +122,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const checkUserExists = async () => {
       try {
-        const [{ data: authData, error: authError }, { data: profileData, error: profileError }] = await Promise.all([
-          supabase.auth.getUser(),
-          supabase
-            .from('profiles')
-            .select('user_id')
-            .eq('user_id', session.user.id)
-            .maybeSingle(),
-        ]);
+        const { data: authData, error: authError } = await supabase.auth.getUser();
 
+        // Only act on explicit "user deleted" signals. Transient errors
+        // (network, expired JWT mid-refresh, 5xx) must NOT force logout —
+        // Supabase will auto-refresh the token on its own.
         const msg = (authError?.message || '').toLowerCase();
-        const deleted =
+        const userDeleted =
           !!authError &&
           (msg.includes('user_not_found') ||
             msg.includes('user not found') ||
-            msg.includes('user from sub claim') ||
-            msg.includes('invalid') ||
-            msg.includes('jwt'));
+            msg.includes('user from sub claim'));
 
-        const missingProfile = !profileError && !profileData;
-        const missingAuthUser = !!authError || !authData?.user;
-
-        if (deleted || missingAuthUser || missingProfile) {
+        if (userDeleted) {
           await forceLogout();
+          return;
+        }
+
+        // If getUser succeeded, also verify the profile row still exists.
+        // Skip this check entirely on auth errors to avoid false positives.
+        if (!authError && authData?.user) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+          if (!profileError && !profileData) {
+            await forceLogout();
+          }
         }
       } catch {
         // ignore network errors
       }
     };
 
-    // Check immediately, on window focus, and every 30s
+    // Check once on mount and every 5 minutes. No focus listener — it caused
+    // a /user request on every tab switch and triggered false logouts on flaky networks.
     checkUserExists();
-    const onFocus = () => checkUserExists();
-    window.addEventListener('focus', onFocus);
-    const interval = setInterval(checkUserExists, 30000);
+    const interval = setInterval(checkUserExists, 5 * 60 * 1000);
 
     return () => {
-      window.removeEventListener('focus', onFocus);
       clearInterval(interval);
     };
   }, [session?.user?.id, isRecovery]);
