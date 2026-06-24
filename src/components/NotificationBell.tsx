@@ -50,7 +50,7 @@ export default function NotificationBell() {
             </button>
           )}
         </div>
-        <ScrollArea className="max-h-[60vh]">
+        <ScrollArea className="h-[60vh]">
           {items.length === 0 ? (
             <div className="px-6 py-10 text-center">
               <Bell className="w-8 h-8 mx-auto mb-2 text-muted-foreground/40" />
