@@ -15,6 +15,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const DEVICE_KEY = 'active_device_id';
+
+const getOrCreateDeviceId = (): string => {
+  try {
+    let id = localStorage.getItem(DEVICE_KEY);
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem(DEVICE_KEY, id);
+    }
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+};
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -24,6 +39,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return localStorage.getItem('pwd_recovery') === '1';
   });
   const forceLogoutInProgress = useRef(false);
+  const kickedOut = useRef(false);
 
   useEffect(() => {
     // If a previous recovery flow was started but never completed
@@ -102,6 +118,70 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Single-device enforcement: claim active_session_id on login, then watch for changes.
+  useEffect(() => {
+    if (!session?.user?.id || isRecovery) return;
+    const userId = session.user.id;
+    const deviceId = getOrCreateDeviceId();
+
+    let cancelled = false;
+
+    // 1) Claim this device as the active one
+    (async () => {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ active_session_id: deviceId })
+          .eq('user_id', userId);
+      } catch { /* ignore */ }
+
+      if (cancelled) return;
+
+      // 2) Verify still ours shortly after (in case another device claimed simultaneously)
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('active_session_id')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (!cancelled && data?.active_session_id && data.active_session_id !== deviceId) {
+          kickedOut.current = true;
+          alert('Akun Anda baru saja login di perangkat lain. Sesi di perangkat ini dihentikan.');
+          forceLogoutInProgress.current = false;
+          await supabase.auth.signOut().catch(() => {});
+          setUser(null);
+          setSession(null);
+          if (typeof window !== 'undefined') window.location.replace('/auth');
+        }
+      } catch { /* ignore */ }
+    })();
+
+    // 3) Realtime watch — kick out instantly when another device takes over
+    const channel = supabase
+      .channel(`profile-device-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `user_id=eq.${userId}` },
+        async (payload: any) => {
+          const newId = payload?.new?.active_session_id;
+          if (newId && newId !== deviceId && !kickedOut.current) {
+            kickedOut.current = true;
+            alert('Akun Anda baru saja login di perangkat lain. Sesi di perangkat ini dihentikan.');
+            await supabase.auth.signOut().catch(() => {});
+            setUser(null);
+            setSession(null);
+            if (typeof window !== 'undefined') window.location.replace('/auth');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, [session?.user?.id, isRecovery]);
 
   // Detect deleted/disabled accounts and force sign-out
   useEffect(() => {
