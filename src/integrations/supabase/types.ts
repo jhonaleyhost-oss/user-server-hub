@@ -472,6 +472,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_session_id: string | null
           avatar_url: string | null
           created_at: string
           device_fingerprint: string | null
@@ -486,6 +487,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          active_session_id?: string | null
           avatar_url?: string | null
           created_at?: string
           device_fingerprint?: string | null
@@ -500,6 +502,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          active_session_id?: string | null
           avatar_url?: string | null
           created_at?: string
           device_fingerprint?: string | null
