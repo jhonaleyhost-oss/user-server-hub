@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 4000) => {
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = 8000) => {
   const c = new AbortController();
   const t = setTimeout(() => c.abort(), timeoutMs);
   try {
@@ -54,12 +54,35 @@ serve(async (req) => {
 
     // Optional pre-check server alive — if dead, mark ALL panels as offline (server unreachable)
     let serverAlive = false;
+    // Bulk fetch ALL servers from Pterodactyl via pagination — much faster & reliable than per-panel checks
+    const pteroServerMap = new Map<number, { suspended: boolean; uuid: string }>();
     try {
-      const ping = await fetchWithTimeout(`${server.domain}/api/application/servers?per_page=1`, {
-        headers: { 'Authorization': `Bearer ${server.plta_key}`, 'Accept': 'application/json' },
-      }, 3000);
-      serverAlive = ping.ok;
-    } catch { serverAlive = false; }
+      let page = 1;
+      const perPage = 100;
+      // Hard cap on pages to avoid runaway loops
+      for (let i = 0; i < 50; i++) {
+        const r = await fetchWithTimeout(
+          `${server.domain}/api/application/servers?per_page=${perPage}&page=${page}`,
+          { headers: { 'Authorization': `Bearer ${server.plta_key}`, 'Accept': 'application/json' } },
+          10000,
+        );
+        if (!r.ok) { serverAlive = page > 1; break; }
+        serverAlive = true;
+        const body = await r.json();
+        const data = body?.data || [];
+        for (const s of data) {
+          const attr = s?.attributes;
+          if (!attr?.id) continue;
+          pteroServerMap.set(Number(attr.id), {
+            suspended: !!attr.suspended,
+            uuid: String(attr.uuid || ''),
+          });
+        }
+        const totalPages = body?.meta?.pagination?.total_pages ?? 1;
+        if (page >= totalPages) break;
+        page++;
+      }
+    } catch { /* serverAlive stays false if first page failed */ }
 
     // Fetch profiles map for owner name
     const userIds = Array.from(new Set((panels || []).map(p => p.user_id)));
@@ -90,84 +113,51 @@ serve(async (req) => {
         });
       }
     } else {
-      // Cek per-panel di Pterodactyl (parallel batches of 10)
-      const batchSize = 10;
-      const list = panels || [];
-      for (let i = 0; i < list.length; i += batchSize) {
-        const batch = list.slice(i, i + batchSize);
-        const checks = await Promise.all(batch.map(async (p): Promise<Result> => {
-          if (!p.ptero_server_id) {
-            return {
-              id: p.id, username: p.username, email: p.email,
-              owner_email: profileMap[p.user_id]?.email ?? null,
-              owner_name: profileMap[p.user_id]?.full_name ?? null,
-              ptero_server_id: null, status: 'orphan',
-              panel_type: p.panel_type, ram: p.ram, cpu: p.cpu, disk: p.disk, created_at: p.created_at,
-            };
-          }
+      // Classify each panel using the bulk map (no per-panel HTTP). Optional power-state check after.
+      const onlineUuids: { panelIdx: number; uuid: string }[] = [];
+      for (const p of (panels || [])) {
+        let status: Result['status'];
+        let uuid = '';
+        if (!p.ptero_server_id) {
+          status = 'orphan';
+        } else {
+          const info = pteroServerMap.get(Number(p.ptero_server_id));
+          if (!info) status = 'orphan';
+          else if (info.suspended) status = 'suspended';
+          else { status = 'online'; uuid = info.uuid; }
+        }
+        const idx = results.length;
+        results.push({
+          id: p.id, username: p.username, email: p.email,
+          owner_email: profileMap[p.user_id]?.email ?? null,
+          owner_name: profileMap[p.user_id]?.full_name ?? null,
+          ptero_server_id: p.ptero_server_id, status,
+          panel_type: p.panel_type, ram: p.ram, cpu: p.cpu, disk: p.disk, created_at: p.created_at,
+        });
+        if (status === 'online' && uuid && server.pltc_key) {
+          onlineUuids.push({ panelIdx: idx, uuid });
+        }
+      }
+
+      // Optional power-state probe — parallel, generous concurrency, soft-fail keeps "online"
+      const POWER_CONCURRENCY = 25;
+      for (let i = 0; i < onlineUuids.length; i += POWER_CONCURRENCY) {
+        const batch = onlineUuids.slice(i, i + POWER_CONCURRENCY);
+        await Promise.all(batch.map(async ({ panelIdx, uuid }) => {
           try {
-            const r = await fetchWithTimeout(
-              `${server.domain}/api/application/servers/${p.ptero_server_id}`,
-              { headers: { 'Authorization': `Bearer ${server.plta_key}`, 'Accept': 'application/json' } },
-              4000
+            const cr = await fetchWithTimeout(
+              `${server.domain}/api/client/servers/${uuid}/resources`,
+              { headers: { 'Authorization': `Bearer ${server.pltc_key}`, 'Accept': 'application/json' } },
+              5000,
             );
-            let status: Result['status'];
-            if (r.status === 404) {
-              status = 'orphan';
-            } else if (r.ok) {
-              try {
-                const body = await r.json();
-                const suspended = !!body?.attributes?.suspended;
-                if (suspended) {
-                  status = 'suspended';
-                } else {
-                  // Cek power state via Client API (mirip /delserveroff bot)
-                  const uuid = body?.attributes?.uuid as string | undefined;
-                  if (uuid && server.pltc_key) {
-                    try {
-                      const cr = await fetchWithTimeout(
-                        `${server.domain}/api/client/servers/${uuid}/resources`,
-                        { headers: { 'Authorization': `Bearer ${server.pltc_key}`, 'Accept': 'application/json' } },
-                        4000
-                      );
-                      if (cr.ok) {
-                        const cb = await cr.json();
-                        const state = String(cb?.attributes?.current_state || '').toLowerCase();
-                        status = (state === 'offline' || state === 'stopped') ? 'power_off' : 'online';
-                      } else {
-                        status = 'online';
-                      }
-                    } catch {
-                      status = 'online';
-                    }
-                  } else {
-                    status = 'online';
-                  }
-                }
-              } catch {
-                status = 'online';
-              }
-            } else {
-              status = 'unknown';
+            if (!cr.ok) return;
+            const cb = await cr.json();
+            const state = String(cb?.attributes?.current_state || '').toLowerCase();
+            if (state === 'offline' || state === 'stopped') {
+              results[panelIdx].status = 'power_off';
             }
-            return {
-              id: p.id, username: p.username, email: p.email,
-              owner_email: profileMap[p.user_id]?.email ?? null,
-              owner_name: profileMap[p.user_id]?.full_name ?? null,
-              ptero_server_id: p.ptero_server_id, status,
-              panel_type: p.panel_type, ram: p.ram, cpu: p.cpu, disk: p.disk, created_at: p.created_at,
-            };
-          } catch {
-            return {
-              id: p.id, username: p.username, email: p.email,
-              owner_email: profileMap[p.user_id]?.email ?? null,
-              owner_name: profileMap[p.user_id]?.full_name ?? null,
-              ptero_server_id: p.ptero_server_id, status: 'unreachable',
-              panel_type: p.panel_type, ram: p.ram, cpu: p.cpu, disk: p.disk, created_at: p.created_at,
-            };
-          }
+          } catch { /* keep online on probe failure */ }
         }));
-        results.push(...checks);
       }
     }
 
