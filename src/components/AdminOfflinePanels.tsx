@@ -40,6 +40,8 @@ const AdminOfflinePanels = () => {
   const [logSuccess, setLogSuccess] = useState(true);
   const [scanProgress, setScanProgress] = useState(0);
   const [scanStage, setScanStage] = useState('');
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [deleteStage, setDeleteStage] = useState('');
 
   // Animated staged progress while scan request is in flight (edge function is atomic)
   useEffect(() => {
@@ -62,6 +64,29 @@ const AdminOfflinePanels = () => {
     }, 1800);
     return () => clearInterval(id);
   }, [scanning]);
+
+  // Animated staged progress while delete request is in flight
+  useEffect(() => {
+    if (!deleting) { setDeleteProgress(0); setDeleteStage(''); return; }
+    const total = selected.size || 1;
+    const stages = [
+      { p: 8,  s: 'Memverifikasi izin admin...' },
+      { p: 25, s: `Mengantri ${total} panel untuk dihapus...` },
+      { p: 50, s: 'Menghapus dari Pterodactyl...' },
+      { p: 75, s: 'Membersihkan database lokal...' },
+      { p: 90, s: 'Mencatat aktivitas & notifikasi...' },
+      { p: 95, s: 'Menyelesaikan...' },
+    ];
+    let i = 0;
+    setDeleteProgress(stages[0].p);
+    setDeleteStage(stages[0].s);
+    const id = setInterval(() => {
+      i = Math.min(i + 1, stages.length - 1);
+      setDeleteProgress(stages[i].p);
+      setDeleteStage(stages[i].s);
+    }, 1200);
+    return () => clearInterval(id);
+  }, [deleting, selected.size]);
 
   useEffect(() => {
     (async () => {
@@ -146,6 +171,8 @@ const AdminOfflinePanels = () => {
         body: { panelIds: Array.from(selected), serverId: selectedServer },
       });
       if (error) throw error;
+      setDeleteProgress(100);
+      setDeleteStage('Selesai');
       setLogs(Array.isArray(data?.logs) ? data.logs : []);
       setLogSuccess(!!data?.success);
       setLogOpen(true);
