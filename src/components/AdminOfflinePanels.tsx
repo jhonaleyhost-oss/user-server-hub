@@ -191,10 +191,14 @@ const AdminOfflinePanels = () => {
       {/* Status summary */}
       {scanned && (
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          className="grid grid-cols-2 sm:grid-cols-6 gap-2">
           <div className="rounded-xl p-3 border border-border bg-secondary/30">
             <p className="text-[10px] text-muted-foreground uppercase">Total</p>
             <p className="text-lg font-bold">{panels.length}</p>
+          </div>
+          <div className="rounded-xl p-3 border border-orange-500/30 bg-orange-500/10">
+            <p className="text-[10px] text-orange-300 uppercase flex items-center gap-1"><WifiOff className="w-3 h-3" />Offline</p>
+            <p className="text-lg font-bold text-orange-400">{allOfflinePanels.length}</p>
           </div>
           <div className="rounded-xl p-3 border border-rose-500/30 bg-rose-500/10">
             <p className="text-[10px] text-rose-300 uppercase flex items-center gap-1"><Ghost className="w-3 h-3" />Orphan (404)</p>

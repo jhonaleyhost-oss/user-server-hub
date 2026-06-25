@@ -139,8 +139,8 @@ serve(async (req) => {
         }
       }
 
-      // Optional power-state probe — parallel, generous concurrency, soft-fail keeps "online"
-      const POWER_CONCURRENCY = 25;
+      // Power-state probe — high concurrency. Probe failure = power_off (client API down = server off).
+      const POWER_CONCURRENCY = 60;
       for (let i = 0; i < onlineUuids.length; i += POWER_CONCURRENCY) {
         const batch = onlineUuids.slice(i, i + POWER_CONCURRENCY);
         await Promise.all(batch.map(async ({ panelIdx, uuid }) => {
@@ -148,9 +148,9 @@ serve(async (req) => {
             const cr = await fetchWithTimeout(
               `${server.domain}/api/client/servers/${uuid}/resources`,
               { headers: { 'Authorization': `Bearer ${server.pltc_key}`, 'Accept': 'application/json' } },
-              5000,
+              8000,
             );
-            if (!cr.ok) return;
+            if (!cr.ok) return; // 403/404 etc — keep online
             const cb = await cr.json();
             const state = String(cb?.attributes?.current_state || '').toLowerCase();
             if (state === 'offline' || state === 'stopped') {
