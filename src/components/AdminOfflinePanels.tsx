@@ -214,6 +214,31 @@ const AdminOfflinePanels = () => {
         </Button>
       </div>
 
+      {/* Scan progress */}
+      {scanning && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2"
+        >
+          <div className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-2 text-primary font-medium">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              {scanStage || 'Memulai pindai...'}
+            </span>
+            <span className="font-mono text-muted-foreground">{scanProgress}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-secondary/60 overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-primary/70 to-primary"
+              initial={{ width: 0 }}
+              animate={{ width: `${scanProgress}%` }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+            />
+          </div>
+        </motion.div>
+      )}
+
       {/* Status summary */}
       {scanned && (
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
