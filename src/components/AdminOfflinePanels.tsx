@@ -364,6 +364,31 @@ const AdminOfflinePanels = () => {
         </div>
       )}
 
+      {/* Delete progress */}
+      {deleting && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-2"
+        >
+          <div className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-2 text-destructive font-medium">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              {deleteStage || 'Memulai penghapusan...'}
+            </span>
+            <span className="font-mono text-muted-foreground">{deleteProgress}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-secondary/60 overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-destructive/70 to-destructive"
+              initial={{ width: 0 }}
+              animate={{ width: `${deleteProgress}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+            />
+          </div>
+        </motion.div>
+      )}
+
       {/* Empty states */}
       {!scanned && (
         <div className="text-center py-12 border border-dashed border-border rounded-xl">
