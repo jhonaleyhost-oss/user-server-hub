@@ -38,6 +38,30 @@ const AdminOfflinePanels = () => {
   const [logs, setLogs] = useState<string[]>([]);
   const [logOpen, setLogOpen] = useState(false);
   const [logSuccess, setLogSuccess] = useState(true);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanStage, setScanStage] = useState('');
+
+  // Animated staged progress while scan request is in flight (edge function is atomic)
+  useEffect(() => {
+    if (!scanning) { setScanProgress(0); setScanStage(''); return; }
+    const stages = [
+      { p: 10,  s: 'Menghubungi server Pterodactyl...' },
+      { p: 30,  s: 'Mengambil daftar server (paginated)...' },
+      { p: 55,  s: 'Memuat data pemilik panel...' },
+      { p: 75,  s: 'Mengklasifikasi status panel...' },
+      { p: 90,  s: 'Memeriksa power state tiap panel...' },
+      { p: 95,  s: 'Menyelesaikan...' },
+    ];
+    let i = 0;
+    setScanProgress(stages[0].p);
+    setScanStage(stages[0].s);
+    const id = setInterval(() => {
+      i = Math.min(i + 1, stages.length - 1);
+      setScanProgress(stages[i].p);
+      setScanStage(stages[i].s);
+    }, 1800);
+    return () => clearInterval(id);
+  }, [scanning]);
 
   useEffect(() => {
     (async () => {
@@ -64,6 +88,8 @@ const AdminOfflinePanels = () => {
       setPanels(data.panels || []);
       setServerAlive(!!data.serverAlive);
       setScanned(true);
+      setScanProgress(100);
+      setScanStage('Selesai');
       // Auto-select all panels that are NOT online (orphan + suspended + unreachable + unknown)
       const offlineIds = (data.panels || [])
         .filter((p: OfflinePanel) => p.status !== 'online')
