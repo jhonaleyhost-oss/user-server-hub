@@ -40,6 +40,8 @@ const AdminOfflinePanels = () => {
   const [logSuccess, setLogSuccess] = useState(true);
   const [scanProgress, setScanProgress] = useState(0);
   const [scanStage, setScanStage] = useState('');
+  const [deleteProgress, setDeleteProgress] = useState(0);
+  const [deleteStage, setDeleteStage] = useState('');
 
   // Animated staged progress while scan request is in flight (edge function is atomic)
   useEffect(() => {
@@ -62,6 +64,29 @@ const AdminOfflinePanels = () => {
     }, 1800);
     return () => clearInterval(id);
   }, [scanning]);
+
+  // Animated staged progress while delete request is in flight
+  useEffect(() => {
+    if (!deleting) { setDeleteProgress(0); setDeleteStage(''); return; }
+    const total = selected.size || 1;
+    const stages = [
+      { p: 8,  s: 'Memverifikasi izin admin...' },
+      { p: 25, s: `Mengantri ${total} panel untuk dihapus...` },
+      { p: 50, s: 'Menghapus dari Pterodactyl...' },
+      { p: 75, s: 'Membersihkan database lokal...' },
+      { p: 90, s: 'Mencatat aktivitas & notifikasi...' },
+      { p: 95, s: 'Menyelesaikan...' },
+    ];
+    let i = 0;
+    setDeleteProgress(stages[0].p);
+    setDeleteStage(stages[0].s);
+    const id = setInterval(() => {
+      i = Math.min(i + 1, stages.length - 1);
+      setDeleteProgress(stages[i].p);
+      setDeleteStage(stages[i].s);
+    }, 1200);
+    return () => clearInterval(id);
+  }, [deleting, selected.size]);
 
   useEffect(() => {
     (async () => {
@@ -146,6 +171,8 @@ const AdminOfflinePanels = () => {
         body: { panelIds: Array.from(selected), serverId: selectedServer },
       });
       if (error) throw error;
+      setDeleteProgress(100);
+      setDeleteStage('Selesai');
       setLogs(Array.isArray(data?.logs) ? data.logs : []);
       setLogSuccess(!!data?.success);
       setLogOpen(true);
@@ -335,6 +362,31 @@ const AdminOfflinePanels = () => {
             </AlertDialogContent>
           </AlertDialog>
         </div>
+      )}
+
+      {/* Delete progress */}
+      {deleting && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 space-y-2"
+        >
+          <div className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-2 text-destructive font-medium">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              {deleteStage || 'Memulai penghapusan...'}
+            </span>
+            <span className="font-mono text-muted-foreground">{deleteProgress}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-secondary/60 overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-destructive/70 to-destructive"
+              initial={{ width: 0 }}
+              animate={{ width: `${deleteProgress}%` }}
+              transition={{ duration: 0.5, ease: 'easeOut' }}
+            />
+          </div>
+        </motion.div>
       )}
 
       {/* Empty states */}
