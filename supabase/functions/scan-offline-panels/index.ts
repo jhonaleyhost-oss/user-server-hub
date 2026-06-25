@@ -153,9 +153,7 @@ serve(async (req) => {
             if (!cr.ok) return; // 403/404 etc — keep online
             const cb = await cr.json();
             const state = String(cb?.attributes?.current_state || '').toLowerCase();
-            if (state === 'offline' || state === 'stopped' || state === 'starting' && false) {
-              results[panelIdx].status = 'power_off';
-            } else if (state === 'offline' || state === 'stopped') {
+            if (state === 'offline' || state === 'stopped') {
               results[panelIdx].status = 'power_off';
             }
           } catch { /* keep online on probe failure */ }
