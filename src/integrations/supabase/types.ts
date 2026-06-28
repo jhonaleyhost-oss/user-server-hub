@@ -1220,6 +1220,7 @@ export type Database = {
       }
       has_transacted: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_name_taken: { Args: { _name: string }; Returns: boolean }
       mark_all_notifications_read: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {
