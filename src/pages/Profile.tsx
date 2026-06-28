@@ -58,31 +58,45 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-    if (!fullName.trim()) {
+    const newName = fullName.trim();
+    if (!newName) {
       toast.error("Username tidak boleh kosong");
       return;
     }
     setSavingProfile(true);
     const oldName = (await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle()).data?.full_name ?? "";
+    if (newName.toLowerCase() !== oldName.toLowerCase()) {
+      const { data: taken } = await supabase.rpc("is_name_taken", { _name: newName });
+      if (taken) {
+        setSavingProfile(false);
+        toast.error("Nama sudah terpakai, silakan pilih nama lain");
+        return;
+      }
+    }
     const { error } = await supabase
       .from("profiles")
       .update({
-        full_name: fullName.trim(),
+        full_name: newName,
         avatar_url: avatarUrl || null,
       })
       .eq("user_id", user.id);
     setSavingProfile(false);
-    if (error) toast.error("Gagal menyimpan: " + error.message);
-    else {
+    if (error) {
+      if ((error as any).code === "23505" || /unique/i.test(error.message)) {
+        toast.error("Nama sudah terpakai, silakan pilih nama lain");
+      } else {
+        toast.error("Gagal menyimpan: " + error.message);
+      }
+    } else {
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Profil berhasil diperbarui");
-      if (oldName !== fullName.trim()) {
+      if (oldName !== newName) {
         const { error: logErr } = await supabase.from("user_activity_logs").insert({
           user_id: user.id,
           action: "update_username",
           detail: "Mengubah username",
           old_value: oldName,
-          new_value: fullName.trim(),
+          new_value: newName,
         });
         if (logErr) console.error("log username err:", logErr);
       }
