@@ -67,7 +67,9 @@ export default function Users() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase.rpc("get_public_users");
+      const { data } = await supabase
+        .rpc("get_public_users")
+        .range(0, 99999);
       const merged: UserRow[] = (data ?? []).map((p: any) => ({
         user_id: p.user_id,
         full_name: p.full_name,
