@@ -1134,6 +1134,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_public_users_by_ids: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          full_name: string
+          panel_count: number
+          reseller_expires_at: string
+          reseller_permanent: boolean
+          reseller_plan: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }[]
+      }
       get_revenue_stats: { Args: { _days?: number }; Returns: Json }
       get_server_keys: {
         Args: { _server_id: string }
