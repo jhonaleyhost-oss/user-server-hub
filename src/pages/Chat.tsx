@@ -134,7 +134,7 @@ const Chat = () => {
 
   // Load public profile info (name, avatar, role) for all users via RPC
   const refreshProfiles = async () => {
-    const { data, error } = await supabase.rpc("get_public_users");
+    const { data, error } = await supabase.rpc("get_public_users").range(0, 99999);
     if (error || !data) return;
     setTotalMembers((data as any[]).length);
     setProfiles((prev) => {
