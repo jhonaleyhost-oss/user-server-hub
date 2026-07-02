@@ -220,6 +220,7 @@ const Chat = () => {
       const ordered = (data ?? []).slice().reverse() as ChatMessage[];
       setMessages(ordered);
       await refreshProfiles();
+      await fetchProfilesByIds(ordered.map((m) => m.user_id));
       // Load existing reads for these messages
       const ids = ordered.map((m) => m.id);
       if (ids.length) {
@@ -259,7 +260,9 @@ const Chat = () => {
         async (payload) => {
           const m = payload.new as ChatMessage;
           setMessages((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m]));
-          if (!profiles[m.user_id]) await refreshProfiles();
+          if (!profiles[m.user_id]) {
+            await fetchProfilesByIds([m.user_id]);
+          }
         }
       )
       .on(
