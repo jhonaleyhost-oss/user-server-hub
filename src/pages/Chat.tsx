@@ -164,6 +164,42 @@ const Chat = () => {
     });
   };
 
+  // Fallback: fetch specific profiles by ids (used when a message's author
+  // isn't in the RPC result, e.g. when PostgREST caps the RPC row count).
+  const fetchProfilesByIds = async (ids: string[]) => {
+    const missing = Array.from(new Set(ids)).filter((id) => id && !profiles[id]);
+    if (!missing.length) return;
+    const [{ data: profs }, { data: roles }, { data: panels }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url, reseller_plan, reseller_permanent, reseller_expires_at, created_at")
+        .in("user_id", missing),
+      supabase.from("user_roles").select("user_id, role").in("user_id", missing),
+      supabase.from("user_panels").select("user_id").in("user_id", missing),
+    ]);
+    if (!profs) return;
+    const roleMap: Record<string, string> = {};
+    for (const r of (roles ?? []) as Array<{ user_id: string; role: string }>) roleMap[r.user_id] = r.role;
+    const panelCount: Record<string, number> = {};
+    for (const p of (panels ?? []) as Array<{ user_id: string }>) panelCount[p.user_id] = (panelCount[p.user_id] ?? 0) + 1;
+    setProfiles((prev) => {
+      const next = { ...prev };
+      for (const p of profs as Array<any>) {
+        next[p.user_id] = {
+          user_id: p.user_id,
+          full_name: p.full_name,
+          avatar_url: p.avatar_url,
+          role: roleMap[p.user_id] ?? "free",
+          reseller_plan: null,
+          reseller_permanent: !!p.reseller_permanent,
+          panel_count: panelCount[p.user_id] ?? 0,
+          created_at: p.created_at ?? null,
+        };
+      }
+      return next;
+    });
+  };
+
   // Fetch initial messages
   useEffect(() => {
     if (!user) return;
