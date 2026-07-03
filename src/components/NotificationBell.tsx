@@ -8,10 +8,12 @@ import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { RichText } from "@/components/RichText";
+import ImageLightbox from "@/components/ImageLightbox";
 
 export default function NotificationBell() {
   const { items, unread, markAllRead, markOneRead } = useNotifications();
   const [open, setOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<string | null>(null);
   const navigate = useNavigate();
 
   return (
@@ -82,7 +84,8 @@ export default function NotificationBell() {
                         <img
                           src={n.banner_url}
                           alt=""
-                          className="w-full h-24 object-cover rounded-md mb-2 border border-border"
+                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setLightbox(n.banner_url!); }}
+                          className="w-full h-24 object-cover rounded-md mb-2 border border-border cursor-zoom-in hover:opacity-90 transition"
                         />
                       )}
                       <p className={`text-sm font-semibold leading-tight mb-1 ${n.is_read ? "text-foreground/80" : "text-foreground"}`}>
@@ -107,6 +110,7 @@ export default function NotificationBell() {
           )}
         </ScrollArea>
       </PopoverContent>
+      <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
     </Popover>
   );
 }

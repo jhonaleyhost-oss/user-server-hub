@@ -9,10 +9,13 @@ import { formatDistanceToNow } from "date-fns";
 import { id as idLocale } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { RichText } from "@/components/RichText";
+import ImageLightbox from "@/components/ImageLightbox";
+import { useState } from "react";
 
 export default function Notifications() {
   const { items, unread, loading, markAllRead, markOneRead } = useNotifications();
   const navigate = useNavigate();
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   return (
     <AppShell>
@@ -55,7 +58,12 @@ export default function Notifications() {
                       {!n.is_read && <span className="mt-2 w-2.5 h-2.5 rounded-full bg-primary shrink-0 animate-pulse" />}
                       <div className="flex-1 min-w-0">
                         {n.banner_url && (
-                          <img src={n.banner_url} alt="" className="w-full max-h-48 object-cover rounded-lg mb-3 border border-border" />
+                          <img
+                            src={n.banner_url}
+                            alt=""
+                            onClick={() => setLightbox(n.banner_url!)}
+                            className="w-full max-h-48 object-cover rounded-lg mb-3 border border-border cursor-zoom-in hover:opacity-90 transition"
+                          />
                         )}
                         <h3 className="text-base font-bold text-foreground mb-1">{n.title}</h3>
                         <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
@@ -90,6 +98,7 @@ export default function Notifications() {
             </div>
           )}
         </div>
+        <ImageLightbox src={lightbox} onClose={() => setLightbox(null)} />
       </PageTransition>
     </AppShell>
   );
