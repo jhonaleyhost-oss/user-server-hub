@@ -143,6 +143,8 @@ interface UserPanel {
   } | null;
 }
 
+type UserPanelRow = Omit<UserPanel, 'profiles'>;
+
 interface DeviceRecord {
   id: string;
   user_id: string;
@@ -152,6 +154,28 @@ interface DeviceRecord {
   device_fingerprint: string | null;
   created_at: string;
 }
+
+const ADMIN_PAGE_SIZE = 1000;
+
+const fetchAllAdminRows = async <T,>(
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>
+): Promise<T[]> => {
+  const allRows: T[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await buildQuery(from, from + ADMIN_PAGE_SIZE - 1);
+    if (error) throw error;
+
+    const batch = (data || []) as T[];
+    allRows.push(...batch);
+
+    if (batch.length < ADMIN_PAGE_SIZE) break;
+    from += ADMIN_PAGE_SIZE;
+  }
+
+  return allRows;
+};
 
 const Admin = () => {
   const { user, loading: authLoading } = useAuth();
@@ -341,31 +365,36 @@ const Admin = () => {
 
   const fetchUsers = async () => {
     try {
-      const { data: profiles, error: profilesError } = await supabase
+      const { count } = await supabase
         .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .range(0, 99999);
+        .select('id', { count: 'exact', head: true });
 
-      if (profilesError) throw profilesError;
+      const profiles = await fetchAllAdminRows<Omit<UserWithRole, 'role'>>((from, to) =>
+        supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to)
+      );
 
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('*')
-        .range(0, 99999);
+      const roles = await fetchAllAdminRows<{ user_id: string; role: AppRole }>((from, to) =>
+        supabase
+          .from('user_roles')
+          .select('user_id, role')
+          .range(from, to)
+      );
 
-      if (rolesError) throw rolesError;
+      const rolesByUserId = new Map(roles.map((role) => [role.user_id, role.role]));
 
-      const usersWithRoles: UserWithRole[] = (profiles || []).map((profile) => {
-        const userRole = roles?.find((r) => r.user_id === profile.user_id);
+      const usersWithRoles: UserWithRole[] = profiles.map((profile) => {
         return {
           ...profile,
-          role: (userRole?.role as AppRole) || 'free',
+          role: rolesByUserId.get(profile.user_id) || 'free',
         };
       });
 
       setUsers(usersWithRoles);
-      setTotalUsers(usersWithRoles.length);
+      setTotalUsers(count ?? usersWithRoles.length);
     } catch (err) {
       console.error('Error fetching users:', err);
     }
@@ -423,22 +452,26 @@ const Admin = () => {
 
   const fetchPanels = async () => {
     try {
-      // Fetch panels
-      const { data: panelsData, error: panelsError } = await supabase
-        .from('user_panels')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const panelsData = await fetchAllAdminRows<UserPanelRow>((from, to) =>
+        supabase
+          .from('user_panels')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(from, to)
+      );
 
-      if (panelsError) throw panelsError;
+      const profilesData = await fetchAllAdminRows<Pick<DeviceRecord, 'user_id' | 'email' | 'full_name'>>((from, to) =>
+        supabase
+          .from('profiles')
+          .select('user_id, email, full_name')
+          .range(from, to)
+      );
 
-      // Fetch profiles separately
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('user_id, email, full_name');
+      const profilesByUserId = new Map(profilesData.map((profile) => [profile.user_id, profile]));
 
       // Merge panels with profiles
-      const panelsWithProfiles = (panelsData || []).map(panel => {
-        const profile = profilesData?.find(p => p.user_id === panel.user_id);
+      const panelsWithProfiles = panelsData.map(panel => {
+        const profile = profilesByUserId.get(panel.user_id);
         return {
           ...panel,
           profiles: profile ? { email: profile.email, full_name: profile.full_name } : null,
@@ -454,14 +487,16 @@ const Admin = () => {
 
   const fetchDevices = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, user_id, email, full_name, ip_address, device_fingerprint, created_at')
-        .or('ip_address.neq.,device_fingerprint.neq.')
-        .order('created_at', { ascending: false });
+      const data = await fetchAllAdminRows<DeviceRecord>((from, to) =>
+        supabase
+          .from('profiles')
+          .select('id, user_id, email, full_name, ip_address, device_fingerprint, created_at')
+          .or('ip_address.neq.,device_fingerprint.neq.')
+          .order('created_at', { ascending: false })
+          .range(from, to)
+      );
 
-      if (error) throw error;
-      setDevices((data || []).filter(d => d.ip_address || d.device_fingerprint) as DeviceRecord[]);
+      setDevices(data.filter(d => d.ip_address || d.device_fingerprint));
     } catch (err) {
       console.error('Error fetching devices:', err);
     }
