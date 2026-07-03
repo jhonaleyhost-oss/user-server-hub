@@ -143,6 +143,8 @@ interface UserPanel {
   } | null;
 }
 
+type UserPanelRow = Omit<UserPanel, 'profiles'>;
+
 interface DeviceRecord {
   id: string;
   user_id: string;
@@ -156,7 +158,7 @@ interface DeviceRecord {
 const ADMIN_PAGE_SIZE = 1000;
 
 const fetchAllAdminRows = async <T,>(
-  buildQuery: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>
 ): Promise<T[]> => {
   const allRows: T[] = [];
   let from = 0;
@@ -165,7 +167,7 @@ const fetchAllAdminRows = async <T,>(
     const { data, error } = await buildQuery(from, from + ADMIN_PAGE_SIZE - 1);
     if (error) throw error;
 
-    const batch = data || [];
+    const batch = (data || []) as T[];
     allRows.push(...batch);
 
     if (batch.length < ADMIN_PAGE_SIZE) break;
@@ -450,7 +452,7 @@ const Admin = () => {
 
   const fetchPanels = async () => {
     try {
-      const panelsData = await fetchAllAdminRows<UserPanel>((from, to) =>
+      const panelsData = await fetchAllAdminRows<UserPanelRow>((from, to) =>
         supabase
           .from('user_panels')
           .select('*')
