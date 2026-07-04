@@ -355,7 +355,10 @@ ${serverList}
                             </div>
                             <div className="p-3 flex items-center justify-between gap-2">
                               <div className="min-w-0 flex-1">
-                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Username</p>
+                                <p className="text-[10px] uppercase tracking-wider text-primary font-bold flex items-center gap-1">
+                                  Username Login
+                                  <span className="text-[9px] font-black px-1 py-0.5 rounded bg-primary/15 text-primary normal-case tracking-normal">PAKAI INI UNTUK LOGIN</span>
+                                </p>
                                 <p className="text-sm font-mono text-foreground truncate">{group.username}</p>
                               </div>
                               <button
@@ -393,9 +396,14 @@ ${serverList}
 
                           {/* Server list */}
                           <div>
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 px-1">
-                              Server ({group.panels.length})
-                            </p>
+                            <div className="flex items-center justify-between mb-2 px-1">
+                              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                                Nama Server ({group.panels.length})
+                              </p>
+                              <p className="text-[10px] text-muted-foreground italic">
+                                bukan buat login
+                              </p>
+                            </div>
                             <div className="space-y-2">
                               {group.panels.map((panel) => (
                                 <div
@@ -407,6 +415,7 @@ ${serverList}
                                   </div>
                                   <div className="min-w-0 flex-1">
                                     <p className="text-sm font-semibold text-foreground truncate">{panel.username}</p>
+                                    <p className="text-[10px] text-muted-foreground">Nama server</p>
                                     <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                                       <span className="flex items-center gap-1">
                                         <Calendar className="w-3 h-3" />
