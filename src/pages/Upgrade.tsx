@@ -810,12 +810,16 @@ const Upgrade = () => {
               <GlassCard className="p-5 sm:p-6 mb-6" delay={0.1}>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider text-center mb-4">
                   {isAlreadyReseller && !isPermanent
-                    ? 'Perpanjang Masa Aktif Reseller'
+                    ? isAdpTier
+                      ? 'Perpanjang Masa Aktif Admin Panel'
+                      : 'Perpanjang Masa Aktif Reseller'
+                    : isAdpTier
+                    ? 'Pilih Paket Admin Panel'
                     : 'Pilih Paket Reseller'}
                 </p>
 
-                {/* Status Reseller */}
-                {isAlreadyReseller && (
+                {/* Status */}
+                {isAlreadyReseller && !isAdpTier && (
                   <div className="mb-4 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-primary/5 to-transparent p-4">
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 shrink-0">
@@ -872,15 +876,50 @@ const Upgrade = () => {
                   </div>
                 )}
 
-                <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
-                  <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan{' '}
-                  <span className="font-semibold">VPS DIGITALOCEAN</span>. Jika ingin yang{' '}
-                  <span className="font-semibold">anti mokad</span>, silahkan scroll ke bawah dan pilih paket tersebut.
-                </div>
+                {isAdpTier && isAlreadyReseller && (
+                  <div className="mb-4 rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 via-fuchsia-500/5 to-transparent p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-purple-500/15 border border-purple-500/30 shrink-0">
+                        {isPermanent ? (
+                          <InfinityIcon className="w-5 h-5 text-purple-400" />
+                        ) : (
+                          <CalendarClock className="w-5 h-5 text-purple-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground">Admin Panel Server Aktif</p>
+                        {isPermanent ? (
+                          <p className="text-xs text-purple-300 mt-0.5">Permanen — selamanya.</p>
+                        ) : adpStatus?.expires_at ? (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Berakhir{' '}
+                            <span className="text-foreground font-semibold">
+                              {new Date(adpStatus.expires_at).toLocaleString('id-ID', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {!isAdpTier && (
+                  <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
+                    <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan{' '}
+                    <span className="font-semibold">VPS DIGITALOCEAN</span>. Jika ingin yang{' '}
+                    <span className="font-semibold">anti mokad</span>, silahkan scroll ke bawah dan pilih paket tersebut.
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                  {PLANS.map((p) => {
+                  {activePlans.map((p) => {
                     const active = p.key === selected;
                     const disabled = isPermanent;
+                    const isPerm = p.key === 'perm' || p.key === 'adp_perm';
                     return (
                       <button
                         key={p.key}
@@ -891,18 +930,30 @@ const Upgrade = () => {
                           disabled ? 'opacity-50 cursor-not-allowed' : ''
                         } ${
                           active
-                            ? 'border-amber bg-gradient-to-br from-amber/15 via-primary/10 to-accent/10 shadow-lg shadow-amber/10 scale-[1.02]'
+                            ? isAdpTier
+                              ? 'border-purple-500 bg-gradient-to-br from-purple-500/15 via-fuchsia-500/10 to-purple-500/10 shadow-lg shadow-purple-500/20 scale-[1.02]'
+                              : 'border-amber bg-gradient-to-br from-amber/15 via-primary/10 to-accent/10 shadow-lg shadow-amber/10 scale-[1.02]'
+                            : isAdpTier
+                            ? 'border-border/60 bg-secondary/30 hover:border-purple-500/40'
                             : 'border-border/60 bg-secondary/30 hover:border-primary/40'
                         }`}
                       >
                         {p.badge && (
-                          <span className="absolute -top-2 right-3 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber to-primary text-background">
+                          <span
+                            className={`absolute -top-2 right-3 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                              isAdpTier
+                                ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white'
+                                : 'bg-gradient-to-r from-amber to-primary text-background'
+                            }`}
+                          >
                             {p.badge}
                           </span>
                         )}
                         <div className="flex items-center gap-1.5 mb-1">
-                          {p.key === 'perm' ? (
-                            <InfinityIcon className="w-4 h-4 text-amber" />
+                          {isPerm ? (
+                            <InfinityIcon className={`w-4 h-4 ${isAdpTier ? 'text-purple-400' : 'text-amber'}`} />
+                          ) : isAdpTier ? (
+                            <ShieldCheck className="w-4 h-4 text-purple-400" />
                           ) : (
                             <Crown className="w-4 h-4 text-primary" />
                           )}
@@ -911,23 +962,34 @@ const Upgrade = () => {
                         <p className="text-[10px] text-muted-foreground mb-2">{p.duration}</p>
                         <p
                           className={`text-lg font-extrabold ${
-                            active ? 'text-amber' : 'text-foreground'
+                            active ? (isAdpTier ? 'text-fuchsia-300' : 'text-amber') : 'text-foreground'
                           }`}
                         >
                           Rp {p.amount.toLocaleString('id-ID')}
                         </p>
                         <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-1.5">
-                          <VerifiedBadge role="reseller" plan={p.key} size={14} />
-                          <span className="text-[10px] text-muted-foreground leading-tight">
-                            Unlock Badge Eksklusif{' '}
-                            <span className="font-semibold text-foreground">
-                              {p.key === '1bln'
-                                ? 'Centang Biru'
-                                : p.key === '2bln'
-                                ? 'Centang Hijau'
-                                : 'Centang Merah'}
-                            </span>
-                          </span>
+                          {isAdpTier ? (
+                            <>
+                              <VerifiedBadge role="adp_server" size={14} />
+                              <span className="text-[10px] text-muted-foreground leading-tight">
+                                Unlock Badge <span className="font-semibold text-foreground">Ungu Eksklusif</span>
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <VerifiedBadge role="reseller" plan={p.key} size={14} />
+                              <span className="text-[10px] text-muted-foreground leading-tight">
+                                Unlock Badge Eksklusif{' '}
+                                <span className="font-semibold text-foreground">
+                                  {p.key === '1bln'
+                                    ? 'Centang Biru'
+                                    : p.key === '2bln'
+                                    ? 'Centang Hijau'
+                                    : 'Centang Merah'}
+                                </span>
+                              </span>
+                            </>
+                          )}
                         </div>
                       </button>
                     );
@@ -937,7 +999,11 @@ const Upgrade = () => {
                 <Button
                   onClick={handleGenerate}
                   disabled={qrisLoading || isPermanent}
-                  className="w-full h-12 bg-gradient-to-r from-amber to-primary hover:opacity-90 text-background font-bold gap-2"
+                  className={`w-full h-12 hover:opacity-90 font-bold gap-2 ${
+                    isAdpTier
+                      ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-700 text-white shadow-lg shadow-purple-500/30'
+                      : 'bg-gradient-to-r from-amber to-primary text-background'
+                  }`}
                 >
                   {qrisLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -954,17 +1020,23 @@ const Upgrade = () => {
                     ? `Perpanjang ${plan.label} • Rp ${payAmount.toLocaleString('id-ID')}`
                     : `Bayar Rp ${payAmount.toLocaleString('id-ID')} via QRIS`}
                 </Button>
-                <div className="mt-3">
-                  <PromoInput scope="reseller" amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
-                </div>
-                {appliedPromo && (
+                {!isAdpTier && (
+                  <div className="mt-3">
+                    <PromoInput scope="reseller" amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
+                  </div>
+                )}
+                {!isAdpTier && appliedPromo && (
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Harga normal:</span>
                     <span className="line-through text-muted-foreground">Rp {plan.amount.toLocaleString('id-ID')}</span>
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  {isAlreadyReseller && !isPermanent
+                  {isAdpTier
+                    ? isAlreadyReseller && !isPermanent
+                      ? 'Masa aktif baru ditambahkan ke sisa hari Admin Panel Server kamu.'
+                      : 'Admin Panel Server aktif otomatis setelah pembayaran terkonfirmasi. Kompatibel bersama role Reseller.'
+                    : isAlreadyReseller && !isPermanent
                     ? 'Masa aktif baru ditambahkan ke sisa hari yang ada.'
                     : 'Role Reseller akan aktif otomatis setelah pembayaran terkonfirmasi.'}
                 </p>
