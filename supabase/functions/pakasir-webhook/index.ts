@@ -108,6 +108,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (order_id.startsWith("ADP-")) {
+      const { data: act, error: actErr } = await supabase.rpc("activate_adp_server", {
+        _order_id: order_id,
+      });
+      if (actErr) {
+        console.error("[pakasir-webhook] activate_adp_server error", actErr);
+        return new Response(JSON.stringify({ ok: false, error: actErr.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log("[pakasir-webhook] adp_server activated", act);
+      return new Response(JSON.stringify({ ok: true, status, kind: "adp_server", activation: act }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { data: act, error: actErr } = await supabase.rpc("activate_reseller", {
       _order_id: order_id,
     });
