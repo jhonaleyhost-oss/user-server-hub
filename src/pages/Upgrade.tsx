@@ -744,35 +744,35 @@ const Upgrade = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    Jadi <b className="text-foreground">root-admin</b> Pterodactyl (root_admin=1)
+                    <span className="flex-1 leading-snug">Jadi <b className="text-foreground">root-admin</b> Pterodactyl (root_admin=1)</span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    Dapat <b className="text-foreground">URL panel, username, password, PLTA & PLTC</b>
+                    <span className="flex-1 leading-snug">Dapat <b className="text-foreground">URL panel, username, password, PLTA &amp; PLTC</b></span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    Buat <b className="text-foreground">user baru</b> di panel Pterodactyl kamu
+                    <span className="flex-1 leading-snug">Buat <b className="text-foreground">user baru</b> di panel Pterodactyl kamu</span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <Server className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    Buat <b className="text-foreground">server/panel</b> untuk user bikinan kamu
+                    <span className="flex-1 leading-snug">Buat <b className="text-foreground">server/panel</b> untuk user bikinan kamu</span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <Layers className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    Setiap sub-user dapat <b className="text-foreground">PLTA & PLTC</b> sendiri
+                    <span className="flex-1 leading-snug">Setiap sub-user dapat <b className="text-foreground">PLTA &amp; PLTC</b> sendiri</span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <Crown className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
-                    Badge <b className="text-foreground">ungu eksklusif</b> di samping nama kamu
+                    <span className="flex-1 leading-snug">Badge <b className="text-foreground">ungu eksklusif</b> di samping nama kamu</span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
                     <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    Kompatibel dengan role <b className="text-foreground">Reseller</b> — bisa dimiliki bersamaan
+                    <span className="flex-1 leading-snug">Kompatibel dengan role <b className="text-foreground">Reseller</b> — bisa dimiliki bersamaan</span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
                     <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    Batas: <b className="text-foreground">1 Admin Panel per server</b> (private &amp; publik dihitung terpisah)
+                    <span className="flex-1 leading-snug">Batas: <b className="text-foreground">1 Admin Panel per server</b> (private &amp; publik dihitung terpisah)</span>
                   </div>
                 </div>
               ) : (
