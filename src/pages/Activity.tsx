@@ -654,6 +654,70 @@ const Activity = () => {
                               </span>
                             </div>
                           </>
+                        ) : a.kind === "panel_deleted" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Menghapus panel{" "}
+                              <span className="font-semibold text-foreground">{a.username || "-"}</span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold">
+                                <Trash2 className="w-3 h-3" />
+                                Panel Dihapus
+                              </span>
+                              {a.server_name && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                  <Server className="w-3 h-3 text-primary" />
+                                  {a.server_name}
+                                </span>
+                              )}
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-semibold ${
+                                  a.panel_type === "python"
+                                    ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                                    : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                }`}
+                              >
+                                <Code2 className="w-3 h-3" />
+                                {a.panel_type === "python" ? "Python" : "NodeJS"}
+                              </span>
+                            </div>
+                          </>
+                        ) : a.kind === "admin_panel" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Membuat{" "}
+                              <span className="font-semibold text-fuchsia-300">Admin Panel</span>
+                              {" "}
+                              <span className="font-semibold text-foreground">{a.username || "-"}</span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500/15 to-fuchsia-500/15 border border-fuchsia-500/40 text-fuchsia-300 font-bold">
+                                <ShieldCheck className="w-3 h-3" />
+                                Admin Panel
+                              </span>
+                              {a.server_name && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                  <Server className="w-3 h-3 text-primary" />
+                                  {a.server_name}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : a.kind === "user_deleted" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Akun{" "}
+                              <span className="font-semibold text-foreground">{a.email || a.full_name || "-"}</span>
+                              {" "}dihapus
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold">
+                                <UserMinus className="w-3 h-3" />
+                                User Dihapus
+                              </span>
+                            </div>
+                          </>
                         ) : a.kind === "ad" ? (
                           <>
                             <p className="text-xs text-muted-foreground mb-2">
