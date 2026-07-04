@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Server, MessageCircle, Star, Radio } from "lucide-react";
+import { Server, MessageCircle, Star, Radio, Trash2, ShieldCheck, UserMinus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-type ActivityKind = "panel" | "chat" | "feedback";
+type ActivityKind = "panel" | "chat" | "feedback" | "panel_deleted" | "admin_panel" | "user_deleted";
 
 interface ActivityItem {
   id: string;
@@ -192,6 +192,62 @@ const ActivityTicker = () => {
       )
       .on(
         "postgres_changes",
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.panel_deleted" },
+        async (payload) => {
+          const row = payload.new as {
+            id: string; actor_user_id: string; actor_name: string | null;
+            detail: string | null; created_at: string;
+          };
+          const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          const [uname] = (row.detail || "").split("|");
+          push({
+            id: `pdel-${row.id}`,
+            kind: "panel_deleted",
+            text: `${name} menghapus panel`,
+            detail: uname || undefined,
+            created_at: row.created_at,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.admin_panel" },
+        async (payload) => {
+          const row = payload.new as {
+            id: string; actor_user_id: string; actor_name: string | null;
+            detail: string | null; created_at: string;
+          };
+          const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          const [uname, srv] = (row.detail || "").split("|");
+          push({
+            id: `apnl-${row.id}`,
+            kind: "admin_panel",
+            text: `${name} membuat Admin Panel`,
+            detail: srv ? `${uname} • ${srv}` : uname || undefined,
+            created_at: row.created_at,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.user_deleted" },
+        async (payload) => {
+          const row = payload.new as {
+            id: string; actor_user_id: string; actor_name: string | null;
+            detail: string | null; created_at: string;
+          };
+          const name = row.actor_name?.trim() || "Pengguna";
+          push({
+            id: `udel-${row.id}`,
+            kind: "user_deleted",
+            text: `Akun ${name} dihapus`,
+            detail: row.detail || undefined,
+            created_at: row.created_at,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         async (payload) => {
           const row = payload.new as {
@@ -268,6 +324,12 @@ const ActivityTicker = () => {
         return <MessageCircle className="w-3.5 h-3.5 text-accent shrink-0" />;
       case "feedback":
         return <Star className="w-3.5 h-3.5 text-amber shrink-0" />;
+      case "panel_deleted":
+        return <Trash2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />;
+      case "admin_panel":
+        return <ShieldCheck className="w-3.5 h-3.5 text-fuchsia-400 shrink-0" />;
+      case "user_deleted":
+        return <UserMinus className="w-3.5 h-3.5 text-rose-400 shrink-0" />;
     }
   };
 
