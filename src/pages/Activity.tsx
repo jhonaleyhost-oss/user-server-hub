@@ -371,19 +371,26 @@ const Activity = () => {
 
   const current = useMemo<FeedItem[]>(() => {
     if (tab === "panel") {
-      return panels.map((p) => ({ kind: "panel" as const, ...p }));
+      const merged: FeedItem[] = [
+        ...panels.map((p) => ({ kind: "panel" as const, ...p })),
+        ...panelDeletes.map((p) => ({ kind: "panel_deleted" as const, ...p })),
+        ...adminPanels.map((p) => ({ kind: "admin_panel" as const, ...p })),
+        ...userDeletes.map((u) => ({ kind: "user_deleted" as const, ...u })),
+        ...cleanups.map((c) => ({ kind: "admin_cleanup" as const, ...c })),
+      ];
+      merged.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      return merged;
     }
     if (tab === "upgrade") {
       return upgrades.map((u) => ({ kind: "upgrade" as const, ...u }));
-    }
-    if (tab === "admin") {
-      return cleanups.map((c) => ({ kind: "admin_cleanup" as const, ...c }));
     }
     if (tab === "ads") {
       return ads.map((a) => ({ kind: "ad" as const, ...a }));
     }
     return signups.map((s) => ({ kind: "signup" as const, ...s }));
-  }, [tab, panels, signups, upgrades, cleanups, ads]);
+  }, [tab, panels, signups, upgrades, cleanups, ads, panelDeletes, adminPanels, userDeletes]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -394,6 +401,9 @@ const Activity = () => {
       if (a.kind === "upgrade") fields.push(a.plan, String(a.amount));
       if (a.kind === "admin_cleanup") fields.push(a.server_name, String(a.count));
       if (a.kind === "ad") fields.push(a.title, a.event);
+      if (a.kind === "panel_deleted") fields.push(a.username, a.server_name, a.panel_type);
+      if (a.kind === "admin_panel") fields.push(a.username, a.server_name);
+      if (a.kind === "user_deleted") fields.push(a.email);
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
   }, [current, search]);
