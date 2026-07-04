@@ -278,6 +278,7 @@ const Dashboard = () => {
             cpu: cpuPercent,
             disk: diskMB,
             panelType: panelType,
+            subUserId: targetSubUser !== 'self' ? targetSubUser : undefined,
           }),
         }
       );
