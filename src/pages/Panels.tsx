@@ -506,7 +506,7 @@ ${serverList}
             })
           )
         ) : (
-          {groups.length === 0 ? (
+          groups.length === 0 ? (
             <GlassCard className="text-center py-12 border-dashed border-2 border-border">
               <Ghost className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-bold text-foreground">Belum ada panel</h3>
@@ -733,7 +733,8 @@ ${serverList}
                 </GlassCard>
               );
             })
-          )}
+          )
+        )}
         </div>
 
         {/* Back to Dashboard */}
