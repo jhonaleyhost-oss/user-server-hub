@@ -330,7 +330,7 @@ ${serverList}
               onClick={() => setViewMode('admin_panel')}
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
                 viewMode === 'admin_panel'
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                  ? 'bg-amber-500 text-black shadow-md'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -367,7 +367,7 @@ ${serverList}
                     onClick={() => setExpandedGroup(isOpen ? null : key)}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                      <div className="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-500 shrink-0 shadow-md">
                         <Crown className="w-5 h-5" />
                       </div>
                       <div className="min-w-0 flex-1">
