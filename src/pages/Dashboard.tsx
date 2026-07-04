@@ -703,7 +703,8 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* Resources */}
+            {/* Resources — hidden in admin_panel mode */}
+            {createMode === 'panel' && (
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-semibold text-muted-foreground">RAM (GB)</Label>
@@ -755,8 +756,10 @@ const Dashboard = () => {
                 </Select>
               </div>
             </div>
+            )}
 
-            {/* Panel Type */}
+            {/* Panel Type — hidden in admin_panel mode */}
+            {createMode === 'panel' && (
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-muted-foreground">Tipe Panel</Label>
               <Select value={panelType} onValueChange={(v) => setPanelType(v as 'nodejs' | 'python')}>
@@ -769,19 +772,42 @@ const Dashboard = () => {
                 </SelectContent>
               </Select>
             </div>
+            )}
+
+            {/* Admin Panel benefits summary */}
+            {createMode === 'admin_panel' && (
+              <div className="rounded-xl p-4 bg-gradient-to-br from-fuchsia-500/10 to-purple-500/5 border border-fuchsia-500/30 space-y-2">
+                <p className="text-xs font-bold text-fuchsia-400 flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5" /> Yang akan kamu dapat:
+                </p>
+                <ul className="text-[11px] text-muted-foreground space-y-1 leading-snug">
+                  <li>✓ URL Panel + Username + Password (root-admin)</li>
+                  <li>✓ PLTA (Application API) &amp; PLTC (Client API) keys</li>
+                  <li>✓ Nest ID + Egg ID Node.js &amp; Python</li>
+                  <li>✓ Bisa buat user &amp; server unlimited di panel kamu</li>
+                </ul>
+                <p className="text-[10px] text-amber mt-2">
+                  Batas: 1 Admin Panel per server.
+                </p>
+              </div>
+            )}
 
             {/* Submit */}
             <Button
               type="submit"
               disabled={submitting}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className={`w-full flex items-center justify-center gap-2 font-bold ${
+                createMode === 'admin_panel'
+                  ? 'bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-purple-700 hover:opacity-90 text-white shadow-lg shadow-fuchsia-500/30'
+                  : 'btn-primary'
+              }`}
             >
               {submitting ? (
                 <span className="animate-spin">⏳</span>
               ) : (
                 <>
-                  <Zap className="w-5 h-5" />
-                  <span>Deploy Server Sekarang</span>
+                  {createMode === 'admin_panel' ? <ShieldCheck className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
+                  <span>{createMode === 'admin_panel' ? 'Buat Admin Panel Sekarang' : 'Deploy Server Sekarang'}</span>
                 </>
               )}
             </Button>
