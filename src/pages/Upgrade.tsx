@@ -665,48 +665,143 @@ const Upgrade = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-8"
+              className="text-center mb-6"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber via-primary to-accent mb-4 shadow-lg shadow-primary/30">
-                <Crown className="w-8 h-8 text-white" />
+              <div
+                className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg ${
+                  isAdpTier
+                    ? 'bg-gradient-to-br from-purple-500 via-fuchsia-500 to-purple-700 shadow-purple-500/30'
+                    : 'bg-gradient-to-br from-amber via-primary to-accent shadow-primary/30'
+                }`}
+              >
+                {isAdpTier ? (
+                  <ShieldCheck className="w-8 h-8 text-white" />
+                ) : (
+                  <Crown className="w-8 h-8 text-white" />
+                )}
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-                Upgrade ke <span className="text-amber">Reseller</span>
+                {isAdpTier ? (
+                  <>
+                    Upgrade ke{' '}
+                    <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500 bg-clip-text text-transparent">
+                      Admin Panel
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Upgrade ke <span className="text-amber">Reseller</span>
+                  </>
+                )}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Bayar via QRIS, role aktif otomatis dalam hitungan detik.
+                {isAdpTier
+                  ? 'Kuasai server-mu — jadi root-admin Pterodactyl, kelola user & panel sendiri.'
+                  : 'Bayar via QRIS, role aktif otomatis dalam hitungan detik.'}
               </p>
             </motion.div>
 
-            {/* Benefits Grid */}
-            <GlassCard className="p-6 mb-6">
-              <h3 className="font-bold text-foreground mb-4 text-center">Yang Kamu Dapatkan</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Unlimited RAM & CPU
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Type Panel NodeJs dan Python
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Bisa Hapus Panel Sendiri
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip & Aman 100%
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 8 GB / 4 Core
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
-                  <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python & Node.js
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Tidak ada biaya tambahan lain / Anti PTPT
-                </div>
+            {/* Tier Switcher */}
+            {!showQris && (
+              <div className="grid grid-cols-2 gap-2 mb-6 p-1 rounded-2xl bg-secondary/40 border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => setTier('reseller')}
+                  className={`relative rounded-xl px-3 py-2.5 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                    !isAdpTier
+                      ? 'bg-gradient-to-r from-amber to-primary text-background shadow'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Crown className="w-4 h-4" />
+                  Reseller
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTier('adp')}
+                  className={`relative rounded-xl px-3 py-2.5 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                    isAdpTier
+                      ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-700 text-white shadow shadow-purple-500/30'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin Panel
+                  <span className="absolute -top-1.5 -right-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow">
+                    NEW
+                  </span>
+                </button>
               </div>
+            )}
+
+            {/* Benefits Grid */}
+            <GlassCard className={`p-6 mb-6 ${isAdpTier ? 'border-purple-500/30' : ''}`}>
+              <h3 className="font-bold text-foreground mb-4 text-center flex items-center justify-center gap-2">
+                <Sparkles className={`w-4 h-4 ${isAdpTier ? 'text-purple-400' : 'text-amber'}`} />
+                {isAdpTier ? 'Yang Kamu Dapatkan (Admin Panel)' : 'Yang Kamu Dapatkan (Reseller)'}
+              </h3>
+              {isAdpTier ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Jadi <b className="text-foreground">root-admin</b> Pterodactyl (root_admin=1)
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Dapat <b className="text-foreground">URL panel, username, password, PLTA & PLTC</b>
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <UsersLike /> Buat <b className="text-foreground">user baru</b> di panel Pterodactyl kamu
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Server className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Buat <b className="text-foreground">server/panel</b> untuk user bikinan kamu
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Layers className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Setiap sub-user dapat <b className="text-foreground">PLTA & PLTC</b> sendiri
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Crown className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
+                    Badge <b className="text-foreground">ungu eksklusif</b> di samping nama kamu
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
+                    <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Kompatibel dengan role <b className="text-foreground">Reseller</b> — bisa dimiliki bersamaan
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
+                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Batas: <b className="text-foreground">1 Admin Panel per server</b> (private &amp; publik dihitung terpisah)
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Unlimited RAM &amp; CPU
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Type Panel NodeJs dan Python
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Bisa Hapus Panel Sendiri
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip &amp; Aman 100%
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 8 GB / 4 Core
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                    <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python &amp; Node.js
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Tidak ada biaya tambahan lain / Anti PTPT
+                  </div>
+                </div>
+              )}
             </GlassCard>
 
             {/* Plan picker */}
