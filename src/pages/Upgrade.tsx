@@ -751,7 +751,8 @@ const Upgrade = () => {
                     Dapat <b className="text-foreground">URL panel, username, password, PLTA & PLTC</b>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
-                    <UsersLike /> Buat <b className="text-foreground">user baru</b> di panel Pterodactyl kamu
+                    <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Buat <b className="text-foreground">user baru</b> di panel Pterodactyl kamu
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <Server className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
