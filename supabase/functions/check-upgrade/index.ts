@@ -36,10 +36,15 @@ Deno.serve(async (req) => {
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
       );
-      const rpcName = String(order_id).startsWith("AD-")
-        ? "activate_ad_rental"
-        : "activate_reseller";
-      kind = String(order_id).startsWith("AD-") ? "ad_rental" : "upgrade";
+      const oid = String(order_id);
+      let rpcName = "activate_reseller";
+      if (oid.startsWith("AD-")) {
+        rpcName = "activate_ad_rental";
+        kind = "ad_rental";
+      } else if (oid.startsWith("ADP-")) {
+        rpcName = "activate_adp_server";
+        kind = "adp_server";
+      }
       const { data: act, error: actErr } = await supabase.rpc(rpcName, {
         _order_id: order_id,
       });

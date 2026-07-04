@@ -104,6 +104,170 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_panel_servers: {
+        Row: {
+          admin_panel_id: string
+          cpu: number
+          created_at: string
+          disk: number
+          id: string
+          name: string
+          panel_type: string
+          ptero_server_id: number
+          ram: number
+          subuser_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_panel_id: string
+          cpu?: number
+          created_at?: string
+          disk?: number
+          id?: string
+          name: string
+          panel_type?: string
+          ptero_server_id: number
+          ram?: number
+          subuser_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_panel_id?: string
+          cpu?: number
+          created_at?: string
+          disk?: number
+          id?: string
+          name?: string
+          panel_type?: string
+          ptero_server_id?: number
+          ram?: number
+          subuser_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_panel_servers_admin_panel_id_fkey"
+            columns: ["admin_panel_id"]
+            isOneToOne: false
+            referencedRelation: "admin_panels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_panel_servers_subuser_id_fkey"
+            columns: ["subuser_id"]
+            isOneToOne: false
+            referencedRelation: "admin_panel_subusers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_panel_subusers: {
+        Row: {
+          admin_panel_id: string
+          created_at: string
+          email: string
+          id: string
+          password: string
+          plta_key: string | null
+          pltc_key: string | null
+          ptero_user_id: number
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          admin_panel_id: string
+          created_at?: string
+          email: string
+          id?: string
+          password: string
+          plta_key?: string | null
+          pltc_key?: string | null
+          ptero_user_id: number
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          admin_panel_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          password?: string
+          plta_key?: string | null
+          pltc_key?: string | null
+          ptero_user_id?: number
+          updated_at?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_panel_subusers_admin_panel_id_fkey"
+            columns: ["admin_panel_id"]
+            isOneToOne: false
+            referencedRelation: "admin_panels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_panels: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          login_url: string
+          password: string
+          plta_key: string | null
+          pltc_key: string | null
+          ptero_user_id: number
+          server_id: string
+          updated_at: string
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          login_url: string
+          password: string
+          plta_key?: string | null
+          pltc_key?: string | null
+          ptero_user_id: number
+          server_id: string
+          updated_at?: string
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          login_url?: string
+          password?: string
+          plta_key?: string | null
+          pltc_key?: string | null
+          ptero_user_id?: number
+          server_id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_panels_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "active_servers_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_panels_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "pterodactyl_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_settings: {
         Row: {
           created_at: string
@@ -473,6 +637,8 @@ export type Database = {
       profiles: {
         Row: {
           active_session_id: string | null
+          adp_server_expires_at: string | null
+          adp_server_permanent: boolean
           avatar_url: string | null
           created_at: string
           device_fingerprint: string | null
@@ -488,6 +654,8 @@ export type Database = {
         }
         Insert: {
           active_session_id?: string | null
+          adp_server_expires_at?: string | null
+          adp_server_permanent?: boolean
           avatar_url?: string | null
           created_at?: string
           device_fingerprint?: string | null
@@ -503,6 +671,8 @@ export type Database = {
         }
         Update: {
           active_session_id?: string | null
+          adp_server_expires_at?: string | null
+          adp_server_permanent?: boolean
           avatar_url?: string | null
           created_at?: string
           device_fingerprint?: string | null
@@ -1033,8 +1203,14 @@ export type Database = {
         Returns: boolean
       }
       activate_ad_rental: { Args: { _order_id: string }; Returns: Json }
+      activate_adp_server: { Args: { _order_id: string }; Returns: Json }
       activate_reseller: { Args: { _order_id: string }; Returns: Json }
+      can_create_admin_panel: { Args: { _user_id: string }; Returns: boolean }
       can_send_feedback: { Args: never; Returns: boolean }
+      compute_effective_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       create_admin_ad: {
         Args: {
           _buttons: Json
@@ -1235,6 +1411,7 @@ export type Database = {
       }
       has_transacted: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_adp_server_active: { Args: { _user_id: string }; Returns: boolean }
       is_name_taken: { Args: { _name: string }; Returns: boolean }
       mark_all_notifications_read: { Args: never; Returns: number }
       move_to_dlq: {
@@ -1258,6 +1435,10 @@ export type Database = {
         Args: { _plta_key: string; _pltc_key: string; _server_id: string }
         Returns: undefined
       }
+      sync_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
       validate_promo_code: {
         Args: {
           _amount: number
@@ -1268,7 +1449,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "free" | "premium" | "reseller" | "admin"
+      app_role: "free" | "premium" | "reseller" | "admin" | "adp_server"
       notification_audience: "all" | "free" | "reseller" | "premium" | "admin"
       promo_discount_type: "percent" | "amount"
       promo_scope: "reseller" | "ads" | "both"
@@ -1399,7 +1580,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["free", "premium", "reseller", "admin"],
+      app_role: ["free", "premium", "reseller", "admin", "adp_server"],
       notification_audience: ["all", "free", "reseller", "premium", "admin"],
       promo_discount_type: ["percent", "amount"],
       promo_scope: ["reseller", "ads", "both"],

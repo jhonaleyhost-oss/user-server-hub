@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -70,6 +70,7 @@ export function AppSidebar() {
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
     { title: "Promo & Kupon", url: "/promo", icon: Tag },
     { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
+    { title: "Admin Panel Server", url: "/upgrade-adp", icon: ShieldCheck },
     ...(isAdmin
       ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
@@ -90,6 +91,8 @@ export function AppSidebar() {
     switch (role) {
       case "admin":
         return "Admin";
+      case "adp_server":
+        return "Admin Panel";
       case "reseller":
         return "Reseller";
       case "premium":
@@ -103,6 +106,8 @@ export function AppSidebar() {
     switch (role) {
       case "admin":
         return "bg-amber/15 text-amber border-amber/30";
+      case "adp_server":
+        return "bg-purple-500/15 text-purple-400 border-purple-500/30";
       case "reseller":
         return "bg-primary/15 text-primary border-primary/30";
       case "premium":

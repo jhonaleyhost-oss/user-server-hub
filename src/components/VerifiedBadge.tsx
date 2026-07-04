@@ -22,7 +22,7 @@ import { Crown, Sparkles } from "lucide-react";
  * For premium / free roles we fall back to a tiny pill label so existing
  * UI keeps the same vertical rhythm.
  */
-export type BadgeRole = "admin" | "reseller" | "premium" | "free" | string;
+export type BadgeRole = "admin" | "adp_server" | "reseller" | "premium" | "free" | string;
 export type BadgePlan = "perm" | "1bln" | "2bln" | string | null | undefined;
 
 export interface VerifiedBadgeProps {
@@ -51,6 +51,13 @@ const TIERS: Record<string, Tier> = {
     check: "#ffffff",
     glow: "rgba(245, 158, 11, 0.55)",
   },
+  adp_server: {
+    label: "Admin Panel Server",
+    fill: "#a855f7",
+    stroke: "#6b21a8",
+    check: "#ffffff",
+    glow: "rgba(168, 85, 247, 0.7)",
+  },
   perm: {
     label: "Reseller Permanen",
     fill: "#ef4444",
@@ -74,13 +81,19 @@ const TIERS: Record<string, Tier> = {
   },
 };
 
-type TierKey = "admin" | "perm" | "2bln" | "1bln";
+type TierKey = "admin" | "adp_server" | "perm" | "2bln" | "1bln";
 
 const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: string }> = {
   admin: {
     title: "Badge Admin",
     description:
       "Badge eksklusif berwarna oranye khusus untuk Admin & Staff resmi Jhonaley Store. Badge ini menandakan akun terverifikasi dan dipercaya untuk mengelola sistem.",
+  },
+  adp_server: {
+    title: "Admin Panel Server",
+    description:
+      "Badge super eksklusif berwarna ungu khusus untuk pemilik Admin Panel Server — role tertinggi setelah Admin. Kamu bisa membuat panel Pterodactyl root-admin lengkap dengan PLTA/PLTC di setiap server yang tersedia.",
+    cta: "Kelola Admin Panel",
   },
   perm: {
     title: "Reseller Permanen",
@@ -104,6 +117,7 @@ const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: str
 
 function pickTierKey(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null): TierKey | null {
   if (role === "admin") return "admin";
+  if (role === "adp_server") return "adp_server";
   if (role === "reseller") {
     if (permanent || plan === "perm") return "perm";
     if (plan === "2bln") return "2bln";
@@ -238,7 +252,7 @@ const VerifiedBadge = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     setOpen(false);
-                    navigate("/upgrade");
+                    navigate(tierKey === "adp_server" ? "/admin-panels" : "/upgrade");
                   }}
                   className="w-full h-11 rounded-full bg-amber hover:bg-amber/90 text-background font-bold gap-2"
                 >
