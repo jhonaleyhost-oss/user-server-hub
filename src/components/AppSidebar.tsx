@@ -186,8 +186,7 @@ export function AppSidebar() {
               style={{
                 background:
                   "linear-gradient(120deg,hsl(var(--amber)),hsl(var(--primary)),hsl(var(--accent)),hsl(var(--amber)))",
-                backgroundSize: "300% 100%",
-                animation: "shimmer 6s linear infinite",
+                backgroundSize: "200% 100%",
               }}
             >
               <div className="relative rounded-[10px] bg-gradient-to-br from-background via-background to-secondary/40 px-3 py-2.5">
