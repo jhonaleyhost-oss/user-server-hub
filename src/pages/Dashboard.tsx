@@ -107,6 +107,12 @@ const Dashboard = () => {
   }
   const [subUsers, setSubUsers] = useState<SubUserOption[]>([]);
   const [targetSubUser, setTargetSubUser] = useState<string>('self');
+  interface AdminPanelOption {
+    id: string;
+    username: string;
+    server_id: string;
+  }
+  const [adminPanels, setAdminPanels] = useState<AdminPanelOption[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -176,7 +182,13 @@ const Dashboard = () => {
         .from('admin_panels')
         .select('id, server_id, username')
         .eq('user_id', user.id);
-      const apIds = (apData || []).map((a: any) => a.id);
+      const apList: AdminPanelOption[] = (apData || []).map((a: any) => ({
+        id: a.id,
+        username: a.username,
+        server_id: a.server_id,
+      }));
+      setAdminPanels(apList);
+      const apIds = apList.map((a) => a.id);
       if (apIds.length > 0) {
         const { data: subData } = await supabase
           .from('admin_panel_subusers')
@@ -456,11 +468,12 @@ const Dashboard = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Target user selector (only if user has created subusers via admin panels) */}
-            {subUsers.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-muted-foreground">
-                  Buat Untuk User
+            {/* Target user selector — always visible when user owns an Admin Panel */}
+            {adminPanels.length > 0 && (
+              <div className="space-y-2 rounded-2xl p-4 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/5 to-transparent border border-fuchsia-500/30">
+                <Label className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
+                  Buat Panel Untuk User <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white">ADMIN PANEL</span>
                 </Label>
                 <Select
                   value={targetSubUser}
@@ -476,17 +489,23 @@ const Dashboard = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="self">Diri Sendiri (buat user Ptero baru)</SelectItem>
+                    <SelectItem value="self">👤 Diri Sendiri (user Pterodactyl baru)</SelectItem>
                     {subUsers.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
-                        {s.username} · via {s.admin_panel_username}
+                        🎯 {s.username} · via {s.admin_panel_username}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-muted-foreground">
-                  Jika pilih sub-user, server dibuat di akun Pterodactyl user tersebut (pakai PLTA/PLTC admin panel kamu).
-                </p>
+                {subUsers.length === 0 ? (
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Kamu belum punya sub-user. Login ke <b className="text-fuchsia-400">panel Pterodactyl kamu</b> untuk bikin user baru dulu, baru bisa dipilih di sini.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground leading-snug">
+                    Pilih <b className="text-foreground">Diri Sendiri</b> untuk user Pterodactyl baru, atau pilih sub-user existing (pakai PLTA/PLTC admin panel kamu).
+                  </p>
+                )}
               </div>
             )}
 
