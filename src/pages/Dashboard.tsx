@@ -336,6 +336,7 @@ const Dashboard = () => {
     switch (role) {
       case 'admin': return 'Admin';
       case 'reseller': return 'Reseller';
+      case 'adp_server': return 'Admin Panel';
       case 'premium': return 'Premium';
       default: return 'Free';
     }
@@ -345,6 +346,7 @@ const Dashboard = () => {
     switch (role) {
       case 'admin': return '∞';
       case 'reseller': return '∞';
+      case 'adp_server': return '∞';
       case 'premium': return '10';
       default: return '1';
     }
