@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import {
   Sparkles,
   ExternalLink,
@@ -17,6 +18,9 @@ import {
   CalendarClock,
   RefreshCw,
   Download,
+  Server,
+  KeyRound,
+  Layers,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +48,8 @@ interface PopupData {
   buttons: PopupButton[];
 }
 
-type PlanKey = '1bln' | '2bln' | 'perm';
+type PlanKey = '1bln' | '2bln' | 'perm' | 'adp_1bln' | 'adp_2bln' | 'adp_perm';
+type Tier = 'reseller' | 'adp';
 
 interface Plan {
   key: PlanKey;
@@ -60,6 +65,12 @@ const PLANS: Plan[] = [
   { key: '1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 5000 },
   { key: '2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 10000, badge: 'Hemat' },
   { key: 'perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 15000, badge: 'Spesial', highlight: true },
+];
+
+const ADP_PLANS: Plan[] = [
+  { key: 'adp_1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 10000 },
+  { key: 'adp_2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 20000, badge: 'Hemat' },
+  { key: 'adp_perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 35000, badge: 'Terbaik', highlight: true },
 ];
 
 const PAKASIR_SLUG = 'jhonaley-store';
