@@ -121,7 +121,10 @@ const renderContent = (text: string) => {
 
 const Upgrade = () => {
   const { user } = useAuth();
-  const { role, refetch } = useUserRole();
+  const { role, isAdpServer, refetch } = useUserRole();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTier: Tier = searchParams.get('tier') === 'adp' ? 'adp' : 'reseller';
+  const [tier, setTier] = useState<Tier>(initialTier);
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -142,16 +145,54 @@ const Upgrade = () => {
     expires_at: string | null;
     days_left: number | null;
   } | null>(null);
+  const [adpStatus, setAdpStatus] = useState<{
+    permanent: boolean;
+    expires_at: string | null;
+  } | null>(null);
 
-  const plan = useMemo(() => PLANS.find((p) => p.key === selected)!, [selected]);
-  const payAmount = appliedPromo?.final_amount ?? plan.amount;
-  const isAlreadyReseller = role === 'reseller' || role === 'admin';
-  const isPermanent = !!status?.permanent || role === 'admin';
+  const isAdpTier = tier === 'adp';
+  const activePlans = isAdpTier ? ADP_PLANS : PLANS;
+  const plan = useMemo(
+    () => activePlans.find((p) => p.key === selected) ?? activePlans[0],
+    [selected, activePlans],
+  );
+  const payAmount = isAdpTier ? plan.amount : (appliedPromo?.final_amount ?? plan.amount);
+  const isReseller = role === 'reseller' || role === 'admin';
+  const isAlreadyReseller = isAdpTier ? isAdpServer : isReseller;
+  const isPermanent = isAdpTier
+    ? (!!adpStatus?.permanent || role === 'admin')
+    : (!!status?.permanent || role === 'admin');
+
+  // Reset selected plan & promo when switching tier
+  useEffect(() => {
+    setSelected(isAdpTier ? 'adp_perm' : 'perm');
+    setAppliedPromo(null);
+    const current = searchParams.get('tier');
+    if (isAdpTier && current !== 'adp') {
+      searchParams.set('tier', 'adp');
+      setSearchParams(searchParams, { replace: true });
+    } else if (!isAdpTier && current) {
+      searchParams.delete('tier');
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tier]);
 
   const loadStatus = async () => {
     if (!user) return;
     const { data } = await supabase.rpc('get_my_reseller_status');
     if (data && data.length > 0) setStatus(data[0] as any);
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('adp_server_expires_at, adp_server_permanent')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (prof) {
+      setAdpStatus({
+        permanent: !!prof.adp_server_permanent,
+        expires_at: (prof.adp_server_expires_at as string | null) ?? null,
+      });
+    }
   };
 
   const loadPendingOrders = async () => {
