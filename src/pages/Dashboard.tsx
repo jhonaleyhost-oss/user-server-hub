@@ -97,6 +97,17 @@ const Dashboard = () => {
   const [panelType, setPanelType] = useState<'nodejs' | 'python'>('nodejs');
   const [submitting, setSubmitting] = useState(false);
 
+  // Sub-users the user created via their admin panels
+  interface SubUserOption {
+    id: string;
+    username: string;
+    admin_panel_id: string;
+    server_id: string;
+    admin_panel_username: string;
+  }
+  const [subUsers, setSubUsers] = useState<SubUserOption[]>([]);
+  const [targetSubUser, setTargetSubUser] = useState<string>('self');
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
