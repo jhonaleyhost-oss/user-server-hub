@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -70,6 +70,7 @@ export function AppSidebar() {
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
     { title: "Promo & Kupon", url: "/promo", icon: Tag },
     { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
+    { title: "Upgrade", url: "/upgrade", icon: Rocket },
     ...(isAdmin
       ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
