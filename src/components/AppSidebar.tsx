@@ -70,7 +70,6 @@ export function AppSidebar() {
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
     { title: "Promo & Kupon", url: "/promo", icon: Tag },
     { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
-    { title: "Admin Panel Server", url: "/upgrade-adp", icon: ShieldCheck },
     ...(isAdmin
       ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
