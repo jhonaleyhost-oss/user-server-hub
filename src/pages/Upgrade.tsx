@@ -473,7 +473,11 @@ const Upgrade = () => {
         return;
       }
       if (data?.completed) {
-        toast.success('Pembayaran terkonfirmasi! Role Reseller aktif 🎉');
+        toast.success(
+          isAdpTier
+            ? 'Pembayaran terkonfirmasi! Admin Panel Server aktif 🎉'
+            : 'Pembayaran terkonfirmasi! Role Reseller aktif 🎉',
+        );
         setPaid(true);
         setPollingOid(null);
         await refetch();
