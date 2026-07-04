@@ -492,19 +492,6 @@ const Activity = () => {
             </button>
             <button
               type="button"
-              onClick={() => setTab("admin")}
-              className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
-                tab === "admin"
-                  ? "bg-gradient-to-r from-rose-500 to-primary text-white shadow"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              Admin
-              <span className="ml-1 text-[10px] opacity-80">({totalCounts.admin || cleanups.length})</span>
-            </button>
-            <button
-              type="button"
               onClick={() => setTab("ads")}
               className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
                 tab === "ads"
