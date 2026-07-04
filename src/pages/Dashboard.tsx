@@ -328,14 +328,14 @@ const Dashboard = () => {
         {resellerStatus && resellerStatus.is_reseller && role !== 'admin' && (
           <Link to="/upgrade" className="block mb-4">
             <div className={`rounded-2xl p-4 border flex items-center gap-3 hover:scale-[1.01] transition-transform ${
-              resellerStatus.permanent
+              resellerStatus.permanent || !resellerStatus.expires_at
                 ? 'bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 border-primary/30'
                 : (resellerStatus.days_left ?? 0) <= 2
                   ? 'bg-gradient-to-r from-destructive/20 via-amber/20 to-destructive/20 border-destructive/40'
                   : 'bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/30'
             }`}>
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                {resellerStatus.permanent
+                {resellerStatus.permanent || !resellerStatus.expires_at
                   ? <InfinityIcon className="w-5 h-5 text-white" />
                   : <Clock className="w-5 h-5 text-white" />}
               </div>
@@ -344,7 +344,7 @@ const Dashboard = () => {
                   Masa Aktif Reseller: {formatResellerRemaining(resellerStatus)}
                 </p>
                 <p className="text-[11px] text-muted-foreground truncate">
-                  {resellerStatus.permanent
+                  {resellerStatus.permanent || !resellerStatus.expires_at
                     ? 'Akun reseller permanen — tidak akan expired.'
                     : `Berakhir ${formatExpiryDate(resellerStatus.expires_at)} • Perpanjang →`}
                 </p>
