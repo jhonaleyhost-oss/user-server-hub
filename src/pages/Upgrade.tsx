@@ -1151,7 +1151,7 @@ const Upgrade = () => {
                   {paid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 pt-1 font-semibold">
                       <CheckCircle2 className="w-4 h-4" />
-                      Pembayaran berhasil! Role Reseller aktif.
+                      Pembayaran berhasil! {isAdpTier ? 'Admin Panel Server aktif.' : 'Role Reseller aktif.'}
                     </div>
                   ) : pollingOid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
