@@ -91,6 +91,8 @@ export function AppSidebar() {
     switch (role) {
       case "admin":
         return "Admin";
+      case "adp_server":
+        return "Admin Panel";
       case "reseller":
         return "Reseller";
       case "premium":
@@ -104,6 +106,8 @@ export function AppSidebar() {
     switch (role) {
       case "admin":
         return "bg-amber/15 text-amber border-amber/30";
+      case "adp_server":
+        return "bg-purple-500/15 text-purple-400 border-purple-500/30";
       case "reseller":
         return "bg-primary/15 text-primary border-primary/30";
       case "premium":
