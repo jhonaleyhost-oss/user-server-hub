@@ -22,6 +22,9 @@ import {
   Lock,
   Clock,
   Infinity as InfinityIcon,
+  Copy,
+  KeyRound,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -113,6 +116,21 @@ const Dashboard = () => {
     server_id: string;
   }
   const [adminPanels, setAdminPanels] = useState<AdminPanelOption[]>([]);
+
+  // Create mode: standard panel vs admin panel (root_admin)
+  const [createMode, setCreateMode] = useState<'panel' | 'admin_panel'>('panel');
+  interface AdminPanelResult {
+    login_url: string;
+    username: string;
+    email: string;
+    password: string;
+    plta_key: string | null;
+    pltc_key: string | null;
+    nest_id: number | null;
+    egg_id_nodejs: number | null;
+    egg_id_python: number | null;
+  }
+  const [adminPanelResult, setAdminPanelResult] = useState<AdminPanelResult | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
