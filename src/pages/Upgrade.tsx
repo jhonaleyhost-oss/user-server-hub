@@ -247,6 +247,8 @@ const Upgrade = () => {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
         return;
       }
+      const targetTier: Tier = String(o.plan).startsWith('adp_') ? 'adp' : 'reseller';
+      setTier(targetTier);
       setSelected(o.plan);
       setOrderId(o.order_id);
       setQrisPayload(data.qris as string);
