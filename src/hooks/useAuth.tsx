@@ -218,19 +218,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await forceLogout();
           return;
         }
-
-        // If getUser succeeded, also verify the profile row still exists.
-        // Skip this check entirely on auth errors to avoid false positives.
-        if (!authError && authData?.user) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('user_id')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          if (!profileError && !profileData) {
-            await forceLogout();
-          }
-        }
+        // NOTE: We intentionally do NOT force-logout when the profiles row
+        // is missing. RLS/session timing can transiently return empty
+        // results right after login and would incorrectly sign the user out.
       } catch {
         // ignore network errors
       }
