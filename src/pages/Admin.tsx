@@ -547,7 +547,11 @@ const Admin = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: AppRole) => {
+  const updateUserRole = async (
+    userId: string,
+    newRole: AppRole,
+    duration?: '30' | '60' | '90' | 'perm',
+  ) => {
     try {
       const { error } = await supabase
         .from('user_roles')
@@ -556,9 +560,31 @@ const Admin = () => {
 
       if (error) throw error;
 
+      // Apply duration to profile columns for reseller / adp_server
+      if (duration && (newRole === 'reseller' || newRole === 'adp_server')) {
+        const permanent = duration === 'perm';
+        const expiresAt = permanent
+          ? null
+          : new Date(Date.now() + parseInt(duration) * 86400000).toISOString();
+        const patch: Record<string, unknown> =
+          newRole === 'adp_server'
+            ? { adp_server_permanent: permanent, adp_server_expires_at: expiresAt }
+            : { reseller_permanent: permanent, reseller_expires_at: expiresAt };
+        const { error: pErr } = await supabase
+          .from('profiles')
+          .update(patch)
+          .eq('user_id', userId);
+        if (pErr) throw pErr;
+      }
+
       toast({
         title: 'Berhasil',
-        description: 'Role pengguna berhasil diperbarui.',
+        description:
+          duration && duration !== 'perm'
+            ? `Role diperbarui, aktif ${duration} hari.`
+            : duration === 'perm'
+            ? 'Role diperbarui, aktif permanen.'
+            : 'Role pengguna berhasil diperbarui.',
       });
 
       setEditingUser(null);
