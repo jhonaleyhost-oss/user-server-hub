@@ -518,15 +518,97 @@ const Dashboard = () => {
         {/* Create Panel Form */}
         <GlassCard className="p-6 sm:p-8" delay={0.4}>
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-foreground mb-2">Buat Server Baru</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              {createMode === 'admin_panel' ? 'Buat Admin Panel' : 'Buat Server Baru'}
+            </h2>
             <p className="text-muted-foreground text-sm">
-              Konfigurasikan spesifikasi server bot Anda di bawah ini.
+              {createMode === 'admin_panel'
+                ? 'Provision root-admin Pterodactyl kamu — dapat URL, kredensial & API keys.'
+                : 'Konfigurasikan spesifikasi server bot Anda di bawah ini.'}
             </p>
           </div>
 
+          {/* Mode toggle — only for adp_server / admin */}
+          {isAdpServer && (
+            <div className="grid grid-cols-2 gap-2 mb-6 p-1 rounded-2xl bg-secondary/40 border border-border/60">
+              <button
+                type="button"
+                onClick={() => setCreateMode('panel')}
+                className={`rounded-xl px-3 py-2.5 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                  createMode === 'panel'
+                    ? 'bg-gradient-to-r from-primary to-accent text-background shadow'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Server className="w-4 h-4" />
+                Panel Biasa
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreateMode('admin_panel')}
+                className={`relative rounded-xl px-3 py-2.5 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                  createMode === 'admin_panel'
+                    ? 'bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-purple-700 text-white shadow shadow-fuchsia-500/40'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                Admin Panel
+              </button>
+            </div>
+          )}
+
+          {/* Admin Panel result — credentials shown once */}
+          {adminPanelResult && createMode === 'admin_panel' && (
+            <div className="mb-6 rounded-2xl p-5 bg-gradient-to-br from-fuchsia-500/15 via-purple-500/10 to-indigo-500/10 border-2 border-fuchsia-500/40 relative">
+              <button
+                type="button"
+                onClick={() => setAdminPanelResult(null)}
+                className="absolute top-3 right-3 p-1 rounded-full hover:bg-background/40"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldCheck className="w-5 h-5 text-fuchsia-400" />
+                <h3 className="font-bold text-foreground">Admin Panel Aktif 🎉</h3>
+              </div>
+              <p className="text-[11px] text-amber mb-4">
+                ⚠️ Simpan kredensial ini sekarang. PLTA/PLTC hanya ditampilkan sekali di sini.
+              </p>
+              {[
+                { label: 'URL Panel', value: adminPanelResult.login_url },
+                { label: 'Username', value: adminPanelResult.username },
+                { label: 'Email', value: adminPanelResult.email },
+                { label: 'Password', value: adminPanelResult.password },
+                { label: 'PLTA (Application)', value: adminPanelResult.plta_key ?? '-' },
+                { label: 'PLTC (Client)', value: adminPanelResult.pltc_key ?? '-' },
+                { label: 'Nest ID', value: String(adminPanelResult.nest_id ?? '-') },
+                { label: 'Egg ID (Node.js)', value: String(adminPanelResult.egg_id_nodejs ?? '-') },
+                { label: 'Egg ID (Python)', value: String(adminPanelResult.egg_id_python ?? '-') },
+              ].map((row) => (
+                <div key={row.label} className="mb-2">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{row.label}</p>
+                  <div className="flex items-center gap-2 mt-0.5 p-2 rounded-lg bg-background/60 border border-border">
+                    <code className="flex-1 text-xs text-foreground font-mono break-all">{row.value}</code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(row.value);
+                        toast({ title: 'Disalin', description: row.label });
+                      }}
+                      className="shrink-0 p-1.5 rounded-md hover:bg-fuchsia-500/20 text-fuchsia-400"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Target user selector — always visible when user has Admin Panel role or record */}
-            {(isAdpServer || adminPanels.length > 0) && (
+            {/* Target user selector — only in panel-biasa mode */}
+            {createMode === 'panel' && (isAdpServer || adminPanels.length > 0) && (
               <div className="space-y-2 rounded-2xl p-4 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/5 to-transparent border border-fuchsia-500/30">
                 <Label className="text-sm font-bold text-foreground flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
