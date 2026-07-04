@@ -135,6 +135,11 @@ const Dashboard = () => {
     fetchData();
   }, [user, authLoading]);
 
+  // Reset reuse selection when target server changes
+  useEffect(() => {
+    setReuseTarget('new');
+  }, [selectedServer]);
+
   const fetchData = async () => {
     if (!user) return;
 
