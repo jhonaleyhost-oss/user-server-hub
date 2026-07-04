@@ -553,12 +553,16 @@ const Admin = () => {
     duration?: '30' | '60' | '90' | 'perm',
   ) => {
     try {
-      const { error } = await supabase
+      // Replace any existing role row (handles users with no row yet, e.g. still 'free')
+      const { error: delErr } = await supabase
         .from('user_roles')
-        .update({ role: newRole })
+        .delete()
         .eq('user_id', userId);
-
-      if (error) throw error;
+      if (delErr) throw delErr;
+      const { error: insErr } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: newRole });
+      if (insErr) throw insErr;
 
       // Apply duration to profile columns for reseller / adp_server
       if (duration && (newRole === 'reseller' || newRole === 'adp_server')) {
