@@ -15,6 +15,8 @@ import {
   Server as ServerIcon,
   Eye,
   EyeOff,
+  Crown,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -68,15 +70,31 @@ interface PanelGroup {
   panels: UserPanel[];
 }
 
+interface AdminPanel {
+  id: string;
+  username: string;
+  email: string;
+  password: string;
+  login_url: string;
+  ptero_user_id: number | null;
+  created_at: string;
+  server_id: string;
+  pterodactyl_servers: { name: string } | null;
+  admin_panel_servers: { id: string }[];
+}
+
 const Panels = () => {
   const { user, loading: authLoading } = useAuth();
-  const { role } = useUserRole();
+  const { role, canCreateAdminPanel } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [panels, setPanels] = useState<UserPanel[]>([]);
+  const [adminPanels, setAdminPanels] = useState<AdminPanel[]>([]);
+  const [viewMode, setViewMode] = useState<'panel' | 'admin_panel'>('panel');
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deletingAdmin, setDeletingAdmin] = useState<string | null>(null);
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
   const [waNumbers, setWaNumbers] = useState<Record<string, string>>({});
@@ -97,17 +115,25 @@ const Panels = () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      const [{ data, error }, apRes] = await Promise.all([
+        supabase
         .from('user_panels')
         .select(`
           *,
           pterodactyl_servers (name)
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('admin_panels')
+          .select('*, pterodactyl_servers(name), admin_panel_servers(id)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+      ]);
 
       if (error) throw error;
       setPanels(data || []);
+      if (!apRes.error) setAdminPanels((apRes.data as any) || []);
     } catch (err) {
       console.error('Error fetching panels:', err);
     } finally {
@@ -188,6 +214,32 @@ ${serverList}
       });
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleDeleteAdminPanel = async (adminPanelId: string) => {
+    setDeletingAdmin(adminPanelId);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-admin-panel', {
+        body: { adminPanelId },
+      });
+      if (error) throw error;
+      if (!data?.success) {
+        setProcessLogs(Array.isArray(data?.logs) ? data.logs : []);
+        setLogDialogSuccess(false);
+        setLogDialogOpen(true);
+        throw new Error(data?.error || 'Gagal menghapus Admin Panel');
+      }
+      setProcessLogs(Array.isArray(data?.logs) ? data.logs : []);
+      setLogDialogSuccess(true);
+      setLogDialogOpen(true);
+      toast({ title: 'Berhasil', description: data?.message || 'Admin Panel dihapus.' });
+      fetchPanels();
+    } catch (err: any) {
+      console.error('Delete admin panel error:', err);
+      toast({ variant: 'destructive', title: 'Gagal', description: err.message || 'Gagal menghapus Admin Panel.' });
+    } finally {
+      setDeletingAdmin(null);
     }
   };
 
