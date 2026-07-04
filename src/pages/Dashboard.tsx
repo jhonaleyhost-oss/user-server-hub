@@ -107,6 +107,12 @@ const Dashboard = () => {
   }
   const [subUsers, setSubUsers] = useState<SubUserOption[]>([]);
   const [targetSubUser, setTargetSubUser] = useState<string>('self');
+  interface AdminPanelOption {
+    id: string;
+    username: string;
+    server_id: string;
+  }
+  const [adminPanels, setAdminPanels] = useState<AdminPanelOption[]>([]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -176,7 +182,13 @@ const Dashboard = () => {
         .from('admin_panels')
         .select('id, server_id, username')
         .eq('user_id', user.id);
-      const apIds = (apData || []).map((a: any) => a.id);
+      const apList: AdminPanelOption[] = (apData || []).map((a: any) => ({
+        id: a.id,
+        username: a.username,
+        server_id: a.server_id,
+      }));
+      setAdminPanels(apList);
+      const apIds = apList.map((a) => a.id);
       if (apIds.length > 0) {
         const { data: subData } = await supabase
           .from('admin_panel_subusers')
