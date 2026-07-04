@@ -1065,8 +1065,14 @@ const Upgrade = () => {
                   </div>
 
                   <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-3 text-center border border-white/10">
-                    <div className="text-base font-extrabold tracking-wide bg-gradient-to-r from-primary via-accent to-amber bg-clip-text text-transparent">
-                      👑 UPGRADE RESELLER 👑
+                    <div
+                      className={`text-base font-extrabold tracking-wide bg-clip-text text-transparent ${
+                        isAdpTier
+                          ? 'bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500'
+                          : 'bg-gradient-to-r from-primary via-accent to-amber'
+                      }`}
+                    >
+                      {isAdpTier ? '🛡️ ADMIN PANEL SERVER 🛡️' : '👑 UPGRADE RESELLER 👑'}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       Paket {plan.label} • {plan.duration}
