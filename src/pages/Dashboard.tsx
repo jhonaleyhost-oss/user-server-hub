@@ -97,6 +97,17 @@ const Dashboard = () => {
   const [panelType, setPanelType] = useState<'nodejs' | 'python'>('nodejs');
   const [submitting, setSubmitting] = useState(false);
 
+  // Sub-users the user created via their admin panels
+  interface SubUserOption {
+    id: string;
+    username: string;
+    admin_panel_id: string;
+    server_id: string;
+    admin_panel_username: string;
+  }
+  const [subUsers, setSubUsers] = useState<SubUserOption[]>([]);
+  const [targetSubUser, setTargetSubUser] = useState<string>('self');
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -158,6 +169,30 @@ const Dashboard = () => {
       const { data: statusData } = await (supabase.rpc as any)('get_my_reseller_status');
       if (statusData && statusData.length > 0) {
         setResellerStatus(statusData[0] as ResellerStatus);
+      }
+
+      // Fetch admin panels + subusers the user created
+      const { data: apData } = await supabase
+        .from('admin_panels')
+        .select('id, server_id, username')
+        .eq('user_id', user.id);
+      const apIds = (apData || []).map((a: any) => a.id);
+      if (apIds.length > 0) {
+        const { data: subData } = await supabase
+          .from('admin_panel_subusers')
+          .select('id, username, admin_panel_id')
+          .in('admin_panel_id', apIds);
+        const opts: SubUserOption[] = (subData || []).map((s: any) => {
+          const ap = (apData as any[]).find((a) => a.id === s.admin_panel_id);
+          return {
+            id: s.id,
+            username: s.username,
+            admin_panel_id: s.admin_panel_id,
+            server_id: ap?.server_id ?? '',
+            admin_panel_username: ap?.username ?? '',
+          };
+        });
+        setSubUsers(opts);
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -243,6 +278,7 @@ const Dashboard = () => {
             cpu: cpuPercent,
             disk: diskMB,
             panelType: panelType,
+            subUserId: targetSubUser !== 'self' ? targetSubUser : undefined,
           }),
         }
       );
@@ -328,14 +364,14 @@ const Dashboard = () => {
         {resellerStatus && resellerStatus.is_reseller && role !== 'admin' && (
           <Link to="/upgrade" className="block mb-4">
             <div className={`rounded-2xl p-4 border flex items-center gap-3 hover:scale-[1.01] transition-transform ${
-              resellerStatus.permanent
+              resellerStatus.permanent || !resellerStatus.expires_at
                 ? 'bg-gradient-to-r from-primary/15 via-accent/10 to-primary/15 border-primary/30'
                 : (resellerStatus.days_left ?? 0) <= 2
                   ? 'bg-gradient-to-r from-destructive/20 via-amber/20 to-destructive/20 border-destructive/40'
                   : 'bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-primary/30'
             }`}>
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                {resellerStatus.permanent
+                {resellerStatus.permanent || !resellerStatus.expires_at
                   ? <InfinityIcon className="w-5 h-5 text-white" />
                   : <Clock className="w-5 h-5 text-white" />}
               </div>
@@ -344,7 +380,7 @@ const Dashboard = () => {
                   Masa Aktif Reseller: {formatResellerRemaining(resellerStatus)}
                 </p>
                 <p className="text-[11px] text-muted-foreground truncate">
-                  {resellerStatus.permanent
+                  {resellerStatus.permanent || !resellerStatus.expires_at
                     ? 'Akun reseller permanen — tidak akan expired.'
                     : `Berakhir ${formatExpiryDate(resellerStatus.expires_at)} • Perpanjang →`}
                 </p>
@@ -420,10 +456,44 @@ const Dashboard = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Target user selector (only if user has created subusers via admin panels) */}
+            {subUsers.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-muted-foreground">
+                  Buat Untuk User
+                </Label>
+                <Select
+                  value={targetSubUser}
+                  onValueChange={(v) => {
+                    setTargetSubUser(v);
+                    if (v !== 'self') {
+                      const su = subUsers.find((s) => s.id === v);
+                      if (su?.server_id) setSelectedServer(su.server_id);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="input-glass">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="self">Diri Sendiri (buat user Ptero baru)</SelectItem>
+                    {subUsers.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.username} · via {s.admin_panel_username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Jika pilih sub-user, server dibuat di akun Pterodactyl user tersebut (pakai PLTA/PLTC admin panel kamu).
+                </p>
+              </div>
+            )}
+
             {/* Username */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-muted-foreground">
-                Nama Server / User
+                {targetSubUser !== 'self' ? 'Nama Server' : 'Nama Server / User'}
               </Label>
               <div className="relative">
                 <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
