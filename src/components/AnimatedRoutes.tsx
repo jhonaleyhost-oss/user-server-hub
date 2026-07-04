@@ -7,7 +7,7 @@ import Panels from '@/pages/Panels';
 import Admin from '@/pages/Admin';
 import AdminRoute from '@/components/AdminRoute';
 import Upgrade from '@/pages/Upgrade';
-import UpgradeAdp from '@/pages/UpgradeAdp';
+import { Navigate } from 'react-router-dom';
 import Profile from '@/pages/Profile';
 import Users from '@/pages/Users';
 import Chat from '@/pages/Chat';
@@ -38,7 +38,7 @@ export const AnimatedRoutes = () => {
           }
         />
         <Route path="/upgrade" element={<Upgrade />} />
-        <Route path="/upgrade-adp" element={<UpgradeAdp />} />
+        <Route path="/upgrade-adp" element={<Navigate to="/upgrade?tier=adp" replace />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/users" element={<Users />} />
         <Route path="/chat" element={<Chat />} />
