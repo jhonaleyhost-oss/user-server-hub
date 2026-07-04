@@ -1278,7 +1278,17 @@ const Admin = () => {
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => setEditingUser(u)}
+                                    onClick={() => {
+                                      setEditingUser(u);
+                                      setEditRole(u.role as AppRole);
+                                      setEditDuration(
+                                        u.role === 'adp_server'
+                                          ? 'perm'
+                                          : u.reseller_permanent
+                                          ? 'perm'
+                                          : '30',
+                                      );
+                                    }}
                                   >
                                     <UserCog className="w-4 h-4" />
                                   </Button>
@@ -1290,11 +1300,12 @@ const Admin = () => {
                                       Ubah role untuk {u.email}
                                     </DialogDescription>
                                   </DialogHeader>
-                                  <div className="py-4">
+                                  <div className="py-4 space-y-4">
+                                   <div>
                                     <Label>Role</Label>
                                     <Select
-                                      defaultValue={u.role}
-                                      onValueChange={(val) => updateUserRole(u.user_id, val as AppRole)}
+                                      value={editRole}
+                                      onValueChange={(val) => setEditRole(val as AppRole)}
                                     >
                                       <SelectTrigger className="input-glass mt-2">
                                         <SelectValue />
@@ -1303,9 +1314,72 @@ const Admin = () => {
                                         <SelectItem value="free">Free</SelectItem>
                                         <SelectItem value="premium">Premium</SelectItem>
                                         <SelectItem value="reseller">Reseller</SelectItem>
+                                        <SelectItem value="adp_server">
+                                          Admin Panel Server (adp_server)
+                                        </SelectItem>
                                         <SelectItem value="admin">Admin</SelectItem>
                                       </SelectContent>
                                     </Select>
+                                   </div>
+
+                                   {(editRole === 'reseller' || editRole === 'adp_server') && (
+                                     <div>
+                                       <Label>Durasi Aktif</Label>
+                                       <Select
+                                         value={editDuration}
+                                         onValueChange={(val) => setEditDuration(val as any)}
+                                       >
+                                         <SelectTrigger className="input-glass mt-2">
+                                           <SelectValue />
+                                         </SelectTrigger>
+                                         <SelectContent>
+                                           <SelectItem value="30">1 Bulan (30 hari)</SelectItem>
+                                           <SelectItem value="60">2 Bulan (60 hari)</SelectItem>
+                                           <SelectItem value="90">3 Bulan (90 hari)</SelectItem>
+                                           <SelectItem value="perm">Permanen ∞</SelectItem>
+                                         </SelectContent>
+                                       </Select>
+                                       <p className="text-[11px] text-muted-foreground mt-1.5">
+                                         Aktif sampai:{' '}
+                                         <span className="text-foreground font-semibold">
+                                           {editDuration === 'perm'
+                                             ? 'Selamanya'
+                                             : new Date(
+                                                 Date.now() + parseInt(editDuration) * 86400000,
+                                               ).toLocaleString('id-ID', {
+                                                 day: '2-digit',
+                                                 month: 'short',
+                                                 year: 'numeric',
+                                                 hour: '2-digit',
+                                                 minute: '2-digit',
+                                               })}
+                                         </span>
+                                       </p>
+                                     </div>
+                                   )}
+
+                                   <div className="flex justify-end gap-2 pt-2">
+                                     <Button
+                                       variant="outline"
+                                       onClick={() => setEditingUser(null)}
+                                     >
+                                       Batal
+                                     </Button>
+                                     <Button
+                                       className="btn-primary"
+                                       onClick={() =>
+                                         updateUserRole(
+                                           u.user_id,
+                                           editRole,
+                                           editRole === 'reseller' || editRole === 'adp_server'
+                                             ? editDuration
+                                             : undefined,
+                                         )
+                                       }
+                                     >
+                                       Simpan
+                                     </Button>
+                                   </div>
                                   </div>
                                 </DialogContent>
                               </Dialog>
