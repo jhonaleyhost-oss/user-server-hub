@@ -205,6 +205,8 @@ const Admin = () => {
 
   // Edit dialogs
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
+  const [editRole, setEditRole] = useState<AppRole>('free');
+  const [editDuration, setEditDuration] = useState<'30' | '60' | '90' | 'perm'>('perm');
   const [editingServer, setEditingServer] = useState<PterodactylServer | null>(null);
   const [newServer, setNewServer] = useState(false);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
