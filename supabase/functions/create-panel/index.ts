@@ -14,6 +14,7 @@ interface CreatePanelRequest {
   disk: number; // in MB
   panelType?: 'nodejs' | 'python';
   subUserId?: string;
+  reusePteroUserId?: number;
 }
 
 interface PterodactylServer {
@@ -57,7 +58,7 @@ serve(async (req) => {
     console.log('User authenticated');
 
     // Parse request body
-    const { username, serverId, ram, cpu, disk, panelType, subUserId }: CreatePanelRequest = await req.json();
+    const { username, serverId, ram, cpu, disk, panelType, subUserId, reusePteroUserId }: CreatePanelRequest = await req.json();
     const type: 'nodejs' | 'python' = panelType === 'python' ? 'python' : 'nodejs';
     
     console.log('Panel creation request received');
@@ -86,7 +87,7 @@ serve(async (req) => {
 
     const userRole = roleData?.role || 'free';
 
-    if (userRole === 'free' && !subUserId) {
+    if (userRole === 'free' && !subUserId && !reusePteroUserId) {
       // Check panel count limit
       const { count: existingPanels } = await supabase
         .from('user_panels')
@@ -130,6 +131,133 @@ serve(async (req) => {
     }
 
     const pteroServer: PterodactylServer = serverData;
+
+    // Build egg/docker/startup/env once (used by all branches)
+    const _type = type;
+    const eggIdCommon = _type === 'python' ? pteroServer.python_egg_id : pteroServer.egg_id;
+    const dockerImageCommon = _type === 'python'
+      ? 'ghcr.io/parkervcp/yolks:python_3.10'
+      : 'ghcr.io/parkervcp/yolks:nodejs_18';
+    const startupCommon = _type === 'python'
+      ? 'if [[ -d .git ]] && [[ "{{AUTO_UPDATE}}" == "1" ]]; then git pull; fi; if [[ ! -z "{{PY_PACKAGES}}" ]]; then pip install -U --prefix .local {{PY_PACKAGES}}; fi; if [[ -f /home/container/${REQUIREMENTS_FILE} ]]; then pip install -U --prefix .local -r ${REQUIREMENTS_FILE}; fi; /usr/local/bin/python /home/container/{{PY_FILE}}'
+      : 'if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == "1" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then /usr/local/bin/npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then /usr/local/bin/npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f /home/container/package.json ]; then /usr/local/bin/npm install; fi; if [[ ! -z ${CUSTOM_ENVIRONMENT_VARIABLES} ]]; then vars=$(echo ${CUSTOM_ENVIRONMENT_VARIABLES} | tr ";" "\n"); for line in $vars; do export $line; done fi; /usr/local/bin/${CMD_RUN};';
+    const envVarsCommon: Record<string, string> = _type === 'python'
+      ? { GIT_ADDRESS: '', BRANCH: '', AUTO_UPDATE: '0', PY_FILE: 'app.py', PY_PACKAGES: '', USERNAME: '', ACCESS_TOKEN: '', REQUIREMENTS_FILE: 'requirements.txt', USER_UPLOAD: '0' }
+      : { INST: 'npm', USER_UPLOAD: '0', AUTO_UPDATE: '0', CMD_RUN: 'npm start' };
+
+    // ==========================================================
+    // Branch: reuse existing Pterodactyl user (any source)
+    // ==========================================================
+    if (reusePteroUserId) {
+      // Find & authorize: user_panels → admin_panels → admin_panel_subusers
+      let reuseEmail: string | null = null;
+      let reusePassword: string | null = null;
+      let reuseLoginUrl: string = pteroServer.domain;
+
+      const { data: upRow } = await supabase
+        .from('user_panels')
+        .select('email, password, login_url')
+        .eq('user_id', user.id)
+        .eq('server_id', serverId)
+        .eq('ptero_user_id', reusePteroUserId)
+        .limit(1)
+        .maybeSingle();
+      if (upRow) {
+        reuseEmail = (upRow as any).email;
+        reusePassword = (upRow as any).password;
+        reuseLoginUrl = (upRow as any).login_url || pteroServer.domain;
+      }
+
+      if (!reuseEmail) {
+        const { data: apRow } = await supabase
+          .from('admin_panels')
+          .select('email, password, login_url')
+          .eq('user_id', user.id)
+          .eq('server_id', serverId)
+          .eq('ptero_user_id', reusePteroUserId)
+          .maybeSingle();
+        if (apRow) {
+          reuseEmail = (apRow as any).email;
+          reusePassword = (apRow as any).password;
+          reuseLoginUrl = (apRow as any).login_url || pteroServer.domain;
+        }
+      }
+
+      if (!reuseEmail) {
+        const { data: apIds } = await supabase
+          .from('admin_panels')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('server_id', serverId);
+        const ids = (apIds || []).map((r: any) => r.id);
+        if (ids.length > 0) {
+          const { data: suRow } = await supabase
+            .from('admin_panel_subusers')
+            .select('email, password')
+            .in('admin_panel_id', ids)
+            .eq('ptero_user_id', reusePteroUserId)
+            .maybeSingle();
+          if (suRow) {
+            reuseEmail = (suRow as any).email;
+            reusePassword = (suRow as any).password;
+          }
+        }
+      }
+
+      if (!reuseEmail || !reusePassword) {
+        throw new Error('User Pterodactyl tidak ditemukan atau bukan milikmu.');
+      }
+
+      const createSrvRes = await fetch(`${pteroServer.domain}/api/application/servers`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${pteroServer.plta_key}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: username,
+          user: reusePteroUserId,
+          egg: eggIdCommon,
+          docker_image: dockerImageCommon,
+          startup: startupCommon,
+          environment: envVarsCommon,
+          limits: { memory: ram, swap: 0, disk, io: 500, cpu },
+          feature_limits: { databases: 0, backups: 1, allocations: 1 },
+          allocation: { default: null },
+          deploy: { locations: [pteroServer.location_id], dedicated_ip: false, port_range: [] },
+        }),
+      });
+      if (!createSrvRes.ok) {
+        const t = await createSrvRes.text();
+        throw new Error(`Gagal buat server di user existing: ${t}`);
+      }
+      const srvJson = await createSrvRes.json();
+      const newPteroSrvId = srvJson.attributes.id;
+
+      const { data: panelRow, error: insErr } = await supabase
+        .from('user_panels')
+        .insert({
+          user_id: user.id,
+          server_id: serverId,
+          ptero_user_id: reusePteroUserId,
+          ptero_server_id: newPteroSrvId,
+          username,
+          email: reuseEmail,
+          password: reusePassword,
+          login_url: reuseLoginUrl,
+          ram, cpu, disk,
+          panel_type: _type,
+        })
+        .select()
+        .single();
+      if (insErr) throw new Error(`Failed to save panel: ${insErr.message}`);
+
+      return new Response(
+        JSON.stringify({ success: true, panel: panelRow, reused: true, message: 'Server ditambahkan ke user Pterodactyl existing!' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     // ==========================================================
     // Branch: sub-user mode → create server for an existing user
