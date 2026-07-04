@@ -170,6 +170,30 @@ const Dashboard = () => {
       if (statusData && statusData.length > 0) {
         setResellerStatus(statusData[0] as ResellerStatus);
       }
+
+      // Fetch admin panels + subusers the user created
+      const { data: apData } = await supabase
+        .from('admin_panels')
+        .select('id, server_id, username')
+        .eq('user_id', user.id);
+      const apIds = (apData || []).map((a: any) => a.id);
+      if (apIds.length > 0) {
+        const { data: subData } = await supabase
+          .from('admin_panel_subusers')
+          .select('id, username, admin_panel_id')
+          .in('admin_panel_id', apIds);
+        const opts: SubUserOption[] = (subData || []).map((s: any) => {
+          const ap = (apData as any[]).find((a) => a.id === s.admin_panel_id);
+          return {
+            id: s.id,
+            username: s.username,
+            admin_panel_id: s.admin_panel_id,
+            server_id: ap?.server_id ?? '',
+            admin_panel_username: ap?.username ?? '',
+          };
+        });
+        setSubUsers(opts);
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
