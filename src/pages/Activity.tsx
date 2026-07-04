@@ -150,18 +150,20 @@ const Activity = () => {
   const [upgrades, setUpgrades] = useState<UpgradeActivity[]>([]);
   const [cleanups, setCleanups] = useState<AdminCleanupActivity[]>([]);
   const [ads, setAds] = useState<AdEvent[]>([]);
+  const [panelDeletes, setPanelDeletes] = useState<PanelDeleteActivity[]>([]);
+  const [adminPanels, setAdminPanels] = useState<AdminPanelActivity[]>([]);
+  const [userDeletes, setUserDeletes] = useState<UserDeleteActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
-  const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "admin" | "ads">("panel");
+  const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "ads">("panel");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const [page, setPage] = useState(1);
-  const [totalCounts, setTotalCounts] = useState<{ panel: number; signup: number; upgrade: number; admin: number; ads: number }>({
+  const [totalCounts, setTotalCounts] = useState<{ panel: number; signup: number; upgrade: number; ads: number }>({
     panel: 0,
     signup: 0,
     upgrade: 0,
-    admin: 0,
     ads: 0,
   });
   const PAGE_SIZE = 50;
