@@ -456,10 +456,44 @@ const Dashboard = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Target user selector (only if user has created subusers via admin panels) */}
+            {subUsers.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-muted-foreground">
+                  Buat Untuk User
+                </Label>
+                <Select
+                  value={targetSubUser}
+                  onValueChange={(v) => {
+                    setTargetSubUser(v);
+                    if (v !== 'self') {
+                      const su = subUsers.find((s) => s.id === v);
+                      if (su?.server_id) setSelectedServer(su.server_id);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="input-glass">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="self">Diri Sendiri (buat user Ptero baru)</SelectItem>
+                    {subUsers.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.username} · via {s.admin_panel_username}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Jika pilih sub-user, server dibuat di akun Pterodactyl user tersebut (pakai PLTA/PLTC admin panel kamu).
+                </p>
+              </div>
+            )}
+
             {/* Username */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-muted-foreground">
-                Nama Server / User
+                {targetSubUser !== 'self' ? 'Nama Server' : 'Nama Server / User'}
               </Label>
               <div className="relative">
                 <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
