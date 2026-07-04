@@ -499,7 +499,7 @@ const Dashboard = () => {
                 </Select>
                 {subUsers.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground leading-snug">
-                    Kamu belum punya sub-user. Buka <Link to="/admin-panel" className="text-fuchsia-400 font-semibold underline">Admin Panel</Link> untuk bikin user baru dulu, baru bisa dipilih di sini.
+                    Kamu belum punya sub-user. Login ke <b className="text-fuchsia-400">panel Pterodactyl kamu</b> untuk bikin user baru dulu, baru bisa dipilih di sini.
                   </p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground leading-snug">
