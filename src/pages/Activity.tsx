@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2, ShieldAlert, Trash2, Megaphone, CalendarX, CrownIcon } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2, ShieldCheck, Trash2, Megaphone, CalendarX, UserMinus } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -62,6 +62,39 @@ interface AdminCleanupActivity {
   created_at: string;
 }
 
+interface PanelDeleteActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: null;
+  role: string;
+  username: string;
+  panel_type: string;
+  server_name: string;
+  created_at: string;
+}
+
+interface AdminPanelActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: null;
+  role: string;
+  username: string;
+  server_name: string;
+  created_at: string;
+}
+
+interface UserDeleteActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: null;
+  role: string;
+  email: string;
+  created_at: string;
+}
+
 interface AdEvent {
   id: string;
   user_id: string;
@@ -79,6 +112,9 @@ type FeedItem =
   | ({ kind: "signup" } & SignupActivity)
   | ({ kind: "upgrade" } & UpgradeActivity)
   | ({ kind: "admin_cleanup" } & AdminCleanupActivity)
+  | ({ kind: "panel_deleted" } & PanelDeleteActivity)
+  | ({ kind: "admin_panel" } & AdminPanelActivity)
+  | ({ kind: "user_deleted" } & UserDeleteActivity)
   | ({ kind: "ad" } & AdEvent);
 
 const formatSpec = (n: number) => (n === 0 ? "Unlimited" : `${n}`);
@@ -114,18 +150,20 @@ const Activity = () => {
   const [upgrades, setUpgrades] = useState<UpgradeActivity[]>([]);
   const [cleanups, setCleanups] = useState<AdminCleanupActivity[]>([]);
   const [ads, setAds] = useState<AdEvent[]>([]);
+  const [panelDeletes, setPanelDeletes] = useState<PanelDeleteActivity[]>([]);
+  const [adminPanels, setAdminPanels] = useState<AdminPanelActivity[]>([]);
+  const [userDeletes, setUserDeletes] = useState<UserDeleteActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [, setTick] = useState(0);
-  const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "admin" | "ads">("panel");
+  const [tab, setTab] = useState<"panel" | "signup" | "upgrade" | "ads">("panel");
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const [page, setPage] = useState(1);
-  const [totalCounts, setTotalCounts] = useState<{ panel: number; signup: number; upgrade: number; admin: number; ads: number }>({
+  const [totalCounts, setTotalCounts] = useState<{ panel: number; signup: number; upgrade: number; ads: number }>({
     panel: 0,
     signup: 0,
     upgrade: 0,
-    admin: 0,
     ads: 0,
   });
   const PAGE_SIZE = 50;
@@ -140,7 +178,7 @@ const Activity = () => {
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes, adsRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes, adsRes, extraRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_upgrade_activity", { _limit: 500 }),
@@ -157,6 +195,12 @@ const Activity = () => {
         .in("kind", ["ad_rental", "ad_expired", "role_expired"])
         .order("created_at", { ascending: false })
         .limit(300),
+      supabase
+        .from("activity_events")
+        .select("id, kind, actor_user_id, actor_name, actor_role, detail, amount, created_at")
+        .in("kind", ["panel_deleted", "admin_panel", "user_deleted"])
+        .order("created_at", { ascending: false })
+        .limit(500),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
@@ -170,14 +214,13 @@ const Activity = () => {
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "panel"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "signup"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "upgrade"),
-      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "admin_cleanup"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).in("kind", ["panel_deleted","admin_panel","user_deleted","admin_cleanup"]),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).in("kind", ["ad_rental","ad_expired","role_expired"]),
-    ]).then(([pc, sc, uc, ac, adc]) => {
+    ]).then(([pc, sc, uc, ex, adc]) => {
       setTotalCounts({
-        panel: pc.count ?? (panelRes.data?.length ?? 0),
+        panel: (pc.count ?? (panelRes.data?.length ?? 0)) + (ex.count ?? 0),
         signup: sc.count ?? (signupRes.data?.length ?? 0),
         upgrade: uc.count ?? (upgradeRes.data?.length ?? 0),
-        admin: ac.count ?? 0,
         ads: adc.count ?? 0,
       });
     }).catch((e) => console.error("Count fetch failed:", e));
@@ -212,6 +255,56 @@ const Activity = () => {
         amount: r.amount,
         created_at: r.created_at,
       })));
+    }
+    if (!extraRes.error && extraRes.data) {
+      const rows = extraRes.data as Array<{
+        id: string; kind: string; actor_user_id: string | null; actor_name: string | null;
+        actor_role: string | null; detail: string | null; amount: number | null; created_at: string;
+      }>;
+      const deletes: PanelDeleteActivity[] = [];
+      const admins: AdminPanelActivity[] = [];
+      const users: UserDeleteActivity[] = [];
+      for (const r of rows) {
+        if (r.kind === 'panel_deleted') {
+          const [uname, ptype, srv] = (r.detail || '').split('|');
+          deletes.push({
+            id: r.id,
+            user_id: r.actor_user_id || '',
+            full_name: r.actor_name,
+            avatar_url: null,
+            role: r.actor_role || 'free',
+            username: uname || '',
+            panel_type: ptype || 'nodejs',
+            server_name: srv || '',
+            created_at: r.created_at,
+          });
+        } else if (r.kind === 'admin_panel') {
+          const [uname, srv] = (r.detail || '').split('|');
+          admins.push({
+            id: r.id,
+            user_id: r.actor_user_id || '',
+            full_name: r.actor_name,
+            avatar_url: null,
+            role: r.actor_role || 'adp_server',
+            username: uname || '',
+            server_name: srv || '',
+            created_at: r.created_at,
+          });
+        } else if (r.kind === 'user_deleted') {
+          users.push({
+            id: r.id,
+            user_id: r.actor_user_id || '',
+            full_name: r.actor_name,
+            avatar_url: null,
+            role: r.actor_role || 'free',
+            email: r.detail || '',
+            created_at: r.created_at,
+          });
+        }
+      }
+      setPanelDeletes(deletes);
+      setAdminPanels(admins);
+      setUserDeletes(users);
     }
     if (!usersRes.error && usersRes.data) {
       const map: Record<string, { plan: string | null; permanent: boolean }> = {};
@@ -278,19 +371,26 @@ const Activity = () => {
 
   const current = useMemo<FeedItem[]>(() => {
     if (tab === "panel") {
-      return panels.map((p) => ({ kind: "panel" as const, ...p }));
+      const merged: FeedItem[] = [
+        ...panels.map((p) => ({ kind: "panel" as const, ...p })),
+        ...panelDeletes.map((p) => ({ kind: "panel_deleted" as const, ...p })),
+        ...adminPanels.map((p) => ({ kind: "admin_panel" as const, ...p })),
+        ...userDeletes.map((u) => ({ kind: "user_deleted" as const, ...u })),
+        ...cleanups.map((c) => ({ kind: "admin_cleanup" as const, ...c })),
+      ];
+      merged.sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      return merged;
     }
     if (tab === "upgrade") {
       return upgrades.map((u) => ({ kind: "upgrade" as const, ...u }));
-    }
-    if (tab === "admin") {
-      return cleanups.map((c) => ({ kind: "admin_cleanup" as const, ...c }));
     }
     if (tab === "ads") {
       return ads.map((a) => ({ kind: "ad" as const, ...a }));
     }
     return signups.map((s) => ({ kind: "signup" as const, ...s }));
-  }, [tab, panels, signups, upgrades, cleanups, ads]);
+  }, [tab, panels, signups, upgrades, cleanups, ads, panelDeletes, adminPanels, userDeletes]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -301,6 +401,9 @@ const Activity = () => {
       if (a.kind === "upgrade") fields.push(a.plan, String(a.amount));
       if (a.kind === "admin_cleanup") fields.push(a.server_name, String(a.count));
       if (a.kind === "ad") fields.push(a.title, a.event);
+      if (a.kind === "panel_deleted") fields.push(a.username, a.server_name, a.panel_type);
+      if (a.kind === "admin_panel") fields.push(a.username, a.server_name);
+      if (a.kind === "user_deleted") fields.push(a.email);
       return fields.filter(Boolean).some((v) => (v as string).toLowerCase().includes(q));
     });
   }, [current, search]);
@@ -325,12 +428,12 @@ const Activity = () => {
                 <h1 className="text-base font-bold text-foreground truncate">Aktivitas Pengguna</h1>
                 <p className="text-xs text-muted-foreground truncate">
                   {tab === "panel"
-                    ? "Log pembuatan panel secara real-time"
+                    ? "Log semua aktivitas panel: dibuat, dihapus, admin panel & cleanup"
                     : tab === "signup"
                     ? "Log pendaftaran user baru secara real-time"
                     : tab === "upgrade"
                     ? "Log upgrade Reseller secara real-time"
-                    : "Log admin membersihkan panel offline"}
+                    : "Log sewa iklan & role expiry"}
                 </p>
               </div>
             </div>
@@ -386,19 +489,6 @@ const Activity = () => {
               <Crown className="w-3.5 h-3.5" />
               Upgrade
               <span className="ml-1 text-[10px] opacity-80">({totalCounts.upgrade || upgrades.length})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setTab("admin")}
-              className={`flex-1 h-9 rounded-full text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-colors whitespace-nowrap ${
-                tab === "admin"
-                  ? "bg-gradient-to-r from-rose-500 to-primary text-white shadow"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              Admin
-              <span className="ml-1 text-[10px] opacity-80">({totalCounts.admin || cleanups.length})</span>
             </button>
             <button
               type="button"
@@ -561,6 +651,70 @@ const Activity = () => {
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
                                 <Server className="w-3 h-3 text-primary" />
                                 {a.server_name}
+                              </span>
+                            </div>
+                          </>
+                        ) : a.kind === "panel_deleted" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Menghapus panel{" "}
+                              <span className="font-semibold text-foreground">{a.username || "-"}</span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold">
+                                <Trash2 className="w-3 h-3" />
+                                Panel Dihapus
+                              </span>
+                              {a.server_name && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                  <Server className="w-3 h-3 text-primary" />
+                                  {a.server_name}
+                                </span>
+                              )}
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border font-semibold ${
+                                  a.panel_type === "python"
+                                    ? "bg-blue-500/10 border-blue-500/30 text-blue-400"
+                                    : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                                }`}
+                              >
+                                <Code2 className="w-3 h-3" />
+                                {a.panel_type === "python" ? "Python" : "NodeJS"}
+                              </span>
+                            </div>
+                          </>
+                        ) : a.kind === "admin_panel" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Membuat{" "}
+                              <span className="font-semibold text-fuchsia-300">Admin Panel</span>
+                              {" "}
+                              <span className="font-semibold text-foreground">{a.username || "-"}</span>
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500/15 to-fuchsia-500/15 border border-fuchsia-500/40 text-fuchsia-300 font-bold">
+                                <ShieldCheck className="w-3 h-3" />
+                                Admin Panel
+                              </span>
+                              {a.server_name && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/60 border border-border/50 text-foreground">
+                                  <Server className="w-3 h-3 text-primary" />
+                                  {a.server_name}
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : a.kind === "user_deleted" ? (
+                          <>
+                            <p className="text-xs text-muted-foreground mb-2">
+                              Akun{" "}
+                              <span className="font-semibold text-foreground">{a.email || a.full_name || "-"}</span>
+                              {" "}dihapus
+                            </p>
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-rose-400 font-bold">
+                                <UserMinus className="w-3 h-3" />
+                                User Dihapus
                               </span>
                             </div>
                           </>
