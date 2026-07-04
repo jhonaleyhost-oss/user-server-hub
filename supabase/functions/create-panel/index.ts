@@ -13,6 +13,7 @@ interface CreatePanelRequest {
   cpu: number; // percentage
   disk: number; // in MB
   panelType?: 'nodejs' | 'python';
+  subUserId?: string;
 }
 
 interface PterodactylServer {
@@ -56,7 +57,7 @@ serve(async (req) => {
     console.log('User authenticated');
 
     // Parse request body
-    const { username, serverId, ram, cpu, disk, panelType }: CreatePanelRequest = await req.json();
+    const { username, serverId, ram, cpu, disk, panelType, subUserId }: CreatePanelRequest = await req.json();
     const type: 'nodejs' | 'python' = panelType === 'python' ? 'python' : 'nodejs';
     
     console.log('Panel creation request received');
@@ -85,7 +86,7 @@ serve(async (req) => {
 
     const userRole = roleData?.role || 'free';
 
-    if (userRole === 'free') {
+    if (userRole === 'free' && !subUserId) {
       // Check panel count limit
       const { count: existingPanels } = await supabase
         .from('user_panels')
@@ -129,6 +130,108 @@ serve(async (req) => {
     }
 
     const pteroServer: PterodactylServer = serverData;
+
+    // ==========================================================
+    // Branch: sub-user mode → create server for an existing user
+    // in the caller's admin panel using the admin panel's PLTA.
+    // ==========================================================
+    if (subUserId) {
+      const { data: subUser, error: suErr } = await supabase
+        .from('admin_panel_subusers')
+        .select('id, ptero_user_id, username, admin_panel_id')
+        .eq('id', subUserId)
+        .single();
+      if (suErr || !subUser) throw new Error('Sub-user tidak ditemukan');
+
+      const { data: adminPanel, error: apErr } = await supabase
+        .from('admin_panels')
+        .select('id, user_id, server_id, plta_key, login_url')
+        .eq('id', (subUser as any).admin_panel_id)
+        .single();
+      if (apErr || !adminPanel) throw new Error('Admin panel tidak ditemukan');
+      if ((adminPanel as any).user_id !== user.id) {
+        throw new Error('Kamu tidak memiliki akses ke sub-user tersebut.');
+      }
+      if ((adminPanel as any).server_id !== serverId) {
+        throw new Error('Server tidak cocok dengan admin panel sub-user.');
+      }
+      const adminPlta = (adminPanel as any).plta_key;
+      if (!adminPlta) throw new Error('Admin panel belum punya PLTA key.');
+
+      const eggId2 = type === 'python' ? pteroServer.python_egg_id : pteroServer.egg_id;
+      const dockerImage2 = type === 'python'
+        ? 'ghcr.io/parkervcp/yolks:python_3.10'
+        : 'ghcr.io/parkervcp/yolks:nodejs_18';
+      const startupCmd2 = type === 'python'
+        ? 'if [[ -d .git ]] && [[ "{{AUTO_UPDATE}}" == "1" ]]; then git pull; fi; if [[ ! -z "{{PY_PACKAGES}}" ]]; then pip install -U --prefix .local {{PY_PACKAGES}}; fi; if [[ -f /home/container/${REQUIREMENTS_FILE} ]]; then pip install -U --prefix .local -r ${REQUIREMENTS_FILE}; fi; /usr/local/bin/python /home/container/{{PY_FILE}}'
+        : 'if [[ -d .git ]] && [[ {{AUTO_UPDATE}} == "1" ]]; then git pull; fi; if [[ ! -z ${NODE_PACKAGES} ]]; then /usr/local/bin/npm install ${NODE_PACKAGES}; fi; if [[ ! -z ${UNNODE_PACKAGES} ]]; then /usr/local/bin/npm uninstall ${UNNODE_PACKAGES}; fi; if [ -f /home/container/package.json ]; then /usr/local/bin/npm install; fi; if [[ ! -z ${CUSTOM_ENVIRONMENT_VARIABLES} ]]; then vars=$(echo ${CUSTOM_ENVIRONMENT_VARIABLES} | tr ";" "\n"); for line in $vars; do export $line; done fi; /usr/local/bin/${CMD_RUN};';
+      const envVars2 = type === 'python'
+        ? { GIT_ADDRESS: '', BRANCH: '', AUTO_UPDATE: '0', PY_FILE: 'app.py', PY_PACKAGES: '', USERNAME: '', ACCESS_TOKEN: '', REQUIREMENTS_FILE: 'requirements.txt', USER_UPLOAD: '0' }
+        : { INST: 'npm', USER_UPLOAD: '0', AUTO_UPDATE: '0', CMD_RUN: 'npm start' };
+
+      const createSubServerRes = await fetch(`${pteroServer.domain}/api/application/servers`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${adminPlta}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          name: username,
+          user: (subUser as any).ptero_user_id,
+          egg: eggId2,
+          docker_image: dockerImage2,
+          startup: startupCmd2,
+          environment: envVars2,
+          limits: {
+            memory: ram === 0 ? 0 : ram,
+            swap: 0,
+            disk: disk === 0 ? 0 : disk,
+            io: 500,
+            cpu: cpu === 0 ? 0 : cpu,
+          },
+          feature_limits: { databases: 0, backups: 1, allocations: 1 },
+          allocation: { default: null },
+          deploy: {
+            locations: [pteroServer.location_id],
+            dedicated_ip: false,
+            port_range: [],
+          },
+        }),
+      });
+      if (!createSubServerRes.ok) {
+        const errText = await createSubServerRes.text();
+        throw new Error(`Gagal buat server sub-user: ${errText}`);
+      }
+      const subServerResult = await createSubServerRes.json();
+      const subPteroServerId = subServerResult.attributes.id;
+
+      const { data: apServerRow, error: apInsErr } = await supabase
+        .from('admin_panel_servers')
+        .insert({
+          admin_panel_id: (adminPanel as any).id,
+          subuser_id: (subUser as any).id,
+          name: username,
+          ptero_server_id: subPteroServerId,
+          ram,
+          cpu,
+          disk,
+          panel_type: type,
+        })
+        .select()
+        .single();
+      if (apInsErr) throw new Error(`Gagal simpan server sub-user: ${apInsErr.message}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          subUser: true,
+          panel: apServerRow,
+          message: `Server berhasil dibuat untuk sub-user ${(subUser as any).username}!`,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
+    }
 
     // Pick egg + docker + startup + env based on panel type
     const eggId = type === 'python' ? pteroServer.python_egg_id : pteroServer.egg_id;
