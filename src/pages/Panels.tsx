@@ -303,15 +303,209 @@ ${serverList}
           className="flex items-center justify-between mb-8"
         >
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Akun & Panel Anda</h1>
+            <h1 className="text-2xl font-bold text-foreground">List Akun Panel</h1>
             <p className="text-sm text-muted-foreground">
-              {groups.length} akun Pterodactyl · {panels.length} server aktif
+              {viewMode === 'panel'
+                ? `${groups.length} akun Pterodactyl · ${panels.length} server aktif`
+                : `${adminPanels.length} Admin Panel aktif`}
             </p>
           </div>
         </motion.div>
 
+        {/* View mode tabs — only for users with Admin Panel access */}
+        {canCreateAdminPanel && (
+          <div className="flex gap-2 mb-6 p-1 rounded-xl bg-secondary/40 border border-border/50">
+            <button
+              onClick={() => setViewMode('panel')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
+                viewMode === 'panel'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Panel ({panels.length})
+            </button>
+            <button
+              onClick={() => setViewMode('admin_panel')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition ${
+                viewMode === 'admin_panel'
+                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Crown className="w-4 h-4" />
+              Admin Panel ({adminPanels.length})
+            </button>
+          </div>
+        )}
+
         {/* Panels List */}
         <div className="space-y-4">
+        {viewMode === 'admin_panel' ? (
+          adminPanels.length === 0 ? (
+            <GlassCard className="text-center py-12 border-dashed border-2 border-border">
+              <Crown className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-foreground">Belum ada Admin Panel</h3>
+              <p className="text-muted-foreground text-sm mb-6">
+                Kamu belum membuat Admin Panel di server manapun.
+              </p>
+              <Link to="/" className="inline-flex items-center gap-2 btn-primary">
+                Buat Admin Panel
+              </Link>
+            </GlassCard>
+          ) : (
+            adminPanels.map((ap) => {
+              const key = `ap-${ap.id}`;
+              const isOpen = expandedGroup === key;
+              const isPwVisible = !!showPassword[key];
+              const serverCount = ap.admin_panel_servers?.length || 0;
+              return (
+                <GlassCard key={ap.id} className="overflow-hidden border-amber-500/30" animate={false}>
+                  <div
+                    className="panel-card-header p-4 cursor-pointer flex items-center justify-between group"
+                    onClick={() => setExpandedGroup(isOpen ? null : key)}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shrink-0 shadow-md">
+                        <Crown className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-foreground text-sm sm:text-base truncate">
+                            {ap.username}
+                          </h3>
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-500 shrink-0">
+                            ADMIN
+                          </span>
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">
+                            {serverCount} SERVER
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {ap.pterodactyl_servers?.name || ap.login_url.replace(/^https?:\/\//, '')}
+                        </p>
+                      </div>
+                    </div>
+                    <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.3 }}>
+                      <ChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    </motion.div>
+                  </div>
+
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="border-t border-border/30"
+                      >
+                        <div className="p-4 space-y-4">
+                          <div className="rounded-xl border border-border/50 bg-background/50 divide-y divide-border/50">
+                            <div className="p-3 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Login URL</p>
+                                <a href={ap.login_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate block max-w-full">
+                                  {ap.login_url}
+                                </a>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <a href={ap.login_url} target="_blank" rel="noopener noreferrer" className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground">
+                                  <ExternalLink className="w-4 h-4" />
+                                </a>
+                                <button onClick={() => copyToClipboard(ap.login_url, 'URL')} className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground">
+                                  <Copy className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="p-3 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[10px] uppercase tracking-wider text-amber-500 font-bold flex items-center gap-1">
+                                  Username Admin
+                                  <span className="text-[9px] font-black px-1 py-0.5 rounded bg-amber-500/15 text-amber-500 normal-case tracking-normal">ROOT ADMIN</span>
+                                </p>
+                                <p className="text-sm font-mono text-foreground truncate">{ap.username}</p>
+                              </div>
+                              <button onClick={() => copyToClipboard(ap.username, 'Username')} className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground shrink-0">
+                                <Copy className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <div className="p-3 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Password</p>
+                                <p className={`text-sm font-mono text-foreground truncate ${isPwVisible ? '' : 'blur-sm select-none'}`}>{ap.password}</p>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button onClick={() => setShowPassword((prev) => ({ ...prev, [key]: !prev[key] }))} className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground">
+                                  {isPwVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                                <button onClick={() => copyToClipboard(ap.password, 'Password')} className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground">
+                                  <Copy className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <div className="p-3 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Dibuat</p>
+                                <p className="text-xs text-foreground flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" /> {formatDate(ap.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Delete Admin Panel */}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Hapus Admin Panel
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="glass-card">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                  <Trash2 className="w-5 h-5 text-destructive" />
+                                  Hapus Admin Panel?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription asChild>
+                                  <div className="space-y-3 text-sm">
+                                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
+                                      ⚠️ <b>PERINGATAN:</b> Tindakan ini akan:
+                                      <ul className="list-disc pl-5 mt-2 space-y-1">
+                                        <li>Menghapus <b>SEMUA server</b> ({serverCount} server) yang ada di Admin Panel <b>{ap.username}</b></li>
+                                        <li>Menghapus user <b>{ap.username}</b> dari Pterodactyl</li>
+                                        <li>Mengembalikan <b>1 slot pembuatan Admin Panel</b> di server ini</li>
+                                      </ul>
+                                    </div>
+                                    <p className="text-muted-foreground">Aksi ini <b>tidak dapat dibatalkan</b>. Yakin ingin lanjut?</p>
+                                  </div>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Batal</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteAdminPanel(ap.id)}
+                                  className="bg-destructive hover:bg-destructive/90"
+                                >
+                                  {deletingAdmin === ap.id ? 'Menghapus...' : 'Ya, Hapus'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </GlassCard>
+              );
+            })
+          )
+        ) : (
           {groups.length === 0 ? (
             <GlassCard className="text-center py-12 border-dashed border-2 border-border">
               <Ghost className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
