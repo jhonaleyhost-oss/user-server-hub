@@ -178,7 +178,7 @@ const Activity = () => {
   }, [authLoading, user, navigate]);
 
   const load = async () => {
-    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes, adsRes] = await Promise.all([
+    const [panelRes, signupRes, upgradeRes, usersRes, cleanupRes, adsRes, extraRes] = await Promise.all([
       (supabase.rpc as any)("get_panel_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_signup_activity", { _limit: 500 }),
       (supabase.rpc as any)("get_upgrade_activity", { _limit: 500 }),
@@ -195,6 +195,12 @@ const Activity = () => {
         .in("kind", ["ad_rental", "ad_expired", "role_expired"])
         .order("created_at", { ascending: false })
         .limit(300),
+      supabase
+        .from("activity_events")
+        .select("id, kind, actor_user_id, actor_name, actor_role, detail, amount, created_at")
+        .in("kind", ["panel_deleted", "admin_panel", "user_deleted"])
+        .order("created_at", { ascending: false })
+        .limit(500),
     ]);
     if (panelRes.error || signupRes.error || upgradeRes.error) {
       toast.error("Gagal memuat aktivitas");
@@ -208,14 +214,13 @@ const Activity = () => {
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "panel"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "signup"),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "upgrade"),
-      supabase.from("activity_events").select("id", { count: "exact", head: true }).eq("kind", "admin_cleanup"),
+      supabase.from("activity_events").select("id", { count: "exact", head: true }).in("kind", ["panel_deleted","admin_panel","user_deleted","admin_cleanup"]),
       supabase.from("activity_events").select("id", { count: "exact", head: true }).in("kind", ["ad_rental","ad_expired","role_expired"]),
-    ]).then(([pc, sc, uc, ac, adc]) => {
+    ]).then(([pc, sc, uc, ex, adc]) => {
       setTotalCounts({
-        panel: pc.count ?? (panelRes.data?.length ?? 0),
+        panel: (pc.count ?? (panelRes.data?.length ?? 0)) + (ex.count ?? 0),
         signup: sc.count ?? (signupRes.data?.length ?? 0),
         upgrade: uc.count ?? (upgradeRes.data?.length ?? 0),
-        admin: ac.count ?? 0,
         ads: adc.count ?? 0,
       });
     }).catch((e) => console.error("Count fetch failed:", e));
@@ -250,6 +255,56 @@ const Activity = () => {
         amount: r.amount,
         created_at: r.created_at,
       })));
+    }
+    if (!extraRes.error && extraRes.data) {
+      const rows = extraRes.data as Array<{
+        id: string; kind: string; actor_user_id: string | null; actor_name: string | null;
+        actor_role: string | null; detail: string | null; amount: number | null; created_at: string;
+      }>;
+      const deletes: PanelDeleteActivity[] = [];
+      const admins: AdminPanelActivity[] = [];
+      const users: UserDeleteActivity[] = [];
+      for (const r of rows) {
+        if (r.kind === 'panel_deleted') {
+          const [uname, ptype, srv] = (r.detail || '').split('|');
+          deletes.push({
+            id: r.id,
+            user_id: r.actor_user_id || '',
+            full_name: r.actor_name,
+            avatar_url: null,
+            role: r.actor_role || 'free',
+            username: uname || '',
+            panel_type: ptype || 'nodejs',
+            server_name: srv || '',
+            created_at: r.created_at,
+          });
+        } else if (r.kind === 'admin_panel') {
+          const [uname, srv] = (r.detail || '').split('|');
+          admins.push({
+            id: r.id,
+            user_id: r.actor_user_id || '',
+            full_name: r.actor_name,
+            avatar_url: null,
+            role: r.actor_role || 'adp_server',
+            username: uname || '',
+            server_name: srv || '',
+            created_at: r.created_at,
+          });
+        } else if (r.kind === 'user_deleted') {
+          users.push({
+            id: r.id,
+            user_id: r.actor_user_id || '',
+            full_name: r.actor_name,
+            avatar_url: null,
+            role: r.actor_role || 'free',
+            email: r.detail || '',
+            created_at: r.created_at,
+          });
+        }
+      }
+      setPanelDeletes(deletes);
+      setAdminPanels(admins);
+      setUserDeletes(users);
     }
     if (!usersRes.error && usersRes.data) {
       const map: Record<string, { plan: string | null; permanent: boolean }> = {};
