@@ -670,12 +670,12 @@ const Upgrade = () => {
               <div
                 className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg ${
                   isAdpTier
-                    ? 'bg-gradient-to-br from-purple-500 via-fuchsia-500 to-purple-700 shadow-purple-500/30'
+                    ? 'bg-gradient-to-br from-purple-600 via-fuchsia-600 to-purple-800 shadow-purple-500/40 ring-2 ring-fuchsia-400/40'
                     : 'bg-gradient-to-br from-amber via-primary to-accent shadow-primary/30'
                 }`}
               >
                 {isAdpTier ? (
-                  <ShieldCheck className="w-8 h-8 text-white" />
+                  <ShieldCheck className="w-8 h-8 text-white drop-shadow" strokeWidth={2.5} />
                 ) : (
                   <Crown className="w-8 h-8 text-white" />
                 )}
@@ -684,7 +684,7 @@ const Upgrade = () => {
                 {isAdpTier ? (
                   <>
                     Upgrade ke{' '}
-                    <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-700 dark:from-purple-300 dark:via-fuchsia-300 dark:to-purple-400 bg-clip-text text-transparent">
                       Admin Panel
                     </span>
                   </>
