@@ -208,6 +208,36 @@ serve(async (req) => {
         throw new Error('User Pterodactyl tidak ditemukan atau bukan milikmu.');
       }
 
+      // Verify the Pterodactyl user actually still exists AND matches our record
+      // (prevents creating server under a wrong/stale user id — e.g. user was
+      // deleted in Pterodactyl but our DB still has the row).
+      const verifyRes = await fetch(
+        `${pteroServer.domain}/api/application/users/${reusePteroUserId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${pteroServer.plta_key}`,
+            'Accept': 'application/json',
+          },
+        },
+      );
+      if (verifyRes.status === 404) {
+        throw new Error('User tidak ditemukan di Pterodactyl. Silakan hapus panel ini lalu buat baru.');
+      }
+      if (!verifyRes.ok) {
+        const t = await verifyRes.text().catch(() => '');
+        throw new Error(`Gagal verifikasi user Pterodactyl: ${t || verifyRes.status}`);
+      }
+      const verifyJson = await verifyRes.json();
+      const pteroEmail: string = verifyJson?.attributes?.email || '';
+      const pteroUsername: string = verifyJson?.attributes?.username || '';
+      if (
+        pteroEmail.toLowerCase() !== reuseEmail.toLowerCase() &&
+        pteroUsername.toLowerCase() !== (reuseEmail.split('@')[0] || '').toLowerCase()
+      ) {
+        throw new Error('User tidak ditemukan atau tidak cocok dengan data akun kamu. Hapus panel ini lalu buat ulang.');
+      }
+
       const createSrvRes = await fetch(`${pteroServer.domain}/api/application/servers`, {
         method: 'POST',
         headers: {
