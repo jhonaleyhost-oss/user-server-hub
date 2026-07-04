@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2, ShieldAlert, Trash2, Megaphone, CalendarX, CrownIcon } from "lucide-react";
+import { Activity as ActivityIcon, Server, Cpu, HardDrive, MemoryStick, RefreshCcw, UserPlus, Crown, Calendar, Wallet, Infinity as InfinityIcon, ChevronLeft, ChevronRight, Code2, ShieldCheck, Trash2, Megaphone, CalendarX, UserMinus } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -62,6 +62,39 @@ interface AdminCleanupActivity {
   created_at: string;
 }
 
+interface PanelDeleteActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: null;
+  role: string;
+  username: string;
+  panel_type: string;
+  server_name: string;
+  created_at: string;
+}
+
+interface AdminPanelActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: null;
+  role: string;
+  username: string;
+  server_name: string;
+  created_at: string;
+}
+
+interface UserDeleteActivity {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  avatar_url: null;
+  role: string;
+  email: string;
+  created_at: string;
+}
+
 interface AdEvent {
   id: string;
   user_id: string;
@@ -79,6 +112,9 @@ type FeedItem =
   | ({ kind: "signup" } & SignupActivity)
   | ({ kind: "upgrade" } & UpgradeActivity)
   | ({ kind: "admin_cleanup" } & AdminCleanupActivity)
+  | ({ kind: "panel_deleted" } & PanelDeleteActivity)
+  | ({ kind: "admin_panel" } & AdminPanelActivity)
+  | ({ kind: "user_deleted" } & UserDeleteActivity)
   | ({ kind: "ad" } & AdEvent);
 
 const formatSpec = (n: number) => (n === 0 ? "Unlimited" : `${n}`);
