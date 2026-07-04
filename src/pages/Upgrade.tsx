@@ -675,9 +675,9 @@ const Upgrade = () => {
                 }`}
               >
                 {isAdpTier ? (
-                  <ShieldCheck className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={2.5} />
+                  <Crown className="w-8 h-8 text-white drop-shadow-lg" strokeWidth={2.5} />
                 ) : (
-                  <Crown className="w-8 h-8 text-white" />
+                  <ShieldCheck className="w-8 h-8 text-white" strokeWidth={2.5} />
                 )}
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
@@ -713,7 +713,7 @@ const Upgrade = () => {
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <Crown className="w-4 h-4" />
+                  <ShieldCheck className="w-4 h-4" />
                   Reseller
                 </button>
                 <button
@@ -721,11 +721,11 @@ const Upgrade = () => {
                   onClick={() => setTier('adp')}
                   className={`relative rounded-xl px-3 py-2.5 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
                     isAdpTier
-                      ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-700 text-white shadow shadow-purple-500/30'
+                      ? 'bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-purple-700 text-white shadow-lg shadow-fuchsia-500/40'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  <ShieldCheck className="w-4 h-4" />
+                  <Crown className="w-4 h-4" />
                   Admin Panel
                   <span className="absolute -top-1.5 -right-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow">
                     NEW
