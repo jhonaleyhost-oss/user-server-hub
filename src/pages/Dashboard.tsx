@@ -100,22 +100,16 @@ const Dashboard = () => {
   const [panelType, setPanelType] = useState<'nodejs' | 'python'>('nodejs');
   const [submitting, setSubmitting] = useState(false);
 
-  // Sub-users the user created via their admin panels
-  interface SubUserOption {
-    id: string;
-    username: string;
-    admin_panel_id: string;
-    server_id: string;
-    admin_panel_username: string;
-  }
-  const [subUsers, setSubUsers] = useState<SubUserOption[]>([]);
-  const [targetSubUser, setTargetSubUser] = useState<string>('self');
-  interface AdminPanelOption {
-    id: string;
+  // Reusable Pterodactyl users the caller already owns (across panels / admin panel / subusers)
+  interface ReusableUser {
+    ptero_user_id: number;
     username: string;
     server_id: string;
+    source: 'panel' | 'admin_panel' | 'subuser';
   }
-  const [adminPanels, setAdminPanels] = useState<AdminPanelOption[]>([]);
+  const [reusableUsers, setReusableUsers] = useState<ReusableUser[]>([]);
+  // "new" = buat user Ptero baru, otherwise value is `${ptero_user_id}`
+  const [reuseTarget, setReuseTarget] = useState<string>('new');
 
   // Create mode: standard panel vs admin panel (root_admin)
   const [createMode, setCreateMode] = useState<'panel' | 'admin_panel'>('panel');
@@ -195,35 +189,64 @@ const Dashboard = () => {
         setResellerStatus(statusData[0] as ResellerStatus);
       }
 
-      // Fetch admin panels + subusers the user created
+      // Build reusable Pterodactyl users list:
+      //  - distinct ptero_user_id per (server_id) from user_panels (regular panels)
+      //  - admin_panels root_admin user
+      //  - admin_panel_subusers
+      const reusable: ReusableUser[] = [];
+      const { data: upAll } = await supabase
+        .from('user_panels')
+        .select('server_id, ptero_user_id, username')
+        .eq('user_id', user.id);
+      const seen = new Set<string>();
+      (upAll || []).forEach((p: any) => {
+        if (!p.ptero_user_id) return;
+        const key = `${p.server_id}:${p.ptero_user_id}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        reusable.push({
+          ptero_user_id: p.ptero_user_id,
+          username: p.username,
+          server_id: p.server_id,
+          source: 'panel',
+        });
+      });
       const { data: apData } = await supabase
         .from('admin_panels')
-        .select('id, server_id, username')
+        .select('id, server_id, username, ptero_user_id')
         .eq('user_id', user.id);
-      const apList: AdminPanelOption[] = (apData || []).map((a: any) => ({
-        id: a.id,
-        username: a.username,
-        server_id: a.server_id,
-      }));
-      setAdminPanels(apList);
-      const apIds = apList.map((a) => a.id);
+      (apData || []).forEach((a: any) => {
+        const key = `${a.server_id}:${a.ptero_user_id}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        reusable.push({
+          ptero_user_id: a.ptero_user_id,
+          username: a.username,
+          server_id: a.server_id,
+          source: 'admin_panel',
+        });
+      });
+      const apIds = (apData || []).map((a: any) => a.id);
       if (apIds.length > 0) {
         const { data: subData } = await supabase
           .from('admin_panel_subusers')
-          .select('id, username, admin_panel_id')
+          .select('admin_panel_id, ptero_user_id, username')
           .in('admin_panel_id', apIds);
-        const opts: SubUserOption[] = (subData || []).map((s: any) => {
+        (subData || []).forEach((s: any) => {
           const ap = (apData as any[]).find((a) => a.id === s.admin_panel_id);
-          return {
-            id: s.id,
+          if (!ap) return;
+          const key = `${ap.server_id}:${s.ptero_user_id}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          reusable.push({
+            ptero_user_id: s.ptero_user_id,
             username: s.username,
-            admin_panel_id: s.admin_panel_id,
-            server_id: ap?.server_id ?? '',
-            admin_panel_username: ap?.username ?? '',
-          };
+            server_id: ap.server_id,
+            source: 'subuser',
+          });
         });
-        setSubUsers(opts);
       }
+      setReusableUsers(reusable);
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -345,7 +368,8 @@ const Dashboard = () => {
             cpu: cpuPercent,
             disk: diskMB,
             panelType: panelType,
-            subUserId: targetSubUser !== 'self' ? targetSubUser : undefined,
+            reusePteroUserId:
+              reuseTarget !== 'new' ? parseInt(reuseTarget, 10) : undefined,
           }),
         }
       );
