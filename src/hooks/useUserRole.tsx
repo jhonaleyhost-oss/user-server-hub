@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export type AppRole = 'free' | 'premium' | 'reseller' | 'admin';
+export type AppRole = 'free' | 'premium' | 'reseller' | 'adp_server' | 'admin';
 
 interface UserRoleData {
   role: AppRole;
@@ -10,6 +10,8 @@ interface UserRoleData {
   isAdmin: boolean;
   isPremium: boolean;
   isReseller: boolean;
+  isAdpServer: boolean;
+  canCreateAdminPanel: boolean;
   refetch: () => Promise<void>;
 }
 
@@ -65,8 +67,10 @@ export const useUserRole = (): UserRoleData => {
     role,
     loading: isLoading,
     isAdmin: role === 'admin',
-    isPremium: role === 'premium' || role === 'reseller' || role === 'admin',
-    isReseller: role === 'reseller' || role === 'admin',
+    isPremium: role === 'premium' || role === 'reseller' || role === 'adp_server' || role === 'admin',
+    isReseller: role === 'reseller' || role === 'adp_server' || role === 'admin',
+    isAdpServer: role === 'adp_server' || role === 'admin',
+    canCreateAdminPanel: role === 'adp_server' || role === 'admin',
     refetch: fetchRole,
   };
 };
