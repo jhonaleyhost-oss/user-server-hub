@@ -77,7 +77,7 @@ interface ResellerStatus {
 
 const Dashboard = () => {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { role, isAdmin, isPremium, loading: roleLoading } = useUserRole();
+  const { role, isAdmin, isPremium, isAdpServer, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -470,8 +470,8 @@ const Dashboard = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Target user selector — always visible when user owns an Admin Panel */}
-            {adminPanels.length > 0 && (
+            {/* Target user selector — always visible when user has Admin Panel role or record */}
+            {(isAdpServer || adminPanels.length > 0) && (
               <div className="space-y-2 rounded-2xl p-4 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/5 to-transparent border border-fuchsia-500/30">
                 <Label className="text-sm font-bold text-foreground flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
@@ -499,7 +499,11 @@ const Dashboard = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {subUsers.length === 0 ? (
+                {adminPanels.length === 0 ? (
+                  <p className="text-[11px] text-amber leading-snug">
+                    ⚠️ Role Admin Panel aktif, tapi kamu belum punya record Admin Panel (PLTA/PLTC). Hubungi admin untuk provisioning panel Pterodactyl kamu.
+                  </p>
+                ) : subUsers.length === 0 ? (
                   <p className="text-[11px] text-muted-foreground leading-snug">
                     Kamu belum punya sub-user. Login ke <b className="text-fuchsia-400">panel Pterodactyl kamu</b> untuk bikin user baru dulu, baru bisa dipilih di sini.
                   </p>
