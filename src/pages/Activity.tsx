@@ -428,12 +428,12 @@ const Activity = () => {
                 <h1 className="text-base font-bold text-foreground truncate">Aktivitas Pengguna</h1>
                 <p className="text-xs text-muted-foreground truncate">
                   {tab === "panel"
-                    ? "Log pembuatan panel secara real-time"
+                    ? "Log semua aktivitas panel: dibuat, dihapus, admin panel & cleanup"
                     : tab === "signup"
                     ? "Log pendaftaran user baru secara real-time"
                     : tab === "upgrade"
                     ? "Log upgrade Reseller secara real-time"
-                    : "Log admin membersihkan panel offline"}
+                    : "Log sewa iklan & role expiry"}
                 </p>
               </div>
             </div>
