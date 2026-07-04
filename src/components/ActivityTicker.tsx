@@ -71,7 +71,7 @@ const ActivityTicker = () => {
     (async () => {
       await loadProfiles();
 
-      const [panelsRes, msgRes, fbRes] = await Promise.all([
+      const [panelsRes, msgRes, fbRes, extraRes] = await Promise.all([
         (supabase.rpc as any)("get_panel_activity", { _limit: 10 }),
         supabase
           .from("messages")
@@ -83,6 +83,12 @@ const ActivityTicker = () => {
           .select("id, user_id, username, rating, message, created_at")
           .order("created_at", { ascending: false })
           .limit(10),
+        supabase
+          .from("activity_events")
+          .select("id, kind, actor_user_id, actor_name, detail, created_at")
+          .in("kind", ["panel_deleted", "admin_panel", "user_deleted"])
+          .order("created_at", { ascending: false })
+          .limit(15),
       ]);
 
       if (cancelled) return;
@@ -147,6 +153,40 @@ const ActivityTicker = () => {
           detail: f.message ? f.message.slice(0, 60) : undefined,
           created_at: f.created_at,
         });
+      }
+
+      for (const r of (extraRes.data ?? []) as Array<{
+        id: string; kind: string; actor_user_id: string;
+        actor_name: string | null; detail: string | null; created_at: string;
+      }>) {
+        const name = r.actor_name?.trim() || "Seseorang";
+        if (r.kind === "panel_deleted") {
+          const [uname] = (r.detail || "").split("|");
+          collected.push({
+            id: `pdel-${r.id}`,
+            kind: "panel_deleted",
+            text: `${name} menghapus panel`,
+            detail: uname || undefined,
+            created_at: r.created_at,
+          });
+        } else if (r.kind === "admin_panel") {
+          const [uname, srv] = (r.detail || "").split("|");
+          collected.push({
+            id: `apnl-${r.id}`,
+            kind: "admin_panel",
+            text: `${name} membuat Admin Panel`,
+            detail: srv ? `${uname} • ${srv}` : uname || undefined,
+            created_at: r.created_at,
+          });
+        } else if (r.kind === "user_deleted") {
+          collected.push({
+            id: `udel-${r.id}`,
+            kind: "user_deleted",
+            text: `Akun ${name} dihapus`,
+            detail: r.detail || undefined,
+            created_at: r.created_at,
+          });
+        }
       }
 
       collected.sort(
