@@ -70,7 +70,6 @@ export function AppSidebar() {
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
     { title: "Promo & Kupon", url: "/promo", icon: Tag },
     { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
-    { title: "Upgrade", url: "/upgrade", icon: Rocket },
     ...(isAdmin
       ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
       : []),
@@ -175,6 +174,48 @@ export function AppSidebar() {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
+          {/* Exclusive Upgrade CTA — always visible, top of nav */}
+          <div className="px-3 pt-3 pb-1">
+            <NavLink
+              to="/upgrade"
+              className={({ isActive }) =>
+                `group relative block overflow-hidden rounded-xl p-[1.5px] transition-transform hover:scale-[1.015] ${
+                  isActive ? "ring-2 ring-amber/60" : ""
+                }`
+              }
+              style={{
+                background:
+                  "linear-gradient(120deg,hsl(var(--amber)),hsl(var(--primary)),hsl(var(--accent)),hsl(var(--amber)))",
+                backgroundSize: "300% 100%",
+                animation: "shimmer 6s linear infinite",
+              }}
+            >
+              <div className="relative rounded-[10px] bg-gradient-to-br from-background via-background to-secondary/40 px-3 py-2.5">
+                <div className="pointer-events-none absolute -top-6 -right-6 w-16 h-16 rounded-full bg-amber/25 blur-2xl" />
+                <div className="pointer-events-none absolute -bottom-6 -left-6 w-16 h-16 rounded-full bg-primary/25 blur-2xl" />
+                <div className="relative flex items-center gap-2.5">
+                  <div className="shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-amber via-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30">
+                    <Rocket className="w-4.5 h-4.5 text-white drop-shadow" strokeWidth={2.5} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[13px] font-black tracking-tight bg-gradient-to-r from-amber via-primary to-accent bg-clip-text text-transparent">
+                        UPGRADE
+                      </span>
+                      <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow">
+                        PRO
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-tight truncate">
+                      Reseller · Admin Panel · Unlimited
+                    </p>
+                  </div>
+                  <Sparkles className="w-3.5 h-3.5 text-amber shrink-0 animate-pulse" />
+                </div>
+              </div>
+            </NavLink>
+          </div>
+
           <SidebarGroup>
             <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
             <SidebarGroupContent>
