@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import {
   Sparkles,
   ExternalLink,
@@ -17,6 +18,9 @@ import {
   CalendarClock,
   RefreshCw,
   Download,
+  Server,
+  KeyRound,
+  Layers,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,7 +48,8 @@ interface PopupData {
   buttons: PopupButton[];
 }
 
-type PlanKey = '1bln' | '2bln' | 'perm';
+type PlanKey = '1bln' | '2bln' | 'perm' | 'adp_1bln' | 'adp_2bln' | 'adp_perm';
+type Tier = 'reseller' | 'adp';
 
 interface Plan {
   key: PlanKey;
@@ -60,6 +65,12 @@ const PLANS: Plan[] = [
   { key: '1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 5000 },
   { key: '2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 10000, badge: 'Hemat' },
   { key: 'perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 15000, badge: 'Spesial', highlight: true },
+];
+
+const ADP_PLANS: Plan[] = [
+  { key: 'adp_1bln', label: '1 Bulan', duration: '30 hari', durationDays: 30, amount: 10000 },
+  { key: 'adp_2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 20000, badge: 'Hemat' },
+  { key: 'adp_perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 35000, badge: 'Terbaik', highlight: true },
 ];
 
 const PAKASIR_SLUG = 'jhonaley-store';
@@ -110,7 +121,10 @@ const renderContent = (text: string) => {
 
 const Upgrade = () => {
   const { user } = useAuth();
-  const { role, refetch } = useUserRole();
+  const { role, isAdpServer, refetch } = useUserRole();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTier: Tier = searchParams.get('tier') === 'adp' ? 'adp' : 'reseller';
+  const [tier, setTier] = useState<Tier>(initialTier);
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -131,16 +145,54 @@ const Upgrade = () => {
     expires_at: string | null;
     days_left: number | null;
   } | null>(null);
+  const [adpStatus, setAdpStatus] = useState<{
+    permanent: boolean;
+    expires_at: string | null;
+  } | null>(null);
 
-  const plan = useMemo(() => PLANS.find((p) => p.key === selected)!, [selected]);
-  const payAmount = appliedPromo?.final_amount ?? plan.amount;
-  const isAlreadyReseller = role === 'reseller' || role === 'admin';
-  const isPermanent = !!status?.permanent || role === 'admin';
+  const isAdpTier = tier === 'adp';
+  const activePlans = isAdpTier ? ADP_PLANS : PLANS;
+  const plan = useMemo(
+    () => activePlans.find((p) => p.key === selected) ?? activePlans[0],
+    [selected, activePlans],
+  );
+  const payAmount = isAdpTier ? plan.amount : (appliedPromo?.final_amount ?? plan.amount);
+  const isReseller = role === 'reseller' || role === 'admin';
+  const isAlreadyReseller = isAdpTier ? isAdpServer : isReseller;
+  const isPermanent = isAdpTier
+    ? (!!adpStatus?.permanent || role === 'admin')
+    : (!!status?.permanent || role === 'admin');
+
+  // Reset selected plan & promo when switching tier
+  useEffect(() => {
+    setSelected(isAdpTier ? 'adp_perm' : 'perm');
+    setAppliedPromo(null);
+    const current = searchParams.get('tier');
+    if (isAdpTier && current !== 'adp') {
+      searchParams.set('tier', 'adp');
+      setSearchParams(searchParams, { replace: true });
+    } else if (!isAdpTier && current) {
+      searchParams.delete('tier');
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tier]);
 
   const loadStatus = async () => {
     if (!user) return;
     const { data } = await supabase.rpc('get_my_reseller_status');
     if (data && data.length > 0) setStatus(data[0] as any);
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('adp_server_expires_at, adp_server_permanent')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (prof) {
+      setAdpStatus({
+        permanent: !!prof.adp_server_permanent,
+        expires_at: (prof.adp_server_expires_at as string | null) ?? null,
+      });
+    }
   };
 
   const loadPendingOrders = async () => {
@@ -195,6 +247,8 @@ const Upgrade = () => {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
         return;
       }
+      const targetTier: Tier = String(o.plan).startsWith('adp_') ? 'adp' : 'reseller';
+      setTier(targetTier);
       setSelected(o.plan);
       setOrderId(o.order_id);
       setQrisPayload(data.qris as string);
@@ -307,10 +361,14 @@ const Upgrade = () => {
           body: { order_id: pollingOid, amount: amt },
         });
         if (data?.completed) {
-          toast.success('Pembayaran berhasil! Role Reseller aktif 🎉');
+          toast.success(
+            isAdpTier
+              ? 'Pembayaran berhasil! Admin Panel Server aktif 🎉'
+              : 'Pembayaran berhasil! Role Reseller aktif 🎉',
+          );
           setPollingOid(null);
           setPaid(true);
-          if (appliedPromo && user) {
+          if (!isAdpTier && appliedPromo && user) {
             await supabase.from('promo_redemptions').insert({
               promo_id: appliedPromo.promo_id,
               user_id: user.id,
@@ -337,7 +395,8 @@ const Upgrade = () => {
   const generateRef = () => {
     const stamp = Date.now().toString(36).toUpperCase();
     const u = user?.id?.slice(0, 6).toUpperCase() ?? 'GUEST';
-    return `UPG-${plan.key.toUpperCase()}-${u}-${stamp}`;
+    const prefix = isAdpTier ? 'ADP' : 'UPG';
+    return `${prefix}-${plan.key.toUpperCase()}-${u}-${stamp}`;
   };
 
   const handleGenerate = async () => {
@@ -414,7 +473,11 @@ const Upgrade = () => {
         return;
       }
       if (data?.completed) {
-        toast.success('Pembayaran terkonfirmasi! Role Reseller aktif 🎉');
+        toast.success(
+          isAdpTier
+            ? 'Pembayaran terkonfirmasi! Admin Panel Server aktif 🎉'
+            : 'Pembayaran terkonfirmasi! Role Reseller aktif 🎉',
+        );
         setPaid(true);
         setPollingOid(null);
         await refetch();
@@ -602,48 +665,144 @@ const Upgrade = () => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-8"
+              className="text-center mb-6"
             >
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-amber via-primary to-accent mb-4 shadow-lg shadow-primary/30">
-                <Crown className="w-8 h-8 text-white" />
+              <div
+                className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 shadow-lg ${
+                  isAdpTier
+                    ? 'bg-gradient-to-br from-purple-500 via-fuchsia-500 to-purple-700 shadow-purple-500/30'
+                    : 'bg-gradient-to-br from-amber via-primary to-accent shadow-primary/30'
+                }`}
+              >
+                {isAdpTier ? (
+                  <ShieldCheck className="w-8 h-8 text-white" />
+                ) : (
+                  <Crown className="w-8 h-8 text-white" />
+                )}
               </div>
               <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-                Upgrade ke <span className="text-amber">Reseller</span>
+                {isAdpTier ? (
+                  <>
+                    Upgrade ke{' '}
+                    <span className="bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500 bg-clip-text text-transparent">
+                      Admin Panel
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Upgrade ke <span className="text-amber">Reseller</span>
+                  </>
+                )}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Bayar via QRIS, role aktif otomatis dalam hitungan detik.
+                {isAdpTier
+                  ? 'Kuasai server-mu — jadi root-admin Pterodactyl, kelola user & panel sendiri.'
+                  : 'Bayar via QRIS, role aktif otomatis dalam hitungan detik.'}
               </p>
             </motion.div>
 
-            {/* Benefits Grid */}
-            <GlassCard className="p-6 mb-6">
-              <h3 className="font-bold text-foreground mb-4 text-center">Yang Kamu Dapatkan</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Unlimited RAM & CPU
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Type Panel NodeJs dan Python
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Check className="w-4 h-4 text-emerald shrink-0" /> Bisa Hapus Panel Sendiri
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip & Aman 100%
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 8 GB / 4 Core
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
-                  <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python & Node.js
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Tidak ada biaya tambahan lain / Anti PTPT
-                </div>
+            {/* Tier Switcher */}
+            {!showQris && (
+              <div className="grid grid-cols-2 gap-2 mb-6 p-1 rounded-2xl bg-secondary/40 border border-border/60">
+                <button
+                  type="button"
+                  onClick={() => setTier('reseller')}
+                  className={`relative rounded-xl px-3 py-2.5 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                    !isAdpTier
+                      ? 'bg-gradient-to-r from-amber to-primary text-background shadow'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Crown className="w-4 h-4" />
+                  Reseller
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTier('adp')}
+                  className={`relative rounded-xl px-3 py-2.5 text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                    isAdpTier
+                      ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-700 text-white shadow shadow-purple-500/30'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  Admin Panel
+                  <span className="absolute -top-1.5 -right-1.5 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow">
+                    NEW
+                  </span>
+                </button>
               </div>
+            )}
+
+            {/* Benefits Grid */}
+            <GlassCard className={`p-6 mb-6 ${isAdpTier ? 'border-purple-500/30' : ''}`}>
+              <h3 className="font-bold text-foreground mb-4 text-center flex items-center justify-center gap-2">
+                <Sparkles className={`w-4 h-4 ${isAdpTier ? 'text-purple-400' : 'text-amber'}`} />
+                {isAdpTier ? 'Yang Kamu Dapatkan (Admin Panel)' : 'Yang Kamu Dapatkan (Reseller)'}
+              </h3>
+              {isAdpTier ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Jadi <b className="text-foreground">root-admin</b> Pterodactyl (root_admin=1)
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Dapat <b className="text-foreground">URL panel, username, password, PLTA & PLTC</b>
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Buat <b className="text-foreground">user baru</b> di panel Pterodactyl kamu
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Server className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Buat <b className="text-foreground">server/panel</b> untuk user bikinan kamu
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Layers className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Setiap sub-user dapat <b className="text-foreground">PLTA & PLTC</b> sendiri
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Crown className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
+                    Badge <b className="text-foreground">ungu eksklusif</b> di samping nama kamu
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
+                    <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Kompatibel dengan role <b className="text-foreground">Reseller</b> — bisa dimiliki bersamaan
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
+                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    Batas: <b className="text-foreground">1 Admin Panel per server</b> (private &amp; publik dihitung terpisah)
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Unlimited RAM &amp; CPU
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Type Panel NodeJs dan Python
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Check className="w-4 h-4 text-emerald shrink-0" /> Bisa Hapus Panel Sendiri
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip &amp; Aman 100%
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 8 GB / 4 Core
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                    <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python &amp; Node.js
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Tidak ada biaya tambahan lain / Anti PTPT
+                  </div>
+                </div>
+              )}
             </GlassCard>
 
             {/* Plan picker */}
@@ -651,12 +810,16 @@ const Upgrade = () => {
               <GlassCard className="p-5 sm:p-6 mb-6" delay={0.1}>
                 <p className="text-xs text-muted-foreground uppercase tracking-wider text-center mb-4">
                   {isAlreadyReseller && !isPermanent
-                    ? 'Perpanjang Masa Aktif Reseller'
+                    ? isAdpTier
+                      ? 'Perpanjang Masa Aktif Admin Panel'
+                      : 'Perpanjang Masa Aktif Reseller'
+                    : isAdpTier
+                    ? 'Pilih Paket Admin Panel'
                     : 'Pilih Paket Reseller'}
                 </p>
 
-                {/* Status Reseller */}
-                {isAlreadyReseller && (
+                {/* Status */}
+                {isAlreadyReseller && !isAdpTier && (
                   <div className="mb-4 rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-primary/5 to-transparent p-4">
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 shrink-0">
@@ -713,15 +876,50 @@ const Upgrade = () => {
                   </div>
                 )}
 
-                <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
-                  <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan{' '}
-                  <span className="font-semibold">VPS DIGITALOCEAN</span>. Jika ingin yang{' '}
-                  <span className="font-semibold">anti mokad</span>, silahkan scroll ke bawah dan pilih paket tersebut.
-                </div>
+                {isAdpTier && isAlreadyReseller && (
+                  <div className="mb-4 rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 via-fuchsia-500/5 to-transparent p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-lg bg-purple-500/15 border border-purple-500/30 shrink-0">
+                        {isPermanent ? (
+                          <InfinityIcon className="w-5 h-5 text-purple-400" />
+                        ) : (
+                          <CalendarClock className="w-5 h-5 text-purple-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground">Admin Panel Server Aktif</p>
+                        {isPermanent ? (
+                          <p className="text-xs text-purple-300 mt-0.5">Permanen — selamanya.</p>
+                        ) : adpStatus?.expires_at ? (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            Berakhir{' '}
+                            <span className="text-foreground font-semibold">
+                              {new Date(adpStatus.expires_at).toLocaleString('id-ID', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {!isAdpTier && (
+                  <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
+                    <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan{' '}
+                    <span className="font-semibold">VPS DIGITALOCEAN</span>. Jika ingin yang{' '}
+                    <span className="font-semibold">anti mokad</span>, silahkan scroll ke bawah dan pilih paket tersebut.
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                  {PLANS.map((p) => {
+                  {activePlans.map((p) => {
                     const active = p.key === selected;
                     const disabled = isPermanent;
+                    const isPerm = p.key === 'perm' || p.key === 'adp_perm';
                     return (
                       <button
                         key={p.key}
@@ -732,18 +930,30 @@ const Upgrade = () => {
                           disabled ? 'opacity-50 cursor-not-allowed' : ''
                         } ${
                           active
-                            ? 'border-amber bg-gradient-to-br from-amber/15 via-primary/10 to-accent/10 shadow-lg shadow-amber/10 scale-[1.02]'
+                            ? isAdpTier
+                              ? 'border-purple-500 bg-gradient-to-br from-purple-500/15 via-fuchsia-500/10 to-purple-500/10 shadow-lg shadow-purple-500/20 scale-[1.02]'
+                              : 'border-amber bg-gradient-to-br from-amber/15 via-primary/10 to-accent/10 shadow-lg shadow-amber/10 scale-[1.02]'
+                            : isAdpTier
+                            ? 'border-border/60 bg-secondary/30 hover:border-purple-500/40'
                             : 'border-border/60 bg-secondary/30 hover:border-primary/40'
                         }`}
                       >
                         {p.badge && (
-                          <span className="absolute -top-2 right-3 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-amber to-primary text-background">
+                          <span
+                            className={`absolute -top-2 right-3 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                              isAdpTier
+                                ? 'bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white'
+                                : 'bg-gradient-to-r from-amber to-primary text-background'
+                            }`}
+                          >
                             {p.badge}
                           </span>
                         )}
                         <div className="flex items-center gap-1.5 mb-1">
-                          {p.key === 'perm' ? (
-                            <InfinityIcon className="w-4 h-4 text-amber" />
+                          {isPerm ? (
+                            <InfinityIcon className={`w-4 h-4 ${isAdpTier ? 'text-purple-400' : 'text-amber'}`} />
+                          ) : isAdpTier ? (
+                            <ShieldCheck className="w-4 h-4 text-purple-400" />
                           ) : (
                             <Crown className="w-4 h-4 text-primary" />
                           )}
@@ -752,23 +962,34 @@ const Upgrade = () => {
                         <p className="text-[10px] text-muted-foreground mb-2">{p.duration}</p>
                         <p
                           className={`text-lg font-extrabold ${
-                            active ? 'text-amber' : 'text-foreground'
+                            active ? (isAdpTier ? 'text-fuchsia-300' : 'text-amber') : 'text-foreground'
                           }`}
                         >
                           Rp {p.amount.toLocaleString('id-ID')}
                         </p>
                         <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-1.5">
-                          <VerifiedBadge role="reseller" plan={p.key} size={14} />
-                          <span className="text-[10px] text-muted-foreground leading-tight">
-                            Unlock Badge Eksklusif{' '}
-                            <span className="font-semibold text-foreground">
-                              {p.key === '1bln'
-                                ? 'Centang Biru'
-                                : p.key === '2bln'
-                                ? 'Centang Hijau'
-                                : 'Centang Merah'}
-                            </span>
-                          </span>
+                          {isAdpTier ? (
+                            <>
+                              <VerifiedBadge role="adp_server" size={14} />
+                              <span className="text-[10px] text-muted-foreground leading-tight">
+                                Unlock Badge <span className="font-semibold text-foreground">Ungu Eksklusif</span>
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <VerifiedBadge role="reseller" plan={p.key} size={14} />
+                              <span className="text-[10px] text-muted-foreground leading-tight">
+                                Unlock Badge Eksklusif{' '}
+                                <span className="font-semibold text-foreground">
+                                  {p.key === '1bln'
+                                    ? 'Centang Biru'
+                                    : p.key === '2bln'
+                                    ? 'Centang Hijau'
+                                    : 'Centang Merah'}
+                                </span>
+                              </span>
+                            </>
+                          )}
                         </div>
                       </button>
                     );
@@ -778,7 +999,11 @@ const Upgrade = () => {
                 <Button
                   onClick={handleGenerate}
                   disabled={qrisLoading || isPermanent}
-                  className="w-full h-12 bg-gradient-to-r from-amber to-primary hover:opacity-90 text-background font-bold gap-2"
+                  className={`w-full h-12 hover:opacity-90 font-bold gap-2 ${
+                    isAdpTier
+                      ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-purple-700 text-white shadow-lg shadow-purple-500/30'
+                      : 'bg-gradient-to-r from-amber to-primary text-background'
+                  }`}
                 >
                   {qrisLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -795,17 +1020,23 @@ const Upgrade = () => {
                     ? `Perpanjang ${plan.label} • Rp ${payAmount.toLocaleString('id-ID')}`
                     : `Bayar Rp ${payAmount.toLocaleString('id-ID')} via QRIS`}
                 </Button>
-                <div className="mt-3">
-                  <PromoInput scope="reseller" amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
-                </div>
-                {appliedPromo && (
+                {!isAdpTier && (
+                  <div className="mt-3">
+                    <PromoInput scope="reseller" amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
+                  </div>
+                )}
+                {!isAdpTier && appliedPromo && (
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Harga normal:</span>
                     <span className="line-through text-muted-foreground">Rp {plan.amount.toLocaleString('id-ID')}</span>
                   </div>
                 )}
                 <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  {isAlreadyReseller && !isPermanent
+                  {isAdpTier
+                    ? isAlreadyReseller && !isPermanent
+                      ? 'Masa aktif baru ditambahkan ke sisa hari Admin Panel Server kamu.'
+                      : 'Admin Panel Server aktif otomatis setelah pembayaran terkonfirmasi. Kompatibel bersama role Reseller.'
+                    : isAlreadyReseller && !isPermanent
                     ? 'Masa aktif baru ditambahkan ke sisa hari yang ada.'
                     : 'Role Reseller akan aktif otomatis setelah pembayaran terkonfirmasi.'}
                 </p>
@@ -834,8 +1065,14 @@ const Upgrade = () => {
                   </div>
 
                   <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-3 text-center border border-white/10">
-                    <div className="text-base font-extrabold tracking-wide bg-gradient-to-r from-primary via-accent to-amber bg-clip-text text-transparent">
-                      👑 UPGRADE RESELLER 👑
+                    <div
+                      className={`text-base font-extrabold tracking-wide bg-clip-text text-transparent ${
+                        isAdpTier
+                          ? 'bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500'
+                          : 'bg-gradient-to-r from-primary via-accent to-amber'
+                      }`}
+                    >
+                      {isAdpTier ? '🛡️ ADMIN PANEL SERVER 🛡️' : '👑 UPGRADE RESELLER 👑'}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
                       Paket {plan.label} • {plan.duration}
@@ -914,7 +1151,7 @@ const Upgrade = () => {
                   {paid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 pt-1 font-semibold">
                       <CheckCircle2 className="w-4 h-4" />
-                      Pembayaran berhasil! Role Reseller aktif.
+                      Pembayaran berhasil! {isAdpTier ? 'Admin Panel Server aktif.' : 'Role Reseller aktif.'}
                     </div>
                   ) : pollingOid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
