@@ -391,7 +391,8 @@ const Upgrade = () => {
   const generateRef = () => {
     const stamp = Date.now().toString(36).toUpperCase();
     const u = user?.id?.slice(0, 6).toUpperCase() ?? 'GUEST';
-    return `UPG-${plan.key.toUpperCase()}-${u}-${stamp}`;
+    const prefix = isAdpTier ? 'ADP' : 'UPG';
+    return `${prefix}-${plan.key.toUpperCase()}-${u}-${stamp}`;
   };
 
   const handleGenerate = async () => {
