@@ -79,7 +79,14 @@ interface AdminPanel {
   ptero_user_id: number | null;
   created_at: string;
   server_id: string;
-  pterodactyl_servers: { name: string } | null;
+  plta_key: string | null;
+  pltc_key: string | null;
+  pterodactyl_servers: {
+    name: string;
+    nest_id: number | null;
+    egg_id: number | null;
+    python_egg_id: number | null;
+  } | null;
   admin_panel_servers: { id: string }[];
 }
 
@@ -126,7 +133,7 @@ const Panels = () => {
           .order('created_at', { ascending: false }),
         supabase
           .from('admin_panels')
-          .select('*, pterodactyl_servers(name), admin_panel_servers(id)')
+          .select('*, pterodactyl_servers(name, nest_id, egg_id, python_egg_id), admin_panel_servers(id)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
       ]);
