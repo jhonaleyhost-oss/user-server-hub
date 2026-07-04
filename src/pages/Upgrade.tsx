@@ -361,10 +361,14 @@ const Upgrade = () => {
           body: { order_id: pollingOid, amount: amt },
         });
         if (data?.completed) {
-          toast.success('Pembayaran berhasil! Role Reseller aktif 🎉');
+          toast.success(
+            isAdpTier
+              ? 'Pembayaran berhasil! Admin Panel Server aktif 🎉'
+              : 'Pembayaran berhasil! Role Reseller aktif 🎉',
+          );
           setPollingOid(null);
           setPaid(true);
-          if (appliedPromo && user) {
+          if (!isAdpTier && appliedPromo && user) {
             await supabase.from('promo_redemptions').insert({
               promo_id: appliedPromo.promo_id,
               user_id: user.id,
