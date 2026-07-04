@@ -79,7 +79,14 @@ interface AdminPanel {
   ptero_user_id: number | null;
   created_at: string;
   server_id: string;
-  pterodactyl_servers: { name: string } | null;
+  plta_key: string | null;
+  pltc_key: string | null;
+  pterodactyl_servers: {
+    name: string;
+    nest_id: number | null;
+    egg_id: number | null;
+    python_egg_id: number | null;
+  } | null;
   admin_panel_servers: { id: string }[];
 }
 
@@ -126,7 +133,7 @@ const Panels = () => {
           .order('created_at', { ascending: false }),
         supabase
           .from('admin_panels')
-          .select('*, pterodactyl_servers(name), admin_panel_servers(id)')
+          .select('*, pterodactyl_servers(name, nest_id, egg_id, python_egg_id), admin_panel_servers(id)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
       ]);
@@ -453,6 +460,57 @@ ${serverList}
                                 </p>
                               </div>
                             </div>
+                          </div>
+
+                          {/* Pterodactyl API & Egg details */}
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-amber-500 font-bold mb-2 flex items-center gap-1">
+                              <ShieldCheck className="w-3 h-3" /> Detail API Pterodactyl
+                            </p>
+                            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 divide-y divide-amber-500/20">
+                              {[
+                                { label: 'PLTA Key (Application)', value: ap.plta_key || '-', mono: true, secret: true, k: `${key}-plta` },
+                                { label: 'PLTC Key (Client)', value: ap.pltc_key || '-', mono: true, secret: true, k: `${key}-pltc` },
+                                { label: 'Nest ID', value: ap.pterodactyl_servers?.nest_id?.toString() || '-', mono: true },
+                                { label: 'Egg ID (Node.js)', value: ap.pterodactyl_servers?.egg_id?.toString() || '-', mono: true },
+                                { label: 'Egg ID (Python)', value: ap.pterodactyl_servers?.python_egg_id?.toString() || '-', mono: true },
+                                { label: 'Ptero User ID', value: ap.ptero_user_id?.toString() || '-', mono: true },
+                              ].map((row) => {
+                                const revealed = row.secret ? !!showPassword[row.k!] : true;
+                                return (
+                                  <div key={row.label} className="p-3 flex items-center justify-between gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{row.label}</p>
+                                      <p className={`text-xs ${row.mono ? 'font-mono' : ''} text-foreground truncate ${row.secret && !revealed ? 'blur-sm select-none' : ''}`}>
+                                        {row.value}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {row.secret && (
+                                        <button
+                                          onClick={() => setShowPassword((prev) => ({ ...prev, [row.k!]: !prev[row.k!] }))}
+                                          className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground"
+                                        >
+                                          {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                        </button>
+                                      )}
+                                      {row.value !== '-' && (
+                                        <button
+                                          onClick={() => copyToClipboard(row.value, row.label)}
+                                          className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground"
+                                        >
+                                          <Copy className="w-4 h-4" />
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-2 flex items-start gap-1">
+                              <span className="text-amber-500">⚠</span>
+                              <span>Jangan bagikan PLTA/PLTC ke siapapun. Kunci ini punya akses penuh ke server.</span>
+                            </p>
                           </div>
 
                           {/* Delete Admin Panel */}
