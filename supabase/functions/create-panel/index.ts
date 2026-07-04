@@ -14,6 +14,7 @@ interface CreatePanelRequest {
   disk: number; // in MB
   panelType?: 'nodejs' | 'python';
   subUserId?: string;
+  reusePteroUserId?: number;
 }
 
 interface PterodactylServer {
@@ -57,7 +58,7 @@ serve(async (req) => {
     console.log('User authenticated');
 
     // Parse request body
-    const { username, serverId, ram, cpu, disk, panelType, subUserId }: CreatePanelRequest = await req.json();
+    const { username, serverId, ram, cpu, disk, panelType, subUserId, reusePteroUserId }: CreatePanelRequest = await req.json();
     const type: 'nodejs' | 'python' = panelType === 'python' ? 'python' : 'nodejs';
     
     console.log('Panel creation request received');
@@ -86,7 +87,7 @@ serve(async (req) => {
 
     const userRole = roleData?.role || 'free';
 
-    if (userRole === 'free' && !subUserId) {
+    if (userRole === 'free' && !subUserId && !reusePteroUserId) {
       // Check panel count limit
       const { count: existingPanels } = await supabase
         .from('user_panels')
