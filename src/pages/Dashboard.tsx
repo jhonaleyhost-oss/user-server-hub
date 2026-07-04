@@ -631,55 +631,41 @@ const Dashboard = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Target user selector — only in panel-biasa mode */}
-            {createMode === 'panel' && (isAdpServer || adminPanels.length > 0) && (
-              <div className="space-y-2 rounded-2xl p-4 bg-gradient-to-br from-fuchsia-500/10 via-purple-500/5 to-transparent border border-fuchsia-500/30">
-                <Label className="text-sm font-bold text-foreground flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-fuchsia-400" />
-                  Buat Panel Untuk User <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white">ADMIN PANEL</span>
-                </Label>
-                <Select
-                  value={targetSubUser}
-                  onValueChange={(v) => {
-                    setTargetSubUser(v);
-                    if (v !== 'self') {
-                      const su = subUsers.find((s) => s.id === v);
-                      if (su?.server_id) setSelectedServer(su.server_id);
-                    }
-                  }}
-                >
-                  <SelectTrigger className="input-glass">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="self">👤 Diri Sendiri (user Pterodactyl baru)</SelectItem>
-                    {subUsers.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        🎯 {s.username} · via {s.admin_panel_username}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {adminPanels.length === 0 ? (
-                  <p className="text-[11px] text-amber leading-snug">
-                    ⚠️ Role Admin Panel aktif, tapi kamu belum punya record Admin Panel (PLTA/PLTC). Hubungi admin untuk provisioning panel Pterodactyl kamu.
-                  </p>
-                ) : subUsers.length === 0 ? (
+            {/* Pterodactyl user selector — reuse existing login or create new */}
+            {createMode === 'panel' && (() => {
+              const filtered = reusableUsers.filter((u) => u.server_id === selectedServer);
+              if (filtered.length === 0) return null;
+              return (
+                <div className="space-y-2 rounded-2xl p-4 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border border-primary/30">
+                  <Label className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    User Pterodactyl <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-gradient-to-r from-primary to-accent text-background">HEMAT LOGIN</span>
+                  </Label>
+                  <Select value={reuseTarget} onValueChange={setReuseTarget}>
+                    <SelectTrigger className="input-glass">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">✨ Buat User Pterodactyl Baru</SelectItem>
+                      {filtered.map((u) => (
+                        <SelectItem key={`${u.source}-${u.ptero_user_id}`} value={String(u.ptero_user_id)}>
+                          {u.source === 'admin_panel' ? '👑' : u.source === 'subuser' ? '🎯' : '🔁'} {u.username}
+                          {u.source === 'admin_panel' ? ' (Admin)' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <p className="text-[11px] text-muted-foreground leading-snug">
-                    Kamu belum punya sub-user. Login ke <b className="text-fuchsia-400">panel Pterodactyl kamu</b> untuk bikin user baru dulu, baru bisa dipilih di sini.
+                    Pilih user existing biar server barumu masuk ke akun Pterodactyl yang sama — <b className="text-foreground">1 login untuk banyak server</b>.
                   </p>
-                ) : (
-                  <p className="text-[11px] text-muted-foreground leading-snug">
-                    Pilih <b className="text-foreground">Diri Sendiri</b> untuk user Pterodactyl baru, atau pilih sub-user existing (pakai PLTA/PLTC admin panel kamu).
-                  </p>
-                )}
-              </div>
-            )}
+                </div>
+              );
+            })()}
 
             {/* Username */}
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-muted-foreground">
-                {targetSubUser !== 'self' ? 'Nama Server' : 'Nama Server / User'}
+                {reuseTarget !== 'new' ? 'Nama Server' : 'Nama Server / User'}
               </Label>
               <div className="relative">
                 <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
