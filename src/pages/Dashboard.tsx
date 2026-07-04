@@ -248,6 +248,43 @@ const Dashboard = () => {
       return;
     }
 
+    // Admin Panel creation branch
+    if (createMode === 'admin_panel') {
+      setSubmitting(true);
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-admin-panel`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionData?.session?.access_token}`,
+              'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            },
+            body: JSON.stringify({ username, serverId: selectedServer }),
+          }
+        );
+        const data = await response.json();
+        if (!response.ok || !data?.success) {
+          throw new Error(data?.error || 'Gagal membuat admin panel');
+        }
+        toast({ title: 'Admin Panel dibuat!', description: 'Simpan kredensial di bawah — ditampilkan sekali.' });
+        setAdminPanelResult(data.panel);
+        setUsername('');
+        fetchData();
+      } catch (err: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Membuat Admin Panel',
+          description: err?.message || 'Terjadi kesalahan',
+        });
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
     // Validate for free users
     if (role === 'free') {
       if (panelCount >= 1) {
