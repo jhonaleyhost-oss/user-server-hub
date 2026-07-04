@@ -213,7 +213,12 @@ ${serverList}
   // Group panels by Pterodactyl user (login_url + ptero_user_id)
   const groups: PanelGroup[] = [];
   const groupMap = new Map<string, PanelGroup>();
-  panels.forEach((p) => {
+  // Iterate oldest→newest so the FIRST panel (which created the Ptero user)
+  // becomes the group's login username. Reused panels only add servers.
+  const panelsChrono = [...panels].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+  panelsChrono.forEach((p) => {
     const key = `${p.login_url}|${p.ptero_user_id ?? p.id}`;
     let g = groupMap.get(key);
     if (!g) {
