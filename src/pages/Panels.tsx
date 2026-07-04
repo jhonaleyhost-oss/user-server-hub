@@ -11,6 +11,10 @@ import {
   Plus,
   Ghost,
   ExternalLink,
+  User as UserIcon,
+  Server as ServerIcon,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -54,6 +58,16 @@ interface UserPanel {
   };
 }
 
+interface PanelGroup {
+  key: string;
+  username: string;
+  email: string;
+  password: string;
+  login_url: string;
+  ptero_user_id: number | null;
+  panels: UserPanel[];
+}
+
 const Panels = () => {
   const { user, loading: authLoading } = useAuth();
   const { role } = useUserRole();
@@ -63,7 +77,8 @@ const Panels = () => {
   const [panels, setPanels] = useState<UserPanel[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [expandedPanel, setExpandedPanel] = useState<string | null>(null);
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState<Record<string, boolean>>({});
   const [waNumbers, setWaNumbers] = useState<Record<string, string>>({});
   const [processLogs, setProcessLogs] = useState<string[]>([]);
   const [logDialogOpen, setLogDialogOpen] = useState(false);
@@ -108,8 +123,8 @@ const Panels = () => {
     });
   };
 
-  const handleSendWA = (panel: UserPanel) => {
-    const waNumber = waNumbers[panel.id];
+  const handleSendWA = (group: PanelGroup) => {
+    const waNumber = waNumbers[group.key];
     if (!waNumber) {
       toast({
         variant: 'destructive',
@@ -119,11 +134,15 @@ const Panels = () => {
       return;
     }
 
+    const serverList = group.panels.map((p, i) => `${i + 1}. ${p.username}`).join('\n');
     const message = `*ACCESS DETAILS*
 ━━━━━━━━━━━━━━━━
-Username: ${panel.username}
-Password: ${panel.password}
-Login URL: ${panel.login_url}
+Username: ${group.username}
+Password: ${group.password}
+Login URL: ${group.login_url}
+
+Server (${group.panels.length}):
+${serverList}
 ━━━━━━━━━━━━━━━━
 *DILARANG PERJUALBELIKAN!*`;
 
@@ -191,6 +210,28 @@ Login URL: ${panel.login_url}
     );
   }
 
+  // Group panels by Pterodactyl user (login_url + ptero_user_id)
+  const groups: PanelGroup[] = [];
+  const groupMap = new Map<string, PanelGroup>();
+  panels.forEach((p) => {
+    const key = `${p.login_url}|${p.ptero_user_id ?? p.id}`;
+    let g = groupMap.get(key);
+    if (!g) {
+      g = {
+        key,
+        username: p.username,
+        email: p.email,
+        password: p.password,
+        login_url: p.login_url,
+        ptero_user_id: p.ptero_user_id,
+        panels: [],
+      };
+      groupMap.set(key, g);
+      groups.push(g);
+    }
+    g.panels.push(p);
+  });
+
   return (
     <PageTransition>
     <AppShell>
@@ -205,16 +246,16 @@ Login URL: ${panel.login_url}
           className="flex items-center justify-between mb-8"
         >
           <div>
-            <h1 className="text-2xl font-bold text-foreground">List Panel Anda</h1>
+            <h1 className="text-2xl font-bold text-foreground">Akun & Panel Anda</h1>
             <p className="text-sm text-muted-foreground">
-              Kelola semua server bot yang aktif
+              {groups.length} akun Pterodactyl · {panels.length} server aktif
             </p>
           </div>
         </motion.div>
 
         {/* Panels List */}
         <div className="space-y-4">
-          {panels.length === 0 ? (
+          {groups.length === 0 ? (
             <GlassCard className="text-center py-12 border-dashed border-2 border-border">
               <Ghost className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-bold text-foreground">Belum ada panel</h3>
@@ -229,48 +270,45 @@ Login URL: ${panel.login_url}
               </Link>
             </GlassCard>
           ) : (
-            panels.map((panel, index) => (
-              <div key={panel.id}>
-                <GlassCard className="overflow-hidden" animate={false}>
-                  {/* Header */}
+            groups.map((group) => {
+              const isOpen = expandedGroup === group.key;
+              const isPwVisible = !!showPassword[group.key];
+              return (
+                <GlassCard key={group.key} className="overflow-hidden" animate={false}>
+                  {/* User Header */}
                   <div
                     className="panel-card-header p-4 cursor-pointer flex items-center justify-between group"
-                    onClick={() =>
-                      setExpandedPanel(expandedPanel === panel.id ? null : panel.id)
-                    }
+                    onClick={() => setExpandedGroup(isOpen ? null : group.key)}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/20 flex items-center justify-center text-primary">
-                        <Terminal className="w-5 h-5" />
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground shrink-0 shadow-md">
+                        <UserIcon className="w-5 h-5" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-foreground text-sm sm:text-base">
-                          {panel.username}
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {formatDate(panel.created_at)}
-                          </span>
-                          <span className="w-1 h-1 bg-muted-foreground rounded-full" />
-                          <span className="text-emerald flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-emerald rounded-full animate-pulse-slow" />
-                            Active
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-foreground text-sm sm:text-base truncate">
+                            {group.username}
+                          </h3>
+                          <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-primary/15 text-primary shrink-0">
+                            {group.panels.length} SERVER
                           </span>
                         </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {group.login_url.replace(/^https?:\/\//, '')}
+                        </p>
                       </div>
                     </div>
                     <motion.div
-                      animate={{ rotate: expandedPanel === panel.id ? 180 : 0 }}
+                      animate={{ rotate: isOpen ? 180 : 0 }}
                       transition={{ duration: 0.3 }}
                     >
                       <ChevronDown className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                     </motion.div>
                   </div>
 
-                  {/* Content */}
+                  {/* Expanded content */}
                   <AnimatePresence>
-                    {expandedPanel === panel.id && (
+                    {isOpen && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -278,55 +316,69 @@ Login URL: ${panel.login_url}
                         transition={{ duration: 0.3 }}
                         className="border-t border-border/30"
                       >
-                        <div className="p-4 space-y-3">
-                          {/* Info Grid */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {/* Login URL */}
-                            <div className="p-3 bg-background/50 rounded-lg border border-border/50">
-                              <p className="text-xs text-muted-foreground mb-1">Login URL</p>
-                              <div className="flex items-center justify-between">
+                        <div className="p-4 space-y-4">
+                          {/* Credentials */}
+                          <div className="rounded-xl border border-border/50 bg-background/50 divide-y divide-border/50">
+                            <div className="p-3 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Login URL</p>
                                 <a
-                                  href={panel.login_url}
+                                  href={group.login_url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-sm text-primary hover:text-primary/80 truncate max-w-[150px] flex items-center gap-1"
+                                  className="text-sm text-primary hover:underline truncate block max-w-full"
                                 >
-                                  {panel.login_url}
-                                  <ExternalLink className="w-3 h-3" />
+                                  {group.login_url}
+                                </a>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <a
+                                  href={group.login_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
                                 </a>
                                 <button
-                                  onClick={() => copyToClipboard(panel.login_url, 'URL')}
-                                  className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+                                  onClick={() => copyToClipboard(group.login_url, 'URL')}
+                                  className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground"
                                 >
                                   <Copy className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
-
-                            {/* Username */}
-                            <div className="p-3 bg-background/50 rounded-lg border border-border/50">
-                              <p className="text-xs text-muted-foreground mb-1">Username</p>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-foreground font-mono">{panel.username}</span>
-                                <button
-                                  onClick={() => copyToClipboard(panel.username, 'Username')}
-                                  className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </button>
+                            <div className="p-3 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Username</p>
+                                <p className="text-sm font-mono text-foreground truncate">{group.username}</p>
                               </div>
+                              <button
+                                onClick={() => copyToClipboard(group.username, 'Username')}
+                                className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground shrink-0"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
                             </div>
-
-                            {/* Password */}
-                            <div className="p-3 bg-background/50 rounded-lg border border-border/50 col-span-1 sm:col-span-2">
-                              <p className="text-xs text-muted-foreground mb-1">Password</p>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm text-foreground font-mono blur-sm hover:blur-none transition-all cursor-help">
-                                  {panel.password}
-                                </span>
+                            <div className="p-3 flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Password</p>
+                                <p className={`text-sm font-mono text-foreground truncate ${isPwVisible ? '' : 'blur-sm select-none'}`}>
+                                  {group.password}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
                                 <button
-                                  onClick={() => copyToClipboard(panel.password, 'Password')}
-                                  className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground transition-colors"
+                                  onClick={() =>
+                                    setShowPassword((prev) => ({ ...prev, [group.key]: !prev[group.key] }))
+                                  }
+                                  className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground"
+                                >
+                                  {isPwVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                                <button
+                                  onClick={() => copyToClipboard(group.password, 'Password')}
+                                  className="p-1.5 hover:bg-secondary rounded text-muted-foreground hover:text-foreground"
                                 >
                                   <Copy className="w-4 h-4" />
                                 </button>
@@ -334,68 +386,93 @@ Login URL: ${panel.login_url}
                             </div>
                           </div>
 
-                          {/* Actions */}
-                          <div className="pt-3 mt-2 border-t border-border/50 flex flex-col sm:flex-row gap-3">
-                            <div className="flex-1 relative">
-                              <Input
-                                type="tel"
-                                placeholder="No. WhatsApp (628xx)"
-                                value={waNumbers[panel.id] || ''}
-                                onChange={(e) =>
-                                  setWaNumbers((prev) => ({
-                                    ...prev,
-                                    [panel.id]: e.target.value,
-                                  }))
-                                }
-                                className="input-glass pr-10"
-                              />
+                          {/* Server list */}
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2 px-1">
+                              Server ({group.panels.length})
+                            </p>
+                            <div className="space-y-2">
+                              {group.panels.map((panel) => (
+                                <div
+                                  key={panel.id}
+                                  className="flex items-center gap-3 p-3 rounded-lg bg-background/50 border border-border/50"
+                                >
+                                  <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                                    <ServerIcon className="w-4 h-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-foreground truncate">{panel.username}</p>
+                                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                        <Calendar className="w-3 h-3" />
+                                        {formatDate(panel.created_at)}
+                                      </span>
+                                      <span className="w-1 h-1 bg-muted-foreground rounded-full" />
+                                      <span className="text-emerald flex items-center gap-1">
+                                        <span className="w-1.5 h-1.5 bg-emerald rounded-full animate-pulse-slow" />
+                                        Active
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {role !== 'free' && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button className="p-2 rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/30 shrink-0">
+                                          <Trash2 className="w-4 h-4" />
+                                        </button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent className="glass-card">
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Hapus Server?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Yakin ingin menghapus server "{panel.username}" secara permanen?
+                                            User Pterodactyl <b>{group.username}</b> tetap ada selama masih punya server lain.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => handleDelete(panel.id)}
+                                            className="bg-destructive hover:bg-destructive/90"
+                                          >
+                                            {deleting === panel.id ? 'Menghapus...' : 'Hapus'}
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
+                              ))}
                             </div>
+                          </div>
+
+                          {/* Send via WA */}
+                          <div className="pt-3 border-t border-border/50 flex flex-col sm:flex-row gap-2">
+                            <Input
+                              type="tel"
+                              placeholder="No. WhatsApp (628xx)"
+                              value={waNumbers[group.key] || ''}
+                              onChange={(e) =>
+                                setWaNumbers((prev) => ({ ...prev, [group.key]: e.target.value }))
+                              }
+                              className="input-glass flex-1"
+                            />
                             <Button
                               variant="outline"
-                              onClick={() => handleSendWA(panel)}
-                              className="flex-1 bg-emerald/10 hover:bg-emerald/20 text-emerald border-emerald/30"
+                              onClick={() => handleSendWA(group)}
+                              className="bg-emerald/10 hover:bg-emerald/20 text-emerald border-emerald/30 sm:w-auto"
                             >
                               <Send className="w-4 h-4 mr-2" />
-                              Kirim
+                              Kirim Akses
                             </Button>
-                            {role !== 'free' && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="outline"
-                                    className="bg-destructive/10 hover:bg-destructive/20 text-destructive border-destructive/30"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="glass-card">
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Hapus Panel?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Yakin ingin menghapus panel "{panel.username}" secara permanen?
-                                      Aksi ini tidak dapat dibatalkan.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDelete(panel.id)}
-                                      className="bg-destructive hover:bg-destructive/90"
-                                    >
-                                      {deleting === panel.id ? 'Menghapus...' : 'Hapus'}
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            )}
                           </div>
                         </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </GlassCard>
-                </div>
-            ))
+              );
+            })
           )}
         </div>
 
