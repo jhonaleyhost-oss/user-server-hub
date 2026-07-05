@@ -1,0 +1,2 @@
+ALTER TABLE public.reseller_orders DROP CONSTRAINT reseller_orders_plan_check;
+ALTER TABLE public.reseller_orders ADD CONSTRAINT reseller_orders_plan_check CHECK (plan = ANY (ARRAY['1bln'::text, '2bln'::text, 'perm'::text, 'adp'::text]));
