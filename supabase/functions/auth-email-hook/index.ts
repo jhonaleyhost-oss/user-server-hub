@@ -219,6 +219,32 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   // Build template props from payload.data (HookData structure)
+  // Try to fetch panel username so recovery emails can show account username instead of email prefix
+  let panelUsername: string | undefined
+  try {
+    const sb = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    )
+    const { data: prof } = await sb
+      .from('profiles')
+      .select('user_id')
+      .eq('email', payload.data.email)
+      .maybeSingle()
+    if (prof?.user_id) {
+      const { data: panel } = await sb
+        .from('user_panels')
+        .select('username')
+        .eq('user_id', prof.user_id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (panel?.username) panelUsername = panel.username
+    }
+  } catch (e) {
+    console.error('Failed to lookup panel username', e)
+  }
+
   const templateProps = {
     siteName: SITE_NAME,
     siteUrl: `https://${ROOT_DOMAIN}`,
@@ -228,6 +254,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     email: payload.data.email,
     oldEmail: payload.data.old_email,
     newEmail: payload.data.new_email,
+    username: panelUsername,
   }
 
   // Render React Email to HTML and plain text
