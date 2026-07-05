@@ -18,6 +18,7 @@ import Support from '@/pages/Support';
 import AdsRental from '@/pages/AdsRental';
 import Promos from '@/pages/Promos';
 import Notifications from '@/pages/Notifications';
+import Unsubscribe from '@/pages/Unsubscribe';
 
 export const AnimatedRoutes = () => {
   const location = useLocation();
@@ -48,6 +49,7 @@ export const AnimatedRoutes = () => {
         <Route path="/sewa-iklan" element={<AdsRental />} />
         <Route path="/promo" element={<Promos />} />
         <Route path="/notifikasi" element={<Notifications />} />
+        <Route path="/unsubscribe" element={<Unsubscribe />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
