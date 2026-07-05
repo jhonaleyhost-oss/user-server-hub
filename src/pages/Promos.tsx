@@ -17,7 +17,7 @@ interface Promo {
   discount_value: number;
   min_amount: number;
   max_discount: number | null;
-  scope: "reseller" | "ads" | "both";
+  scope: "reseller" | "ads" | "adp" | "both";
   quota: number | null;
   used_count: number;
   expires_at: string | null;
