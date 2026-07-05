@@ -219,8 +219,8 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   // Build template props from payload.data (HookData structure)
-  // Try to fetch panel username so recovery emails can show account username instead of email prefix
-  let panelUsername: string | undefined
+  // Fetch profile full_name so recovery emails show account username instead of email prefix
+  let profileName: string | undefined
   try {
     const sb = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -228,21 +228,12 @@ async function handleWebhook(req: Request): Promise<Response> {
     )
     const { data: prof } = await sb
       .from('profiles')
-      .select('user_id')
+      .select('full_name')
       .eq('email', payload.data.email)
       .maybeSingle()
-    if (prof?.user_id) {
-      const { data: panel } = await sb
-        .from('user_panels')
-        .select('username')
-        .eq('user_id', prof.user_id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      if (panel?.username) panelUsername = panel.username
-    }
+    if (prof?.full_name) profileName = prof.full_name
   } catch (e) {
-    console.error('Failed to lookup panel username', e)
+    console.error('Failed to lookup profile name', e)
   }
 
   const templateProps = {
@@ -254,7 +245,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     email: payload.data.email,
     oldEmail: payload.data.old_email,
     newEmail: payload.data.new_email,
-    username: panelUsername,
+    username: profileName,
   }
 
   // Render React Email to HTML and plain text
