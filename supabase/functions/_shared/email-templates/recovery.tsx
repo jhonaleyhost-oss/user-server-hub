@@ -9,10 +9,11 @@ interface RecoveryEmailProps {
   confirmationUrl: string
   recipient?: string
   email?: string
+  username?: string
 }
 
-export const RecoveryEmail = ({ siteName, confirmationUrl, recipient, email }: RecoveryEmailProps) => {
-  const username = (recipient || email || '').split('@')[0] || 'akun Anda'
+export const RecoveryEmail = ({ siteName, confirmationUrl, recipient, email, username }: RecoveryEmailProps) => {
+  const displayName = username || 'akun Anda'
   return (
     <Html lang="id" dir="ltr">
       <Head />
@@ -27,7 +28,7 @@ export const RecoveryEmail = ({ siteName, confirmationUrl, recipient, email }: R
             <Heading style={h1}>Atur ulang kata sandi Anda</Heading>
             <Text style={text}>
               Kami menerima permintaan untuk mengatur ulang kata sandi Anda untuk{' '}
-              <strong style={{ color: brand.primary }}>{username}</strong>. Klik tombol di bawah
+              <strong style={{ color: brand.primary }}>{displayName}</strong>. Klik tombol di bawah
               ini untuk memilih kata sandi baru.
             </Text>
             <Button style={buttonPrimary} href={confirmationUrl}>
