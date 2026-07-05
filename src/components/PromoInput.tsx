@@ -14,7 +14,7 @@ export interface AppliedPromo {
 }
 
 interface Props {
-  scope: "reseller" | "ads";
+  scope: "reseller" | "ads" | "adp";
   amount: number;
   applied: AppliedPromo | null;
   onApply: (p: AppliedPromo | null) => void;
