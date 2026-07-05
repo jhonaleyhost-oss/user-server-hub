@@ -28,6 +28,7 @@ const fmt = (n: number) => "Rp " + n.toLocaleString("id-ID");
 const scopeMeta: Record<string, { label: string; icon: any; color: string }> = {
   reseller: { label: "Reseller", icon: Crown, color: "text-amber border-amber/30 bg-amber/10" },
   ads: { label: "Iklan", icon: Megaphone, color: "text-primary border-primary/30 bg-primary/10" },
+  adp: { label: "Admin Panel", icon: Sparkles, color: "text-fuchsia-400 border-fuchsia-400/30 bg-fuchsia-400/10" },
   both: { label: "Reseller & Iklan", icon: Sparkles, color: "text-accent border-accent/30 bg-accent/10" },
 };
 
