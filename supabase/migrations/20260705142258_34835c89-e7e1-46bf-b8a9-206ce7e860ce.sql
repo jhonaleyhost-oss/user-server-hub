@@ -1,0 +1,1 @@
+ALTER TYPE public.promo_scope ADD VALUE IF NOT EXISTS 'adp';

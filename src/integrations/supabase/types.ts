@@ -1452,7 +1452,7 @@ export type Database = {
       app_role: "free" | "premium" | "reseller" | "admin" | "adp_server"
       notification_audience: "all" | "free" | "reseller" | "premium" | "admin"
       promo_discount_type: "percent" | "amount"
-      promo_scope: "reseller" | "ads" | "both"
+      promo_scope: "reseller" | "ads" | "both" | "adp"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1583,7 +1583,7 @@ export const Constants = {
       app_role: ["free", "premium", "reseller", "admin", "adp_server"],
       notification_audience: ["all", "free", "reseller", "premium", "admin"],
       promo_discount_type: ["percent", "amount"],
-      promo_scope: ["reseller", "ads", "both"],
+      promo_scope: ["reseller", "ads", "both", "adp"],
     },
   },
 } as const
