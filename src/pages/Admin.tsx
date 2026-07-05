@@ -579,6 +579,24 @@ const Admin = () => {
           .update(patch)
           .eq('user_id', userId);
         if (pErr) throw pErr;
+      } else {
+        // Clear tier-specific expiry columns when role no longer grants them
+        const patch: Record<string, unknown> = {};
+        if (newRole !== 'reseller') {
+          patch.reseller_permanent = false;
+          patch.reseller_expires_at = null;
+        }
+        if (newRole !== 'adp_server') {
+          patch.adp_server_permanent = false;
+          patch.adp_server_expires_at = null;
+        }
+        if (Object.keys(patch).length > 0) {
+          const { error: pErr } = await supabase
+            .from('profiles')
+            .update(patch)
+            .eq('user_id', userId);
+          if (pErr) throw pErr;
+        }
       }
 
       toast({
