@@ -9,6 +9,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Text,
@@ -37,27 +38,33 @@ export const EmailChangeEmail = ({
     <Preview>Confirm your email change for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email change</Heading>
+        <Img
+          src="https://jhonaleycpanel.lovable.app/__l5e/assets-v1/f108ee57-10f0-48a6-bd81-8de8ae7e5b19/jhonaley-logo.png"
+          width="72"
+          height="72"
+          alt="Jhonaley Store ID"
+          style={logo}
+        />
+        <Heading style={h1}>Konfirmasi perubahan email</Heading>
         <Text style={text}>
-          You requested to change your email address for {siteName} from{' '}
+          Kamu meminta perubahan alamat email {siteName} dari{' '}
           <Link href={`mailto:${oldEmail}`} style={link}>
             {oldEmail}
           </Link>{' '}
-          to{' '}
+          menjadi{' '}
           <Link href={`mailto:${newEmail}`} style={link}>
             {newEmail}
           </Link>
           .
         </Text>
         <Text style={text}>
-          Click the button below to confirm this change:
+          Klik tombol di bawah untuk mengonfirmasi perubahan ini:
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
+          Konfirmasi Perubahan Email
         </Button>
         <Text style={footer}>
-          If you didn't request this change, please secure your account
-          immediately.
+          Jika kamu tidak meminta perubahan ini, segera amankan akun kamu.
         </Text>
       </Container>
     </Body>
@@ -68,6 +75,7 @@ export default EmailChangeEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
 const container = { padding: '20px 25px' }
+const logo = { margin: '0 0 20px', borderRadius: '12px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,

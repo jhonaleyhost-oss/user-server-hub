@@ -9,6 +9,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Text,
@@ -32,26 +33,33 @@ export const SignupEmail = ({
     <Preview>Confirm your email for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
+        <Img
+          src="https://jhonaleycpanel.lovable.app/__l5e/assets-v1/f108ee57-10f0-48a6-bd81-8de8ae7e5b19/jhonaley-logo.png"
+          width="72"
+          height="72"
+          alt="Jhonaley Store ID"
+          style={logo}
+        />
+        <Heading style={h1}>Konfirmasi email kamu</Heading>
         <Text style={text}>
-          Thanks for signing up for{' '}
+          Terima kasih sudah mendaftar di{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
           !
         </Text>
         <Text style={text}>
-          Please confirm your email address (
+          Silakan konfirmasi alamat email kamu (
           <Link href={`mailto:${recipient}`} style={link}>
             {recipient}
           </Link>
-          ) by clicking the button below:
+          ) dengan klik tombol di bawah ini:
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Verify Email
+          Verifikasi Email
         </Button>
         <Text style={footer}>
-          If you didn't create an account, you can safely ignore this email.
+          Jika kamu tidak mendaftar akun, kamu bisa mengabaikan email ini.
         </Text>
       </Container>
     </Body>
@@ -62,6 +70,7 @@ export default SignupEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
 const container = { padding: '20px 25px' }
+const logo = { margin: '0 0 20px', borderRadius: '12px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,

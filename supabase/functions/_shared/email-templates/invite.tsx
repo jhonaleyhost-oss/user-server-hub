@@ -9,6 +9,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Link,
   Preview,
   Text,
@@ -30,21 +31,27 @@ export const InviteEmail = ({
     <Preview>You've been invited to join {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
+        <Img
+          src="https://jhonaleycpanel.lovable.app/__l5e/assets-v1/f108ee57-10f0-48a6-bd81-8de8ae7e5b19/jhonaley-logo.png"
+          width="72"
+          height="72"
+          alt="Jhonaley Store ID"
+          style={logo}
+        />
+        <Heading style={h1}>Kamu diundang</Heading>
         <Text style={text}>
-          You've been invited to join{' '}
+          Kamu diundang untuk bergabung di{' '}
           <Link href={siteUrl} style={link}>
             <strong>{siteName}</strong>
           </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          . Klik tombol di bawah untuk menerima undangan dan membuat akun kamu.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Accept Invitation
+          Terima Undangan
         </Button>
         <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+          Jika kamu tidak mengharapkan undangan ini, kamu bisa mengabaikan
+          email ini.
         </Text>
       </Container>
     </Body>
@@ -55,6 +62,7 @@ export default InviteEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
 const container = { padding: '20px 25px' }
+const logo = { margin: '0 0 20px', borderRadius: '12px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
