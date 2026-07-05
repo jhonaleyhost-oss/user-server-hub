@@ -104,6 +104,8 @@ interface UserWithRole {
   role: AppRole;
   reseller_expires_at?: string | null;
   reseller_permanent?: boolean;
+  adp_server_expires_at?: string | null;
+  adp_server_permanent?: boolean;
 }
 
 interface PterodactylServer {
@@ -564,24 +566,29 @@ const Admin = () => {
         .insert({ user_id: userId, role: newRole });
       if (insErr) throw insErr;
 
-      // Apply duration to profile columns for reseller / adp_server
+      const patch: Record<string, unknown> = {};
+
+      // Apply duration to profile columns for reseller / adp_server,
+      // and always clear the opposite tier so old permanent badges/status don't stick after switching roles.
       if (duration && (newRole === 'reseller' || newRole === 'adp_server')) {
         const permanent = duration === 'perm';
         const expiresAt = permanent
           ? null
           : new Date(Date.now() + parseInt(duration) * 86400000).toISOString();
-        const patch: Record<string, unknown> =
-          newRole === 'adp_server'
-            ? { adp_server_permanent: permanent, adp_server_expires_at: expiresAt }
-            : { reseller_permanent: permanent, reseller_expires_at: expiresAt };
-        const { error: pErr } = await supabase
-          .from('profiles')
-          .update(patch)
-          .eq('user_id', userId);
-        if (pErr) throw pErr;
+
+        if (newRole === 'adp_server') {
+          patch.adp_server_permanent = permanent;
+          patch.adp_server_expires_at = expiresAt;
+          patch.reseller_permanent = false;
+          patch.reseller_expires_at = null;
+        } else {
+          patch.reseller_permanent = permanent;
+          patch.reseller_expires_at = expiresAt;
+          patch.adp_server_permanent = false;
+          patch.adp_server_expires_at = null;
+        }
       } else {
         // Clear tier-specific expiry columns when role no longer grants them
-        const patch: Record<string, unknown> = {};
         if (newRole !== 'reseller') {
           patch.reseller_permanent = false;
           patch.reseller_expires_at = null;
@@ -590,13 +597,14 @@ const Admin = () => {
           patch.adp_server_permanent = false;
           patch.adp_server_expires_at = null;
         }
-        if (Object.keys(patch).length > 0) {
-          const { error: pErr } = await supabase
-            .from('profiles')
-            .update(patch)
-            .eq('user_id', userId);
-          if (pErr) throw pErr;
-        }
+      }
+
+      if (Object.keys(patch).length > 0) {
+        const { error: pErr } = await supabase
+          .from('profiles')
+          .update(patch)
+          .eq('user_id', userId);
+        if (pErr) throw pErr;
       }
 
       toast({
