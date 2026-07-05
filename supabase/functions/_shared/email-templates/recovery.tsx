@@ -33,9 +33,9 @@ export const RecoveryEmail = ({
     <Body style={main}>
       <Container style={container}>
         <Img
-          src="https://jhonaleycpanel.lovable.app/email-logo.png"
-          width="64"
-          height="64"
+          src="https://jhonaleycpanel.lovable.app/__l5e/assets-v1/f108ee57-10f0-48a6-bd81-8de8ae7e5b19/jhonaley-logo.png"
+          width="72"
+          height="72"
           alt="Jhonaley Store ID"
           style={logo}
         />
