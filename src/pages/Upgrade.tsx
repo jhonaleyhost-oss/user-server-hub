@@ -156,7 +156,7 @@ const Upgrade = () => {
     () => activePlans.find((p) => p.key === selected) ?? activePlans[0],
     [selected, activePlans],
   );
-  const payAmount = isAdpTier ? plan.amount : (appliedPromo?.final_amount ?? plan.amount);
+  const payAmount = appliedPromo?.final_amount ?? plan.amount;
   const isReseller = role === 'reseller' || role === 'admin';
   const isAlreadyReseller = isAdpTier ? isAdpServer : isReseller;
   const isPermanent = isAdpTier
@@ -368,12 +368,12 @@ const Upgrade = () => {
           );
           setPollingOid(null);
           setPaid(true);
-          if (!isAdpTier && appliedPromo && user) {
+          if (appliedPromo && user) {
             await supabase.from('promo_redemptions').insert({
               promo_id: appliedPromo.promo_id,
               user_id: user.id,
               order_ref: pollingOid,
-              scope: 'reseller',
+              scope: isAdpTier ? 'adp' : 'reseller',
               discount_applied: appliedPromo.discount,
             });
             setAppliedPromo(null);
@@ -1020,12 +1020,10 @@ const Upgrade = () => {
                     ? `Perpanjang ${plan.label} • Rp ${payAmount.toLocaleString('id-ID')}`
                     : `Bayar Rp ${payAmount.toLocaleString('id-ID')} via QRIS`}
                 </Button>
-                {!isAdpTier && (
-                  <div className="mt-3">
-                    <PromoInput scope="reseller" amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
-                  </div>
-                )}
-                {!isAdpTier && appliedPromo && (
+                <div className="mt-3">
+                  <PromoInput scope={isAdpTier ? 'adp' : 'reseller'} amount={plan.amount} applied={appliedPromo} onApply={setAppliedPromo} />
+                </div>
+                {appliedPromo && (
                   <div className="mt-2 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Harga normal:</span>
                     <span className="line-through text-muted-foreground">Rp {plan.amount.toLocaleString('id-ID')}</span>
