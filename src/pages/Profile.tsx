@@ -202,7 +202,10 @@ export default function Profile() {
       toast.error("Password salah");
       return;
     }
-    const { error } = await supabase.auth.updateUser({ email: email.trim() });
+    const { error } = await supabase.auth.updateUser(
+      { email: email.trim() },
+      { emailRedirectTo: `${window.location.origin}/profile` }
+    );
     setSavingEmail(false);
     if (error) {
       toast.error("Gagal: " + error.message);
