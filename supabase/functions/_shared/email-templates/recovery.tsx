@@ -9,6 +9,7 @@ import {
   Head,
   Heading,
   Html,
+  Img,
   Preview,
   Text,
 } from 'npm:@react-email/components@0.0.22'
@@ -16,28 +17,40 @@ import {
 interface RecoveryEmailProps {
   siteName: string
   confirmationUrl: string
+  recipient?: string
+  email?: string
 }
 
 export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
+  recipient,
+  email,
 }: RecoveryEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>Atur ulang kata sandi Anda untuk {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
+        <Img
+          src="https://jhonaleycpanel.lovable.app/email-logo.png"
+          width="64"
+          height="64"
+          alt="Jhonaley Store ID"
+          style={logo}
+        />
+        <Heading style={h1}>Atur ulang kata sandi Anda</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          Kami menerima permintaan untuk mengatur ulang kata sandi Anda untuk{' '}
+          <strong>{(recipient || email || '').split('@')[0] || 'akun Anda'}</strong>.
+          Klik tombol di bawah ini untuk memilih kata sandi baru.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Reset Password
+          Atur Ulang Kata Sandi
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          Jika Anda tidak meminta pengaturan ulang kata sandi, Anda dapat
+          mengabaikan email ini. Kata sandi Anda tidak akan diubah.
         </Text>
       </Container>
     </Body>
@@ -48,6 +61,7 @@ export default RecoveryEmail
 
 const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
 const container = { padding: '20px 25px' }
+const logo = { margin: '0 0 20px', borderRadius: '12px' }
 const h1 = {
   fontSize: '22px',
   fontWeight: 'bold' as const,
