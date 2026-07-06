@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   });
   const forceLogoutInProgress = useRef(false);
   const kickedOut = useRef(false);
+  const missCount = useRef(0);
 
   useEffect(() => {
     // If a previous recovery flow was started but never completed
