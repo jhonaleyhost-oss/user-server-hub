@@ -912,7 +912,16 @@ const Upgrade = () => {
                   <div className="mb-4 rounded-xl border border-amber/30 bg-amber/10 px-3 py-2.5 text-[11px] leading-relaxed text-foreground/90">
                     <span className="font-bold text-amber">NOTE:</span> Paket ini menggunakan{' '}
                     <span className="font-semibold">VPS DIGITALOCEAN</span>. Jika ingin yang{' '}
-                    <span className="font-semibold">anti mokad</span>, silahkan scroll ke bawah dan pilih paket tersebut.
+                    <span className="font-semibold">anti mokad</span>, silahkan klik{' '}
+                    <a
+                      href="https://t.me/upgradeuser_bot"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-primary underline underline-offset-2 hover:opacity-80"
+                    >
+                      Beli Panel Legal
+                    </a>{' '}
+                    untuk membeli panel yang dijamin anti mokad 100% dan aktif 30 hari full.
                   </div>
                 )}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
