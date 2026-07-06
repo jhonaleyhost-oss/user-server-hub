@@ -127,33 +127,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     let cancelled = false;
 
-    // 1) Claim this device as the active one
+    // 1) Claim this device as the active one.
+    //    We intentionally do NOT re-read the row right after to "verify" —
+    //    that caused false kick-outs on same-device re-logins because the
+    //    SELECT could race the UPDATE and still return the previous device id.
+    //    Realtime below is enough: if another device claims later, we get kicked.
     (async () => {
       try {
         await supabase
           .from('profiles')
           .update({ active_session_id: deviceId })
           .eq('user_id', userId);
-      } catch { /* ignore */ }
-
-      if (cancelled) return;
-
-      // 2) Verify still ours shortly after (in case another device claimed simultaneously)
-      try {
-        const { data } = await supabase
-          .from('profiles')
-          .select('active_session_id')
-          .eq('user_id', userId)
-          .maybeSingle();
-        if (!cancelled && data?.active_session_id && data.active_session_id !== deviceId) {
-          kickedOut.current = true;
-          alert('Akun Anda baru saja login di perangkat lain. Sesi di perangkat ini dihentikan.');
-          forceLogoutInProgress.current = false;
-          await supabase.auth.signOut().catch(() => {});
-          setUser(null);
-          setSession(null);
-          if (typeof window !== 'undefined') window.location.replace('/auth');
-        }
       } catch { /* ignore */ }
     })();
 
