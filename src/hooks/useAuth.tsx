@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   });
   const forceLogoutInProgress = useRef(false);
   const kickedOut = useRef(false);
+  const missCount = useRef(0);
 
   useEffect(() => {
     // If a previous recovery flow was started but never completed
@@ -199,9 +200,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             msg.includes('user from sub claim'));
 
         if (userDeleted) {
-          await forceLogout();
+          // Require TWO consecutive "user_not_found" responses before kicking.
+          // A single transient auth error (proxy blip, cold-start, edge cache)
+          // is not enough — confirm on a second check ~10s later.
+          missCount.current += 1;
+          if (missCount.current >= 2) {
+            await forceLogout();
+          } else {
+            setTimeout(() => { checkUserExists(); }, 10_000);
+          }
           return;
         }
+        missCount.current = 0;
         // NOTE: We intentionally do NOT force-logout when the profiles row
         // is missing. RLS/session timing can transiently return empty
         // results right after login and would incorrectly sign the user out.
@@ -210,10 +220,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Check once on mount and every 5 minutes. No focus listener — it caused
+    // Check once on mount and every 30 minutes. No focus listener — it caused
     // a /user request on every tab switch and triggered false logouts on flaky networks.
+    // Longer interval + double-confirmation avoids spurious sign-outs on mobile networks.
     checkUserExists();
-    const interval = setInterval(checkUserExists, 5 * 60 * 1000);
+    const interval = setInterval(checkUserExists, 30 * 60 * 1000);
 
     return () => {
       clearInterval(interval);
