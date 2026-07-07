@@ -67,10 +67,22 @@ export default function Users() {
   useEffect(() => {
     const load = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .rpc("get_public_users")
-        .range(0, 99999);
-      const merged: UserRow[] = (data ?? []).map((p: any) => ({
+      const BATCH = 1000;
+      let offset = 0;
+      const all: any[] = [];
+      // Fetch in batches to bypass PostgREST default max-rows cap
+      // Keep going until the RPC returns fewer rows than the batch size
+      // (safety cap at 100k to avoid runaway loops)
+      while (offset < 100000) {
+        const { data, error } = await supabase
+          .rpc("get_public_users")
+          .range(offset, offset + BATCH - 1);
+        if (error || !data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < BATCH) break;
+        offset += BATCH;
+      }
+      const merged: UserRow[] = all.map((p: any) => ({
         user_id: p.user_id,
         full_name: p.full_name,
         avatar_url: p.avatar_url,
