@@ -28,7 +28,8 @@ const relativeTime = (iso: string) => {
 };
 
 const planLabel = (plan: string | null | undefined) => {
-  switch (plan) {
+  const raw = (plan || "").replace(/^adp_/, "");
+  switch (raw) {
     case "perm":
       return "Permanen";
     case "1bln":
@@ -36,9 +37,12 @@ const planLabel = (plan: string | null | undefined) => {
     case "2bln":
       return "2 Bulan";
     default:
-      return plan || "Reseller";
+      return raw || "Reseller";
   }
 };
+
+const productLabel = (plan: string | null | undefined) =>
+  typeof plan === "string" && plan.startsWith("adp_") ? "ADP Server" : "Reseller";
 
 const MAX_ITEMS = 20;
 
@@ -89,7 +93,7 @@ const UpgradeTicker = () => {
         created_at: string;
       }>).map((o) => ({
         id: `upg-${o.id}`,
-        text: `${o.full_name?.trim() || "Seseorang"} upgrade Reseller`,
+        text: `${o.full_name?.trim() || "Seseorang"} upgrade ${productLabel(o.plan)}`,
         detail: planLabel(o.plan),
         created_at: o.paid_at || o.created_at,
       }));
@@ -123,7 +127,7 @@ const UpgradeTicker = () => {
           const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
           push({
             id: `upg-evt-${row.id}`,
-            text: `${name} upgrade Reseller`,
+            text: `${name} upgrade ${productLabel(row.detail)}`,
             detail: planLabel(row.detail),
             created_at: row.created_at,
           });
