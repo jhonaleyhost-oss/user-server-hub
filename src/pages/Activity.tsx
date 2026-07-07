@@ -749,16 +749,28 @@ const Activity = () => {
                               ) : null}
                             </div>
                           </>
-                        ) : a.kind === "upgrade" ? (
-                          <>
-                            <p className="text-xs text-muted-foreground mb-2">
-                              Upgrade ke{" "}
-                              <span className="font-semibold text-amber">Reseller</span>
-                              {" • "}
-                              <span className="font-semibold text-foreground">
-                                {a.plan === "perm" ? "Permanen" : a.plan === "2bln" ? "2 Bulan" : "1 Bulan"}
-                              </span>
-                            </p>
+                         ) : a.kind === "upgrade" ? (
+                           <>
+                             {(() => {
+                               const isAdp = typeof a.plan === "string" && a.plan.startsWith("adp_");
+                               const planCore = isAdp ? a.plan.replace(/^adp_/, "") : a.plan;
+                               const planLabel =
+                                 planCore === "perm"
+                                   ? "Permanen"
+                                   : planCore === "2bln"
+                                   ? "2 Bulan"
+                                   : "1 Bulan";
+                               return (
+                                 <p className="text-xs text-muted-foreground mb-2">
+                                   Upgrade ke{" "}
+                                   <span className="font-semibold text-amber">
+                                     {isAdp ? "ADP Server" : "Reseller"}
+                                   </span>
+                                   {" • "}
+                                   <span className="font-semibold text-foreground">{planLabel}</span>
+                                 </p>
+                               );
+                             })()}
                             <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber/10 border border-amber/30 text-amber font-bold">
                                 <Wallet className="w-3 h-3" />
