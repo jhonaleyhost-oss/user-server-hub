@@ -23,7 +23,7 @@ interface PopupButton {
 }
 
 type PopupKind = 'promo' | 'warning';
-type PopupAudience = 'all' | 'reseller';
+type PopupAudience = 'all' | 'reseller' | 'adp_server' | 'reseller_adp';
 
 interface PopupData {
   id: string;
@@ -180,11 +180,17 @@ const PopupEditor = ({ kind }: { kind: PopupKind }) => {
           <SelectContent>
             <SelectItem value="all">Semua Pengguna</SelectItem>
             <SelectItem value="reseller">Hanya Reseller</SelectItem>
+            <SelectItem value="adp_server">Hanya ADP Server</SelectItem>
+            <SelectItem value="reseller_adp">Reseller & ADP Server</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-[11px] text-muted-foreground">
           {popup.audience === 'reseller'
-            ? 'Popup hanya muncul untuk user dengan role reseller (dan admin).'
+            ? 'Popup hanya muncul untuk user Reseller (dan admin).'
+            : popup.audience === 'adp_server'
+            ? 'Popup hanya muncul untuk user ADP Server (dan admin).'
+            : popup.audience === 'reseller_adp'
+            ? 'Popup muncul untuk user Reseller dan ADP Server (dan admin).'
             : 'Popup muncul untuk semua user yang login.'}
         </p>
       </div>
