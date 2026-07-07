@@ -1,0 +1,2 @@
+ALTER TABLE public.popup_settings DROP CONSTRAINT IF EXISTS popup_settings_audience_check;
+ALTER TABLE public.popup_settings ADD CONSTRAINT popup_settings_audience_check CHECK (audience IN ('all','reseller','adp_server','reseller_adp'));
