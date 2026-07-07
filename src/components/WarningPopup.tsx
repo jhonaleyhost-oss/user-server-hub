@@ -11,21 +11,25 @@ interface PopupButton {
   url: string;
 }
 
+type WarningAudience = 'all' | 'reseller' | 'adp_server' | 'reseller_adp';
+
 interface WarningData {
   id: string;
   title: string;
   content: string;
   image_url: string | null;
   buttons: PopupButton[];
-  audience: 'all' | 'reseller';
+  audience: WarningAudience;
 }
 
 const WarningPopup = () => {
   const [popup, setPopup] = useState<WarningData | null>(null);
   const [open, setOpen] = useState(false);
   const [dontShow, setDontShow] = useState(false);
-  const { isReseller, isAdmin, loading: roleLoading } = useUserRole();
-  const canHide = isReseller || isAdmin;
+  const { role, isAdmin, loading: roleLoading } = useUserRole();
+  const isPureReseller = role === 'reseller';
+  const isAdp = role === 'adp_server';
+  const canHide = isPureReseller || isAdp || isAdmin;
 
   const dismissedKey = (id: string) => `warning_popup_dismissed_${id}`;
 
@@ -51,9 +55,19 @@ const WarningPopup = () => {
         .maybeSingle();
 
       if (!data) return;
-      const audience = (data as any).audience === 'reseller' ? 'reseller' : 'all';
-      // Audience filter
-      if (audience === 'reseller' && !(isReseller || isAdmin)) return;
+      const rawAudience = (data as any).audience as string | undefined;
+      const audience: WarningAudience =
+        rawAudience === 'reseller' ||
+        rawAudience === 'adp_server' ||
+        rawAudience === 'reseller_adp'
+          ? (rawAudience as WarningAudience)
+          : 'all';
+      // Audience filter (admin always sees)
+      if (!isAdmin) {
+        if (audience === 'reseller' && !isPureReseller) return;
+        if (audience === 'adp_server' && !isAdp) return;
+        if (audience === 'reseller_adp' && !(isPureReseller || isAdp)) return;
+      }
 
       try {
         // Suppress only within the same daily window (resets 07:00 WIB).
@@ -80,7 +94,7 @@ const WarningPopup = () => {
 
     const timer = setTimeout(fetchPopup, 700);
     return () => clearTimeout(timer);
-  }, [roleLoading, isReseller, isAdmin]);
+  }, [roleLoading, role, isAdmin]);
 
   const handleClose = () => {
     if (canHide && dontShow && popup) {
@@ -164,7 +178,13 @@ const WarningPopup = () => {
                       {popup.title}
                     </h2>
                     <p className="text-[10px] uppercase tracking-wider text-amber-400/80 mt-0.5">
-                      {popup.audience === 'reseller' ? 'Khusus Reseller' : 'Pengumuman'}
+                      {popup.audience === 'reseller'
+                        ? 'Khusus Reseller'
+                        : popup.audience === 'adp_server'
+                        ? 'Khusus ADP Server'
+                        : popup.audience === 'reseller_adp'
+                        ? 'Khusus Reseller & ADP'
+                        : 'Pengumuman'}
                     </p>
                   </div>
                 </div>
