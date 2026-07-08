@@ -695,24 +695,31 @@ const Dashboard = () => {
                 <Select
                   value={selectedServer}
                   onValueChange={setSelectedServer}
-                  disabled={role === 'free'}
                 >
                   <SelectTrigger className="input-glass pl-10">
                     <SelectValue placeholder="Pilih server" />
                   </SelectTrigger>
                   <SelectContent>
-                    {servers
-                      .filter((server) => role !== 'free' || server.server_type === 'public')
-                      .map((server) => (
-                      <SelectItem
-                        key={server.id}
-                        value={server.id}
-                        disabled={role === 'free' && server.server_type === 'private'}
-                      >
-                        {server.name}
-                        {server.server_type === 'private' && role === 'free' && ' (VIP Only)'}
-                      </SelectItem>
-                    ))}
+                    {servers.map((server) => {
+                      const locked = role === 'free' && server.server_type === 'private';
+                      return (
+                        <SelectItem
+                          key={server.id}
+                          value={server.id}
+                          disabled={locked}
+                        >
+                          <span className="flex items-center gap-2">
+                            {locked && <Lock className="w-3.5 h-3.5 text-amber-400" />}
+                            <span>{server.name}</span>
+                            {locked && (
+                              <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/20 text-amber-400 rounded-full font-medium">
+                                VIP Only
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
