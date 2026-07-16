@@ -1965,48 +1965,9 @@ const Admin = () => {
               </div>
             </TabsContent>
 
-            {/* Popup Tab */}
-            <TabsContent value="popup">
-              <AdminPopupManager />
-            </TabsContent>
-
-            {/* Ad Rentals Tab */}
-            <TabsContent value="ads">
-              <AdminAdRentals />
-            </TabsContent>
-
-            {/* Offline Panels Tab */}
-            <TabsContent value="offline">
-              <AdminOfflinePanels />
-            </TabsContent>
-
-            {/* Inactive Users Tab */}
-            <TabsContent value="inactive">
-              <AdminInactiveUsers />
-            </TabsContent>
-
-            {/* Activity Logs Tab */}
-            <TabsContent value="logs">
-              <AdminActivityLogs />
-            </TabsContent>
-            <TabsContent value="broadcast">
-              <AdminBroadcast />
-            </TabsContent>
-            <TabsContent value="promos">
-              <AdminPromos />
-            </TabsContent>
-            <TabsContent value="revenue">
-              <AdminRevenue />
-            </TabsContent>
           </Tabs>
         </GlassCard>
 
-        {/* Footer */}
-        <p className="text-center text-muted-foreground text-xs mt-8">
-          Admin Panel &copy; 2026 Jhonaley Panel
-        </p>
-      </div>
-    </div>
     <ProcessLogDialog
       open={logDialogOpen}
       onOpenChange={setLogDialogOpen}
@@ -2015,8 +1976,7 @@ const Admin = () => {
       logs={processLogs}
       success={logDialogSuccess}
     />
-    </PageTransition>
-    </AppShell>
+    </AdminLayout>
   );
 };
 
