@@ -5,6 +5,14 @@ import Auth from '@/pages/Auth';
 import ResetPassword from '@/pages/ResetPassword';
 import Panels from '@/pages/Panels';
 import Admin from '@/pages/Admin';
+import AdminOverview from '@/pages/admin/Overview';
+import AdminBroadcastPage from '@/pages/admin/AdminBroadcastPage';
+import AdminPromosPage from '@/pages/admin/AdminPromosPage';
+import AdminAdsPage from '@/pages/admin/AdminAdsPage';
+import AdminPopupPage from '@/pages/admin/AdminPopupPage';
+import AdminActivityPage from '@/pages/admin/AdminActivityPage';
+import AdminInactivePage from '@/pages/admin/AdminInactivePage';
+import AdminOfflinePanelsPage from '@/pages/admin/AdminOfflinePanelsPage';
 import AdminRoute from '@/components/AdminRoute';
 import Upgrade from '@/pages/Upgrade';
 import { Navigate } from 'react-router-dom';
@@ -30,14 +38,15 @@ export const AnimatedRoutes = () => {
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/panels" element={<Panels />} />
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <Admin />
-            </AdminRoute>
-          }
-        />
+        <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
+        <Route path="/admin/manage" element={<AdminRoute><Admin /></AdminRoute>} />
+        <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcastPage /></AdminRoute>} />
+        <Route path="/admin/promos" element={<AdminRoute><AdminPromosPage /></AdminRoute>} />
+        <Route path="/admin/ads" element={<AdminRoute><AdminAdsPage /></AdminRoute>} />
+        <Route path="/admin/popup" element={<AdminRoute><AdminPopupPage /></AdminRoute>} />
+        <Route path="/admin/activity" element={<AdminRoute><AdminActivityPage /></AdminRoute>} />
+        <Route path="/admin/inactive" element={<AdminRoute><AdminInactivePage /></AdminRoute>} />
+        <Route path="/admin/offline-panels" element={<AdminRoute><AdminOfflinePanelsPage /></AdminRoute>} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/upgrade-adp" element={<Navigate to="/upgrade?tier=adp" replace />} />
         <Route path="/profile" element={<Profile />} />
