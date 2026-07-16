@@ -29,6 +29,7 @@ interface Claim {
   active_role: string;
   invoice_image_url: string;
   invoice_storage_path: string | null;
+  invoice_image_paths: string[] | null;
   purchase_at: string;
   requested_role: ReqRole;
   duration_months: number | null;
@@ -221,8 +222,20 @@ const AdminWarrantyClaims = () => {
               </div>
 
               {/* Content: image + details */}
-              <div className="flex gap-3">
-                <SignedImage path={c.invoice_storage_path || c.invoice_image_url} onClick={setLightbox} />
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {((c.invoice_image_paths && c.invoice_image_paths.length > 0)
+                    ? c.invoice_image_paths
+                    : [c.invoice_storage_path || c.invoice_image_url]
+                  ).map((p, i) => (
+                    <div key={`${c.id}-${i}`} className="relative">
+                      <SignedImage path={p} onClick={setLightbox} />
+                      <span className="absolute bottom-1 left-1 text-[10px] font-semibold bg-black/60 text-white px-1.5 rounded">
+                        {i + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className={`px-2 py-0.5 rounded-md border text-[11px] font-bold uppercase tracking-wide ${ROLE_STYLE[c.requested_role]}`}>
