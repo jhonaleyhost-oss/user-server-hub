@@ -68,43 +68,9 @@ Deno.serve(async (req) => {
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
     // Panel counts
-    const { data: panels } = await admin.from("user_panels").select("user_id, created_at, updated_at");
+    const { data: panels } = await admin.from("user_panels").select("user_id");
     const panelCount = new Map<string, number>();
-    const panelLastActivity = new Map<string, number>();
-    (panels || []).forEach((p: any) => {
-      panelCount.set(p.user_id, (panelCount.get(p.user_id) || 0) + 1);
-      const t = new Date(p.updated_at || p.created_at).getTime();
-      if (!panelLastActivity.has(p.user_id) || t > (panelLastActivity.get(p.user_id) || 0)) {
-        panelLastActivity.set(p.user_id, t);
-      }
-    });
-
-    // Activity logs (last action per user)
-    const activityLast = new Map<string, number>();
-    const { data: acts } = await admin
-      .from("user_activity_logs")
-      .select("user_id, created_at")
-      .order("created_at", { ascending: false })
-      .limit(50000);
-    (acts || []).forEach((a: any) => {
-      if (!activityLast.has(a.user_id)) {
-        activityLast.set(a.user_id, new Date(a.created_at).getTime());
-      }
-    });
-
-    // Recent paid orders (also a signal of activity)
-    const orderLast = new Map<string, number>();
-    const { data: ords } = await admin
-      .from("reseller_orders")
-      .select("user_id, paid_at, created_at")
-      .order("created_at", { ascending: false })
-      .limit(20000);
-    (ords || []).forEach((o: any) => {
-      const t = new Date(o.paid_at || o.created_at).getTime();
-      if (!orderLast.has(o.user_id) || t > (orderLast.get(o.user_id) || 0)) {
-        orderLast.set(o.user_id, t);
-      }
-    });
+    (panels || []).forEach((p: any) => panelCount.set(p.user_id, (panelCount.get(p.user_id) || 0) + 1));
 
     const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
     const EXCLUDED = new Set(["admin", "reseller", "adp_server"]);
@@ -115,13 +81,7 @@ Deno.serve(async (req) => {
         const prof = profileMap.get(u.id) as any;
         const created = u.created_at ? new Date(u.created_at).getTime() : 0;
         const signIn = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
-        const lastActivity = Math.max(
-          signIn,
-          created,
-          activityLast.get(u.id) || 0,
-          panelLastActivity.get(u.id) || 0,
-          orderLast.get(u.id) || 0,
-        );
+        const lastActivity = signIn; // only last sign-in counts
         return {
           user_id: u.id,
           email: u.email || prof?.email || null,
@@ -141,9 +101,8 @@ Deno.serve(async (req) => {
       })
       .filter((u) =>
         !EXCLUDED.has(u.role) &&
-        u._created > 0 &&
-        u._created < threshold && // account itself must be older than N days
-        u._lastActivity < threshold // and no activity within N days
+        u._lastActivity > 0 &&        // must have signed in at least once
+        u._lastActivity < threshold   // last sign-in older than N days
       )
       .sort((a, b) => a._lastActivity - b._lastActivity)
       .map(({ _lastActivity, _created, ...rest }) => rest);
