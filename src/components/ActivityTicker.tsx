@@ -85,7 +85,7 @@ const ActivityTicker = () => {
           .limit(10),
         supabase
           .from("activity_events")
-          .select("id, kind, actor_user_id, actor_name, detail, created_at")
+          .select("id, kind, actor_user_id, actor_name, actor_role, detail, created_at")
           .in("kind", ["panel_deleted", "admin_panel", "user_deleted", "warranty_approved"])
           .order("created_at", { ascending: false })
           .limit(15),
@@ -156,7 +156,7 @@ const ActivityTicker = () => {
       }
 
       for (const r of (extraRes.data ?? []) as Array<{
-        id: string; kind: string; actor_user_id: string;
+        id: string; kind: string; actor_user_id: string; actor_role: string | null;
         actor_name: string | null; detail: string | null; created_at: string;
       }>) {
         const name = r.actor_name?.trim() || "Seseorang";
@@ -187,9 +187,7 @@ const ActivityTicker = () => {
             created_at: r.created_at,
           });
         } else if (r.kind === "warranty_approved") {
-          const roleLabel = r.actor_name ? undefined : undefined;
-          const roleKey = (r as any).actor_role as string | undefined;
-          const rl = roleKey === "reseller" ? "Reseller" : roleKey === "adp_server" ? "Admin Panel (ADP)" : roleKey === "premium" ? "Premium" : "Role";
+          const rl = r.actor_role === "reseller" ? "Reseller" : r.actor_role === "adp_server" ? "Admin Panel (ADP)" : r.actor_role === "premium" ? "Premium" : "Role";
           collected.push({
             id: `wrn-${r.id}`,
             kind: "warranty_approved",
