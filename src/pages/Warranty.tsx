@@ -444,9 +444,16 @@ const Warranty = () => {
                       key={c.id}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-3 rounded-xl border border-border/60 bg-secondary/20 flex gap-3"
+                      className="p-3 rounded-xl border border-border/60 bg-secondary/20 space-y-2"
                     >
-                      <SignedThumb path={c.invoice_storage_path || c.invoice_image_url} onOpen={setLightbox} />
+                      <div className="flex flex-wrap gap-2">
+                        {((c.invoice_image_paths && c.invoice_image_paths.length > 0)
+                          ? c.invoice_image_paths
+                          : [c.invoice_storage_path || c.invoice_image_url]
+                        ).map((p, i) => (
+                          <SignedThumb key={`${c.id}-${i}`} path={p} onOpen={setLightbox} />
+                        ))}
+                      </div>
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-semibold">{ROLE_LABEL[c.requested_role]}</span>
