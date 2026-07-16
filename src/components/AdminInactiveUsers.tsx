@@ -34,6 +34,7 @@ const AdminInactiveUsers = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [scanned, setScanned] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [allowReregister, setAllowReregister] = useState(true);
 
   const scan = async () => {
     setScanning(true);
@@ -76,7 +77,7 @@ const AdminInactiveUsers = () => {
     for (const id of ids) {
       try {
         const { data, error } = await supabase.functions.invoke('delete-user', {
-          body: { user_id: id },
+          body: { user_id: id, allow_reregister: allowReregister },
         });
         if (error || (data && data.error)) throw new Error(error?.message || data?.error);
         success++;
@@ -90,7 +91,9 @@ const AdminInactiveUsers = () => {
     setSelected(new Set());
     toast({
       title: 'Selesai',
-      description: `${success} akun dihapus${failed ? `, ${failed} gagal` : ''} • IP/Fingerprint diblokir otomatis`,
+      description: `${success} akun dihapus${failed ? `, ${failed} gagal` : ''} • ${
+        allowReregister ? 'IP/Fingerprint dihapus (bisa daftar lagi)' : 'IP/Fingerprint diblokir'
+      }`,
     });
   };
 
@@ -124,9 +127,18 @@ const AdminInactiveUsers = () => {
         <AlertTriangle className="w-4 h-4 text-amber shrink-0 mt-0.5" />
         <p className="text-amber">
           Reseller, ADP Server, dan Admin <b>dikecualikan</b> otomatis. Menghapus akun akan menghapus profil, panel,
-          role, akun auth, sekaligus <b>memblokir IP & fingerprint</b> agar tidak bisa daftar ulang.
+          role, dan akun auth. Aktifkan opsi di bawah untuk juga menghapus IP + fingerprint agar user bisa mendaftar lagi.
         </p>
       </div>
+
+      {/* IP/FP option */}
+      <label className="flex items-center gap-2 p-3 rounded-lg border border-border bg-secondary/20 cursor-pointer text-xs">
+        <Checkbox checked={allowReregister} onCheckedChange={(v) => setAllowReregister(!!v)} />
+        <span className="flex-1">
+          <b className="text-foreground">Hapus IP + Fingerprint</b> saat menghapus (user bisa daftar akun baru).
+          <span className="text-muted-foreground"> Non-aktifkan untuk blokir permanen.</span>
+        </span>
+      </label>
 
       {/* Summary + bulk action */}
       {scanned && (
@@ -157,15 +169,17 @@ const AdminInactiveUsers = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Hapus {selected.size} akun tidak aktif?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Semua data akun (profil, panel, role, auth) akan dihapus permanen dan
-                      IP + fingerprint akan diblokir agar tidak bisa registrasi ulang.
+                      Semua data akun (profil, panel, role, auth) akan dihapus permanen.
+                      {allowReregister
+                        ? ' IP & fingerprint akan dihapus sehingga user bisa mendaftar akun baru.'
+                        : ' IP & fingerprint akan diblokir agar tidak bisa registrasi ulang.'}
                       Aksi ini tidak dapat dibatalkan.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Batal</AlertDialogCancel>
                     <AlertDialogAction onClick={deleteSelected} className="bg-destructive hover:bg-destructive/90">
-                      Hapus & Blokir
+                      {allowReregister ? 'Hapus & Lepas IP/FP' : 'Hapus & Blokir'}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

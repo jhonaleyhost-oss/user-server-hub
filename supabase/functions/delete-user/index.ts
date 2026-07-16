@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { user_id } = await req.json();
+    const { user_id, allow_reregister } = await req.json();
     if (!user_id) {
       return new Response(JSON.stringify({ error: "user_id is required" }), {
         status: 400,
@@ -69,6 +69,30 @@ Deno.serve(async (req) => {
     await adminClient.from("user_panels").delete().eq("user_id", user_id);
     // Delete roles
     await adminClient.from("user_roles").delete().eq("user_id", user_id);
+
+    // If admin wants to allow this device to register again, wipe the IP/FP
+    // from the profile BEFORE deleting (so archive trigger has nothing to
+    // archive) and delete any pre-existing blocked_devices rows that match.
+    if (allow_reregister) {
+      const { data: prof } = await adminClient
+        .from("profiles")
+        .select("ip_address, device_fingerprint")
+        .eq("user_id", user_id)
+        .maybeSingle();
+      const ip = prof?.ip_address as string | null;
+      const fp = prof?.device_fingerprint as string | null;
+
+      await adminClient
+        .from("profiles")
+        .update({ ip_address: null, device_fingerprint: null })
+        .eq("user_id", user_id);
+
+      // Wipe any archived blocks for this user and any matching ip/fp
+      await adminClient.from("blocked_devices").delete().eq("original_user_id", user_id);
+      if (ip) await adminClient.from("blocked_devices").delete().eq("ip_address", ip);
+      if (fp) await adminClient.from("blocked_devices").delete().eq("device_fingerprint", fp);
+    }
+
     // Delete profile
     await adminClient.from("profiles").delete().eq("user_id", user_id);
     // Delete from auth.users (this is the key part!)
