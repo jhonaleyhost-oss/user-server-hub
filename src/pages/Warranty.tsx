@@ -283,36 +283,55 @@ const Warranty = () => {
 
               {/* Invoice image */}
               <div className="space-y-2">
-                <Label>Screenshot Invoice <span className="text-destructive">*</span></Label>
-                {preview ? (
-                  <div className="relative inline-block">
-                    <img src={preview} alt="Preview" className="w-40 h-40 rounded-xl object-cover border border-border" />
+                <div className="flex items-center justify-between">
+                  <Label>Screenshot Invoice <span className="text-destructive">*</span></Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    {previews.length}/{MAX_IMAGES} gambar
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {previews.map((src, i) => (
+                    <div key={src} className="relative">
+                      <img
+                        src={src}
+                        alt={`Preview ${i + 1}`}
+                        className="w-24 h-24 rounded-xl object-cover border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
+                        aria-label="Hapus gambar"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="absolute bottom-1 left-1 text-[10px] font-semibold bg-black/60 text-white px-1 rounded">
+                        {i + 1}
+                      </span>
+                    </div>
+                  ))}
+                  {previews.length < MAX_IMAGES && (
                     <button
                       type="button"
-                      onClick={() => { setFile(null); setPreview(null); if (fileRef.current) fileRef.current.value = ""; }}
-                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
-                      aria-label="Hapus gambar"
+                      onClick={() => fileRef.current?.click()}
+                      className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary/60 hover:bg-secondary/30 flex flex-col items-center justify-center gap-1 text-muted-foreground transition"
                     >
-                      <X className="w-4 h-4" />
+                      <ImagePlus className="w-6 h-6" />
+                      <span className="text-[10px]">Tambah</span>
+                      <span className="text-[9px]">Max {MAX_SIZE_MB}MB</span>
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="w-40 h-40 rounded-xl border-2 border-dashed border-border hover:border-primary/60 hover:bg-secondary/30 flex flex-col items-center justify-center gap-2 text-muted-foreground transition"
-                  >
-                    <ImagePlus className="w-8 h-8" />
-                    <span className="text-xs">Pilih gambar</span>
-                    <span className="text-[10px]">Max 5MB</span>
-                  </button>
-                )}
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Bisa upload hingga {MAX_IMAGES} gambar (invoice, bukti transfer, chat, dsb).
+                </p>
                 <input
                   ref={fileRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
-                  onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => onPickFiles(e.target.files)}
                 />
               </div>
 
