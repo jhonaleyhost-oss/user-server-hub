@@ -39,6 +39,7 @@ interface Claim {
   admin_note: string | null;
   reviewed_at: string | null;
   created_at: string;
+  deleted_username?: string | null;
 }
 
 const ROLE_LABEL: Record<ReqRole, string> = {
@@ -101,6 +102,7 @@ const Warranty = () => {
   const [durationType, setDurationType] = useState<"months" | "permanent">("months");
   const [months, setMonths] = useState<number>(1);
   const [note, setNote] = useState("");
+  const [deletedUsername, setDeletedUsername] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
 
@@ -177,6 +179,7 @@ const Warranty = () => {
     setDurationType("months");
     setMonths(1);
     setNote("");
+    setDeletedUsername("");
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -221,6 +224,7 @@ const Warranty = () => {
         duration_months: durationType === "months" ? months : null,
         permanent: durationType === "permanent",
         user_note: note.trim() || null,
+        deleted_username: deletedUsername.trim() || null,
       });
       if (insErr) throw insErr;
 
@@ -404,6 +408,16 @@ const Warranty = () => {
               </div>
 
               {/* Note */}
+              <div className="space-y-2">
+                <Label>Username Akun Yang Terhapus (opsional)</Label>
+                <Input
+                  value={deletedUsername}
+                  onChange={(e) => setDeletedUsername(e.target.value)}
+                  placeholder="Contoh: johndoe123"
+                  maxLength={100}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label>Catatan Tambahan (opsional)</Label>
                 <Textarea
