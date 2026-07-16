@@ -409,6 +409,16 @@ const Warranty = () => {
 
               {/* Note */}
               <div className="space-y-2">
+                <Label>Username Akun Yang Terhapus (opsional)</Label>
+                <Input
+                  value={deletedUsername}
+                  onChange={(e) => setDeletedUsername(e.target.value)}
+                  placeholder="Contoh: johndoe123"
+                  maxLength={100}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label>Catatan Tambahan (opsional)</Label>
                 <Textarea
                   value={note}
