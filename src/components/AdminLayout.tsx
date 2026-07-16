@@ -85,29 +85,6 @@ const AdminLayout = ({ title, description, children }: Props) => {
               </div>
             </GlassCard>
 
-            {/* Nav */}
-            <GlassCard className="p-2">
-              <nav className="flex gap-1 overflow-x-auto scrollbar-none touch-pan-x overscroll-x-contain">
-                {ADMIN_NAV.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.end}
-                    className={({ isActive }) =>
-                      `shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                        isActive
-                          ? 'bg-primary/15 text-primary shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                      }`
-                    }
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </NavLink>
-                ))}
-              </nav>
-            </GlassCard>
-
             {/* Content */}
             <div>{children}</div>
 
