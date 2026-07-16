@@ -268,7 +268,7 @@ const AdminWarrantyClaims = () => {
                     size="sm"
                     onClick={() => openAction("approve", c)}
                     disabled={busyId === c.id}
-                    className="flex-1 gap-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                    className="flex-1 gap-1 bg-emerald-500 hover:bg-emerald-600 text-black font-semibold"
                   >
                     <CheckCircle2 className="w-4 h-4" /> Setujui
                   </Button>
@@ -329,7 +329,7 @@ const AdminWarrantyClaims = () => {
             <Button
               onClick={submitAction}
               disabled={busyId === action?.claim.id || (action?.type === "reject" && !adminNote.trim())}
-              className={action?.type === "approve" ? "bg-emerald-500 hover:bg-emerald-600 text-white" : ""}
+              className={action?.type === "approve" ? "bg-emerald-500 hover:bg-emerald-600 text-black font-semibold" : ""}
               variant={action?.type === "reject" ? "destructive" : "default"}
             >
               {busyId === action?.claim.id ? <Loader2 className="w-4 h-4 animate-spin" /> : action?.type === "approve" ? "Setujui & Aktifkan" : "Tolak Klaim"}
