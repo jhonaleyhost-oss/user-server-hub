@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText, ShieldAlert } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -31,6 +31,7 @@ const ADMIN_SUB_ITEMS = [
   { title: "Manajemen", url: "/admin/manage", icon: Settings2 },
   { title: "Akun Nonaktif", url: "/admin/inactive", icon: UserX },
   { title: "Panel Offline", url: "/admin/offline-panels", icon: WifiOff },
+  { title: "Garansi Role", url: "/admin/warranty", icon: ShieldCheck },
   { title: "Broadcast", url: "/admin/broadcast", icon: Bell },
   { title: "Promo", url: "/admin/promos", icon: Tag },
   { title: "Iklan", url: "/admin/ads", icon: Sparkles },
@@ -144,6 +145,7 @@ export function AppSidebar() {
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
     { title: "Promo & Kupon", url: "/promo", icon: Tag },
     { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
+    { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
   ] as Array<{ title: string; url: string; icon: any; badge?: number }>;
 
   const isActive = (path: string) => pathname === path;
