@@ -929,6 +929,7 @@ export type Database = {
           created_at: string
           duration_months: number | null
           id: string
+          invoice_image_paths: string[]
           invoice_image_url: string
           invoice_storage_path: string | null
           permanent: boolean
@@ -946,6 +947,7 @@ export type Database = {
           created_at?: string
           duration_months?: number | null
           id?: string
+          invoice_image_paths?: string[]
           invoice_image_url: string
           invoice_storage_path?: string | null
           permanent?: boolean
@@ -963,6 +965,7 @@ export type Database = {
           created_at?: string
           duration_months?: number | null
           id?: string
+          invoice_image_paths?: string[]
           invoice_image_url?: string
           invoice_storage_path?: string | null
           permanent?: boolean
@@ -1474,6 +1477,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          invoice_image_paths: string[]
           invoice_image_url: string
           invoice_storage_path: string
           permanent: boolean
