@@ -27,6 +27,8 @@ import AdsRental from '@/pages/AdsRental';
 import Promos from '@/pages/Promos';
 import Notifications from '@/pages/Notifications';
 import Unsubscribe from '@/pages/Unsubscribe';
+import Warranty from '@/pages/Warranty';
+import AdminWarrantyPage from '@/pages/admin/AdminWarrantyPage';
 
 export const AnimatedRoutes = () => {
   const location = useLocation();
@@ -47,6 +49,7 @@ export const AnimatedRoutes = () => {
         <Route path="/admin/activity" element={<AdminRoute><AdminActivityPage /></AdminRoute>} />
         <Route path="/admin/inactive" element={<AdminRoute><AdminInactivePage /></AdminRoute>} />
         <Route path="/admin/offline-panels" element={<AdminRoute><AdminOfflinePanelsPage /></AdminRoute>} />
+        <Route path="/admin/warranty" element={<AdminRoute><AdminWarrantyPage /></AdminRoute>} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/upgrade-adp" element={<Navigate to="/upgrade?tier=adp" replace />} />
         <Route path="/profile" element={<Profile />} />
@@ -59,6 +62,7 @@ export const AnimatedRoutes = () => {
         <Route path="/promo" element={<Promos />} />
         <Route path="/notifikasi" element={<Notifications />} />
         <Route path="/unsubscribe" element={<Unsubscribe />} />
+        <Route path="/garansi" element={<Warranty />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

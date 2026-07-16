@@ -13,6 +13,7 @@ import {
   Settings2,
   ArrowLeft,
   Crown,
+  ShieldCheck,
 } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 import { PageTransition } from '@/components/PageTransition';
@@ -26,6 +27,7 @@ export const ADMIN_NAV = [
   { to: '/admin/manage', label: 'Manajemen', icon: Settings2 },
   { to: '/admin/inactive', label: 'Nonaktif', icon: UserX },
   { to: '/admin/offline-panels', label: 'Offline', icon: WifiOff },
+  { to: '/admin/warranty', label: 'Garansi', icon: ShieldCheck },
   { to: '/admin/broadcast', label: 'Broadcast', icon: Bell },
   { to: '/admin/promos', label: 'Promo', icon: Tag },
   { to: '/admin/ads', label: 'Iklan', icon: Sparkles },
