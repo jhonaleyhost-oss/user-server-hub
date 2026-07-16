@@ -6,6 +6,28 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+const PAGE_SIZE = 1000;
+
+async function fetchAllRows(admin: any, table: string, select: string) {
+  const rows: any[] = [];
+  let from = 0;
+
+  while (true) {
+    const { data, error } = await admin
+      .from(table)
+      .select(select)
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+    if (from > 100000) break;
+  }
+
+  return rows;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -51,40 +73,31 @@ Deno.serve(async (req) => {
     const authUsers: any[] = [];
     let page = 1;
     while (true) {
-      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
+      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: PAGE_SIZE });
       if (error) throw error;
       authUsers.push(...data.users);
-      if (data.users.length < 1000) break;
+      if (data.users.length < PAGE_SIZE) break;
       page++;
       if (page > 50) break;
     }
 
-    // Fetch profiles + roles
-    const { data: profiles } = await admin
-      .from("profiles")
-      .select("user_id, full_name, email, avatar_url, ip_address, device_fingerprint, created_at");
-    const { data: roles } = await admin.from("user_roles").select("user_id, role");
-    const roleMap = new Map((roles || []).map((r: any) => [r.user_id, r.role]));
-    const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
-
-    // Cleanup: delete orphan auth users (no matching profile row)
-    let orphansDeleted = 0;
-    for (const u of authUsers) {
-      if (!profileMap.has(u.id)) {
-        try {
-          // Belt-and-suspenders: clean any residual rows in public tables too
-          await admin.from("user_panels").delete().eq("user_id", u.id);
-          await admin.from("user_roles").delete().eq("user_id", u.id);
-          const { error: delErr } = await admin.auth.admin.deleteUser(u.id);
-          if (!delErr) orphansDeleted++;
-        } catch { /* ignore individual failures */ }
-      }
-    }
+    // Fetch profiles + roles with explicit pagination. The default API limit is
+    // 1000 rows; without pagination, valid users past that limit can be falsely
+    // detected as orphan.
+    const profiles = await fetchAllRows(
+      admin,
+      "profiles",
+      "user_id, full_name, email, avatar_url, ip_address, device_fingerprint, created_at",
+    );
+    const roles = await fetchAllRows(admin, "user_roles", "user_id, role");
+    const roleMap = new Map(roles.map((r: any) => [r.user_id, r.role]));
+    const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
+    const orphansFound = authUsers.filter((u: any) => !profileMap.has(u.id)).length;
 
     // Panel counts
-    const { data: panels } = await admin.from("user_panels").select("user_id");
+    const panels = await fetchAllRows(admin, "user_panels", "user_id");
     const panelCount = new Map<string, number>();
-    (panels || []).forEach((p: any) => panelCount.set(p.user_id, (panelCount.get(p.user_id) || 0) + 1));
+    panels.forEach((p: any) => panelCount.set(p.user_id, (panelCount.get(p.user_id) || 0) + 1));
 
     const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
     const EXCLUDED = new Set(["admin", "reseller", "adp_server"]);
@@ -130,8 +143,10 @@ Deno.serve(async (req) => {
       days,
       users: inactive,
       total: inactive.length,
-      total_users: (profiles || []).length,
-      orphans_deleted: orphansDeleted,
+      total_users: profiles.length,
+      total_auth_users: authUsers.length,
+      orphans_found: orphansFound,
+      orphans_deleted: 0,
     }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

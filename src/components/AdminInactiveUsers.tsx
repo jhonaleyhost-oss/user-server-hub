@@ -36,7 +36,7 @@ const AdminInactiveUsers = () => {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [allowReregister, setAllowReregister] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [orphansDeleted, setOrphansDeleted] = useState(0);
+  const [orphansFound, setOrphansFound] = useState(0);
 
   const scan = async () => {
     setScanning(true);
@@ -50,12 +50,12 @@ const AdminInactiveUsers = () => {
       if (!data?.success) throw new Error(data?.error || 'Gagal memindai');
       setUsers(data.users || []);
       setTotalUsers(data.total_users || 0);
-      setOrphansDeleted(data.orphans_deleted || 0);
+      setOrphansFound(data.orphans_found || 0);
       setScanned(true);
       toast({
         title: 'Pindai selesai',
         description: `${data.total}/${data.total_users || 0} akun tidak aktif ≥ ${days} hari` +
-          (data.orphans_deleted ? ` • ${data.orphans_deleted} orphan dibersihkan` : ''),
+          (data.orphans_found ? ` • ${data.orphans_found} orphan ditemukan (tidak dihapus otomatis)` : ''),
       });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Gagal', description: e.message });
@@ -162,8 +162,8 @@ const AdminInactiveUsers = () => {
                 </span>
               )}
             </span>
-            {orphansDeleted > 0 && (
-              <span className="text-emerald-400">• {orphansDeleted} orphan dibersihkan</span>
+            {orphansFound > 0 && (
+              <span className="text-amber">• {orphansFound} orphan ditemukan</span>
             )}
             {users.length > 0 && (
               <span className="text-muted-foreground">
