@@ -72,6 +72,11 @@ export function AppSidebar() {
     el.scrollTop = saved;
   };
 
+  const prepareSidebarNavigation = () => {
+    saveSidebarScroll();
+    ignoreScrollSaveUntilRef.current = performance.now() + 800;
+  };
+
   // Persist sidebar scroll position across route changes
   useEffect(() => {
     const el = scrollRef.current;
@@ -182,7 +187,11 @@ export function AppSidebar() {
         <div>
           <div className="p-3 pt-4">
             <button
-              onClick={() => navigate("/profile")}
+              onPointerDown={prepareSidebarNavigation}
+              onClick={() => {
+                prepareSidebarNavigation();
+                navigate("/profile");
+              }}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/40 hover:bg-secondary/60 border border-border/50 transition-colors text-left"
             >
               {avatarUrl ? (
@@ -238,6 +247,8 @@ export function AppSidebar() {
           <div className="px-3 pt-3 pb-1">
             <NavLink
               to="/upgrade"
+              onPointerDown={prepareSidebarNavigation}
+              onClick={prepareSidebarNavigation}
               className={({ isActive }) =>
                 `group relative block overflow-hidden rounded-xl p-[1.5px] transition-transform hover:scale-[1.015] ${
                   isActive ? "ring-2 ring-amber/60" : ""
@@ -282,7 +293,13 @@ export function AppSidebar() {
                 {items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <NavLink to={item.url} end className="flex items-center gap-3">
+                      <NavLink
+                        to={item.url}
+                        end
+                        onPointerDown={prepareSidebarNavigation}
+                        onClick={prepareSidebarNavigation}
+                        className="flex items-center gap-3"
+                      >
                         <span className="relative shrink-0">
                           <item.icon className="h-4 w-4" />
                           {!!item.badge && item.badge > 0 && (
@@ -319,14 +336,8 @@ export function AppSidebar() {
                             key={sub.url}
                             to={sub.url}
                             end={sub.end}
-                            onPointerDown={() => {
-                              saveSidebarScroll();
-                              ignoreScrollSaveUntilRef.current = performance.now() + 800;
-                            }}
-                            onClick={() => {
-                              saveSidebarScroll();
-                              ignoreScrollSaveUntilRef.current = performance.now() + 800;
-                            }}
+                            onPointerDown={prepareSidebarNavigation}
+                            onClick={prepareSidebarNavigation}
                             className={({ isActive }) =>
                               `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 isActive
@@ -364,7 +375,11 @@ export function AppSidebar() {
                     </p>
                     <Button
                       size="sm"
-                      onClick={() => navigate("/upgrade")}
+                      onPointerDown={prepareSidebarNavigation}
+                      onClick={() => {
+                        prepareSidebarNavigation();
+                        navigate("/upgrade");
+                      }}
                       className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -397,7 +412,11 @@ export function AppSidebar() {
                     </p>
                     <Button
                       size="sm"
-                      onClick={() => navigate("/upgrade")}
+                      onPointerDown={prepareSidebarNavigation}
+                      onClick={() => {
+                        prepareSidebarNavigation();
+                        navigate("/upgrade");
+                      }}
                       className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
                     >
                       <Crown className="w-3.5 h-3.5" />
