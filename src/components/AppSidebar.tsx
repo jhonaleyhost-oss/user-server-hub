@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +38,8 @@ const ADMIN_SUB_ITEMS = [
   { title: "Log Aktivitas", url: "/admin/activity", icon: ScrollText },
 ];
 
+const SIDEBAR_SCROLL_KEY = "sidebar:scrollTop";
+
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { signOut, user } = useAuth();
@@ -52,19 +54,60 @@ export function AppSidebar() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState<boolean>(() => pathname.startsWith("/admin"));
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollTopRef = useRef(0);
+  const ignoreScrollSaveUntilRef = useRef(0);
+
+  const saveSidebarScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    lastScrollTopRef.current = el.scrollTop;
+    sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(el.scrollTop));
+  };
+
+  const restoreSidebarScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = Number(sessionStorage.getItem(SIDEBAR_SCROLL_KEY) ?? lastScrollTopRef.current);
+    if (!Number.isFinite(saved)) return;
+    el.scrollTop = saved;
+  };
+
+  const prepareSidebarNavigation = () => {
+    saveSidebarScroll();
+    ignoreScrollSaveUntilRef.current = performance.now() + 1200;
+  };
 
   // Persist sidebar scroll position across route changes
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const saved = sessionStorage.getItem("sidebar:scrollTop");
-    if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+    restoreSidebarScroll();
     const onScroll = () => {
-      sessionStorage.setItem("sidebar:scrollTop", String(el.scrollTop));
+      if (performance.now() < ignoreScrollSaveUntilRef.current) return;
+      lastScrollTopRef.current = el.scrollTop;
+      sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(el.scrollTop));
     };
     el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+    return () => {
+      saveSidebarScroll();
+      el.removeEventListener("scroll", onScroll);
+    };
   }, []);
+
+  useLayoutEffect(() => {
+    restoreSidebarScroll();
+    const firstFrame = requestAnimationFrame(() => {
+      restoreSidebarScroll();
+      requestAnimationFrame(restoreSidebarScroll);
+    });
+    const shortDelay = window.setTimeout(restoreSidebarScroll, 80);
+    const longDelay = window.setTimeout(restoreSidebarScroll, 220);
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      window.clearTimeout(shortDelay);
+      window.clearTimeout(longDelay);
+    };
+  }, [pathname, adminOpen]);
 
   useEffect(() => {
     if (pathname.startsWith("/admin")) setAdminOpen(true);
@@ -150,7 +193,11 @@ export function AppSidebar() {
         <div>
           <div className="p-3 pt-4">
             <button
-              onClick={() => navigate("/profile")}
+              onPointerDown={prepareSidebarNavigation}
+              onClick={() => {
+                prepareSidebarNavigation();
+                navigate("/profile");
+              }}
               className="w-full flex items-center gap-3 p-3 rounded-xl bg-secondary/40 hover:bg-secondary/60 border border-border/50 transition-colors text-left"
             >
               {avatarUrl ? (
@@ -206,6 +253,8 @@ export function AppSidebar() {
           <div className="px-3 pt-3 pb-1">
             <NavLink
               to="/upgrade"
+              onPointerDown={prepareSidebarNavigation}
+              onClick={prepareSidebarNavigation}
               className={({ isActive }) =>
                 `group relative block overflow-hidden rounded-xl p-[1.5px] transition-transform hover:scale-[1.015] ${
                   isActive ? "ring-2 ring-amber/60" : ""
@@ -250,7 +299,13 @@ export function AppSidebar() {
                 {items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <NavLink to={item.url} end className="flex items-center gap-3">
+                      <NavLink
+                        to={item.url}
+                        end
+                        onPointerDown={prepareSidebarNavigation}
+                        onClick={prepareSidebarNavigation}
+                        className="flex items-center gap-3"
+                      >
                         <span className="relative shrink-0">
                           <item.icon className="h-4 w-4" />
                           {!!item.badge && item.badge > 0 && (
@@ -287,6 +342,8 @@ export function AppSidebar() {
                             key={sub.url}
                             to={sub.url}
                             end={sub.end}
+                            onPointerDown={prepareSidebarNavigation}
+                            onClick={prepareSidebarNavigation}
                             className={({ isActive }) =>
                               `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 isActive
@@ -324,7 +381,11 @@ export function AppSidebar() {
                     </p>
                     <Button
                       size="sm"
-                      onClick={() => navigate("/upgrade")}
+                      onPointerDown={prepareSidebarNavigation}
+                      onClick={() => {
+                        prepareSidebarNavigation();
+                        navigate("/upgrade");
+                      }}
                       className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -357,7 +418,11 @@ export function AppSidebar() {
                     </p>
                     <Button
                       size="sm"
-                      onClick={() => navigate("/upgrade")}
+                      onPointerDown={prepareSidebarNavigation}
+                      onClick={() => {
+                        prepareSidebarNavigation();
+                        navigate("/upgrade");
+                      }}
                       className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
                     >
                       <Crown className="w-3.5 h-3.5" />
