@@ -35,25 +35,11 @@ import {
 } from 'lucide-react';
 import { UserX } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
-import AdminPopupManager from '@/components/AdminPopupManager';
-import AdminActivityLogs from '@/components/AdminActivityLogs';
-import AdminOfflinePanels from '@/components/AdminOfflinePanels';
-import AdminInactiveUsers from '@/components/AdminInactiveUsers';
-import AdminAdRentals from '@/components/AdminAdRentals';
-import AdminBroadcast from '@/components/AdminBroadcast';
-import AdminPromos from '@/components/AdminPromos';
-import AdminRevenue from '@/components/AdminRevenue';
+import AdminLayout from '@/components/AdminLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
-import { PageTransition } from '@/components/PageTransition';
-import AppShell from '@/components/AppShell';
-
 import GlassCard from '@/components/GlassCard';
-import StatCard from '@/components/StatCard';
-import Logo from '@/components/Logo';
-import ThemeToggle from '@/components/ThemeToggle';
-import AccentColorPicker from '@/components/AccentColorPicker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
