@@ -74,6 +74,48 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if full name already taken (case-insensitive) to avoid opaque 500 from unique constraint
+    if (fullName && fullName.trim().length > 0) {
+      const { data: nameTaken } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('full_name', fullName.trim())
+        .limit(1);
+      if (nameTaken && nameTaken.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Nama "${fullName}" sudah dipakai. Silakan gunakan nama lain.`,
+          }),
+          {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    // Check if email already registered
+    {
+      const { data: emailTaken } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .limit(1);
+      if (emailTaken && emailTaken.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Email ini sudah terdaftar. Silakan login atau gunakan email lain.',
+          }),
+          {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
     // Check if IP already used for registration
     if (clientIp !== 'unknown') {
       const { data: ipProfiles } = await supabase
@@ -142,7 +184,16 @@ serve(async (req) => {
 
     if (authError) {
       console.error('Auth error:', authError);
-      throw new Error(authError.message);
+      const raw = (authError.message || '').toLowerCase();
+      let friendly = authError.message || 'Gagal membuat akun. Silakan coba lagi.';
+      if (raw.includes('already registered') || raw.includes('already exists') || raw.includes('duplicate')) {
+        friendly = 'Email ini sudah terdaftar. Silakan login.';
+      } else if (raw.includes('full_name_lower_unique')) {
+        friendly = `Nama "${fullName}" sudah dipakai. Silakan gunakan nama lain.`;
+      } else if (raw.includes('database error')) {
+        friendly = 'Nama atau email sudah dipakai. Silakan coba yang lain.';
+      }
+      throw new Error(friendly);
     }
 
     // Store IP and fingerprint in profile (with retry for trigger race condition)
