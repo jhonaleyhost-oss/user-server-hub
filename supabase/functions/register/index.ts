@@ -184,7 +184,16 @@ serve(async (req) => {
 
     if (authError) {
       console.error('Auth error:', authError);
-      throw new Error(authError.message);
+      const raw = (authError.message || '').toLowerCase();
+      let friendly = authError.message || 'Gagal membuat akun. Silakan coba lagi.';
+      if (raw.includes('already registered') || raw.includes('already exists') || raw.includes('duplicate')) {
+        friendly = 'Email ini sudah terdaftar. Silakan login.';
+      } else if (raw.includes('full_name_lower_unique')) {
+        friendly = `Nama "${fullName}" sudah dipakai. Silakan gunakan nama lain.`;
+      } else if (raw.includes('database error')) {
+        friendly = 'Nama atau email sudah dipakai. Silakan coba yang lain.';
+      }
+      throw new Error(friendly);
     }
 
     // Store IP and fingerprint in profile (with retry for trigger race condition)
