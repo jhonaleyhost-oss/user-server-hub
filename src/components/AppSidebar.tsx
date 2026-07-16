@@ -74,7 +74,7 @@ export function AppSidebar() {
 
   const prepareSidebarNavigation = () => {
     saveSidebarScroll();
-    ignoreScrollSaveUntilRef.current = performance.now() + 800;
+    ignoreScrollSaveUntilRef.current = performance.now() + 1200;
   };
 
   // Persist sidebar scroll position across route changes
@@ -100,7 +100,13 @@ export function AppSidebar() {
       restoreSidebarScroll();
       requestAnimationFrame(restoreSidebarScroll);
     });
-    return () => cancelAnimationFrame(firstFrame);
+    const shortDelay = window.setTimeout(restoreSidebarScroll, 80);
+    const longDelay = window.setTimeout(restoreSidebarScroll, 220);
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      window.clearTimeout(shortDelay);
+      window.clearTimeout(longDelay);
+    };
   }, [pathname, adminOpen]);
 
   useEffect(() => {
