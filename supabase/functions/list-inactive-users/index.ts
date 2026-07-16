@@ -79,6 +79,9 @@ Deno.serve(async (req) => {
       .map((u: any) => {
         const role = (roleMap.get(u.id) as string) || "free";
         const prof = profileMap.get(u.id) as any;
+        // Skip orphan auth users that no longer have a profile row —
+        // these don't appear in /admin/manage user count either.
+        if (!prof) return null as any;
         const created = u.created_at ? new Date(u.created_at).getTime() : 0;
         const signIn = u.last_sign_in_at ? new Date(u.last_sign_in_at).getTime() : 0;
         const lastActivity = signIn; // only last sign-in counts
@@ -99,6 +102,7 @@ Deno.serve(async (req) => {
           _created: created,
         };
       })
+      .filter((u: any) => u !== null)
       .filter((u) =>
         !EXCLUDED.has(u.role) &&
         u._lastActivity > 0 &&        // must have signed in at least once
