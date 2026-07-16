@@ -1476,6 +1476,7 @@ export type Database = {
           admin_note: string
           avatar_url: string
           created_at: string
+          deleted_username: string
           duration_months: number
           email: string
           full_name: string
