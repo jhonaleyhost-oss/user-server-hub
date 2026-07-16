@@ -29,6 +29,7 @@ interface Claim {
   id: string;
   invoice_image_url: string;
   invoice_storage_path: string | null;
+  invoice_image_paths: string[] | null;
   purchase_at: string;
   requested_role: ReqRole;
   duration_months: number | null;
@@ -80,6 +81,9 @@ const SignedThumb = ({ path, onOpen }: { path: string | null; onOpen: (url: stri
   );
 };
 
+const MAX_IMAGES = 10;
+const MAX_SIZE_MB = 5;
+
 const Warranty = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -89,8 +93,8 @@ const Warranty = () => {
 
   // Form
   const fileRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [purchaseDate, setPurchaseDate] = useState<string>("");
   const [purchaseTime, setPurchaseTime] = useState<string>("");
   const [role, setRole] = useState<ReqRole>("reseller");
@@ -125,23 +129,48 @@ const Warranty = () => {
     setLoading(false);
   };
 
-  const onPickFile = (f: File | null) => {
-    if (!f) return;
-    if (!f.type.startsWith("image/")) {
-      toast.error("File harus berupa gambar");
+  const onPickFiles = (list: FileList | null) => {
+    if (!list || list.length === 0) return;
+    const incoming = Array.from(list);
+    const remaining = MAX_IMAGES - files.length;
+    if (remaining <= 0) {
+      toast.error(`Maksimal ${MAX_IMAGES} gambar`);
       return;
     }
-    if (f.size > 5 * 1024 * 1024) {
-      toast.error("Ukuran maksimal 5MB");
-      return;
+    const accepted: File[] = [];
+    for (const f of incoming.slice(0, remaining)) {
+      if (!f.type.startsWith("image/")) {
+        toast.error(`"${f.name}" bukan gambar, dilewati`);
+        continue;
+      }
+      if (f.size > MAX_SIZE_MB * 1024 * 1024) {
+        toast.error(`"${f.name}" melebihi ${MAX_SIZE_MB}MB, dilewati`);
+        continue;
+      }
+      accepted.push(f);
     }
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    if (incoming.length > remaining) {
+      toast.error(`Hanya ${remaining} gambar pertama yang ditambahkan (batas ${MAX_IMAGES})`);
+    }
+    if (accepted.length === 0) return;
+    setFiles((prev) => [...prev, ...accepted]);
+    setPreviews((prev) => [...prev, ...accepted.map((f) => URL.createObjectURL(f))]);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const removeFile = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
+    setPreviews((prev) => {
+      const url = prev[idx];
+      if (url) URL.revokeObjectURL(url);
+      return prev.filter((_, i) => i !== idx);
+    });
   };
 
   const resetForm = () => {
-    setFile(null);
-    setPreview(null);
+    previews.forEach((u) => URL.revokeObjectURL(u));
+    setFiles([]);
+    setPreviews([]);
     setPurchaseDate("");
     setPurchaseTime("");
     setRole("reseller");
@@ -153,7 +182,7 @@ const Warranty = () => {
 
   const submit = async () => {
     if (!user) return;
-    if (!file) return toast.error("Wajib upload screenshot invoice");
+    if (files.length === 0) return toast.error("Wajib upload minimal 1 screenshot invoice");
     if (!purchaseDate) return toast.error("Tanggal pembelian wajib diisi");
     if (!purchaseTime) return toast.error("Jam pembelian wajib diisi");
     if (durationType === "months" && (!months || months < 1 || months > 60)) {
@@ -171,17 +200,22 @@ const Warranty = () => {
       if (isNaN(purchaseAt.getTime())) throw new Error("Tanggal/jam tidak valid");
       if (purchaseAt.getTime() > Date.now()) throw new Error("Tanggal pembelian tidak boleh di masa depan");
 
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("warranty-invoices")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (upErr) throw upErr;
+      const paths: string[] = [];
+      for (const f of files) {
+        const ext = f.name.split(".").pop()?.toLowerCase() || "jpg";
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("warranty-invoices")
+          .upload(path, f, { contentType: f.type, upsert: false });
+        if (upErr) throw upErr;
+        paths.push(path);
+      }
 
       const { error: insErr } = await supabase.from("role_warranty_claims").insert({
         user_id: user.id,
-        invoice_image_url: path,
-        invoice_storage_path: path,
+        invoice_image_url: paths[0],
+        invoice_storage_path: paths[0],
+        invoice_image_paths: paths,
         purchase_at: purchaseAt.toISOString(),
         requested_role: role,
         duration_months: durationType === "months" ? months : null,
@@ -249,36 +283,55 @@ const Warranty = () => {
 
               {/* Invoice image */}
               <div className="space-y-2">
-                <Label>Screenshot Invoice <span className="text-destructive">*</span></Label>
-                {preview ? (
-                  <div className="relative inline-block">
-                    <img src={preview} alt="Preview" className="w-40 h-40 rounded-xl object-cover border border-border" />
+                <div className="flex items-center justify-between">
+                  <Label>Screenshot Invoice <span className="text-destructive">*</span></Label>
+                  <span className="text-[10px] text-muted-foreground">
+                    {previews.length}/{MAX_IMAGES} gambar
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {previews.map((src, i) => (
+                    <div key={src} className="relative">
+                      <img
+                        src={src}
+                        alt={`Preview ${i + 1}`}
+                        className="w-24 h-24 rounded-xl object-cover border border-border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(i)}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
+                        aria-label="Hapus gambar"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="absolute bottom-1 left-1 text-[10px] font-semibold bg-black/60 text-white px-1 rounded">
+                        {i + 1}
+                      </span>
+                    </div>
+                  ))}
+                  {previews.length < MAX_IMAGES && (
                     <button
                       type="button"
-                      onClick={() => { setFile(null); setPreview(null); if (fileRef.current) fileRef.current.value = ""; }}
-                      className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center shadow"
-                      aria-label="Hapus gambar"
+                      onClick={() => fileRef.current?.click()}
+                      className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary/60 hover:bg-secondary/30 flex flex-col items-center justify-center gap-1 text-muted-foreground transition"
                     >
-                      <X className="w-4 h-4" />
+                      <ImagePlus className="w-6 h-6" />
+                      <span className="text-[10px]">Tambah</span>
+                      <span className="text-[9px]">Max {MAX_SIZE_MB}MB</span>
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="w-40 h-40 rounded-xl border-2 border-dashed border-border hover:border-primary/60 hover:bg-secondary/30 flex flex-col items-center justify-center gap-2 text-muted-foreground transition"
-                  >
-                    <ImagePlus className="w-8 h-8" />
-                    <span className="text-xs">Pilih gambar</span>
-                    <span className="text-[10px]">Max 5MB</span>
-                  </button>
-                )}
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Bisa upload hingga {MAX_IMAGES} gambar (invoice, bukti transfer, chat, dsb).
+                </p>
                 <input
                   ref={fileRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
-                  onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+                  onChange={(e) => onPickFiles(e.target.files)}
                 />
               </div>
 
@@ -391,9 +444,16 @@ const Warranty = () => {
                       key={c.id}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-3 rounded-xl border border-border/60 bg-secondary/20 flex gap-3"
+                      className="p-3 rounded-xl border border-border/60 bg-secondary/20 space-y-2"
                     >
-                      <SignedThumb path={c.invoice_storage_path || c.invoice_image_url} onOpen={setLightbox} />
+                      <div className="flex flex-wrap gap-2">
+                        {((c.invoice_image_paths && c.invoice_image_paths.length > 0)
+                          ? c.invoice_image_paths
+                          : [c.invoice_storage_path || c.invoice_image_url]
+                        ).map((p, i) => (
+                          <SignedThumb key={`${c.id}-${i}`} path={p} onOpen={setLightbox} />
+                        ))}
+                      </div>
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-semibold">{ROLE_LABEL[c.requested_role]}</span>
