@@ -1010,73 +1010,7 @@ const Admin = () => {
   }
 
   return (
-    <AppShell>
-    <PageTransition>
-    <div className="min-h-screen py-6 px-4 bg-background">
-
-      <div className="w-full max-w-6xl mx-auto relative z-10">
-        {/* Header */}
-        <GlassCard className="p-5 mb-5 overflow-hidden relative">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber/10 via-transparent to-primary/10 pointer-events-none" />
-          <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber via-amber/80 to-amber/40 flex items-center justify-center shadow-lg shadow-amber/30">
-                  <Crown className="w-6 h-6 text-background" />
-                </div>
-                <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center">
-                  <span className="w-1.5 h-1.5 rounded-full bg-background" />
-                </span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="font-bold text-xl bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    Admin Panel
-                  </h1>
-                  <span className="px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase rounded-md bg-amber/15 text-amber border border-amber/30">
-                    v5.0
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                  <Activity className="w-3 h-3 text-emerald-500" />
-                  Pusat kontrol & manajemen sistem
-                </p>
-              </div>
-            </div>
-
-            {/* Stat badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 lg:gap-3 w-full lg:w-auto">
-              {[
-                { icon: Users, label: 'Pengguna', value: totalUsers, color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-                { icon: Server, label: 'Server', value: totalServers, color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-                { icon: HardDrive, label: 'Panel', value: totalPanels, color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-                {
-                  icon: Wifi,
-                  label: 'Online',
-                  value: Object.values(serverStatuses).filter((s) => s.isOnline).length,
-                  color: 'text-amber',
-                  bg: 'bg-amber/10',
-                  border: 'border-amber/20',
-                },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${stat.bg} ${stat.border} backdrop-blur-sm`}
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.bg} ${stat.color}`}>
-                    <stat.icon className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-base font-bold leading-tight">{stat.value}</div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider truncate">{stat.label}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </GlassCard>
-
-        {/* Tabs */}
+    <AdminLayout title="Manajemen Data" description="Kelola pengguna, server, panel & device dalam satu tempat">
         <GlassCard className="p-4 sm:p-6" delay={0.3}>
           {/* Search Bar */}
           <div className="relative mb-5">
@@ -1097,15 +1031,7 @@ const Admin = () => {
                   { value: 'users', icon: Users, label: 'Pengguna', count: filteredUsers.length },
                   { value: 'servers', icon: Server, label: 'Server', count: filteredServers.length },
                   { value: 'panels', icon: HardDrive, label: 'Panel', count: filteredPanels.length },
-                  { value: 'offline', icon: WifiOff, label: 'Offline' },
                   { value: 'devices', icon: Fingerprint, label: 'Device' },
-                  { value: 'inactive', icon: UserX, label: 'Nonaktif' },
-                  { value: 'popup', icon: Megaphone, label: 'Popup' },
-                  { value: 'ads', icon: Sparkles, label: 'Iklan' },
-                  { value: 'broadcast', icon: Bell, label: 'Broadcast' },
-                  { value: 'promos', icon: Tag, label: 'Promo' },
-                  { value: 'revenue', icon: TrendingUp, label: 'Revenue' },
-                  { value: 'logs', icon: ScrollText, label: 'Log' },
                 ].map((t) => (
                   <TabsTrigger
                     key={t.value}
