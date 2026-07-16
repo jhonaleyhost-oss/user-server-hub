@@ -35,6 +35,7 @@ interface Claim {
   duration_months: number | null;
   permanent: boolean;
   user_note: string | null;
+  deleted_username?: string | null;
   status: Status;
   admin_note: string | null;
   reviewed_by: string | null;
@@ -264,6 +265,11 @@ const AdminWarrantyClaims = () => {
                   {c.user_note && (
                     <p className="text-xs text-foreground/80 bg-background/40 rounded p-2 border border-border/40">
                       <span className="font-semibold">Catatan user: </span>{c.user_note}
+                    </p>
+                  )}
+                  {c.deleted_username && (
+                    <p className="text-xs text-foreground/80 bg-amber/5 rounded p-2 border border-amber/30">
+                      <span className="font-semibold">Username terhapus: </span>{c.deleted_username}
                     </p>
                   )}
                   {c.admin_note && (
