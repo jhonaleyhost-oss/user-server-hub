@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Server, MessageCircle, Star, Radio, Trash2, ShieldCheck, UserMinus } from "lucide-react";
+import { Server, MessageCircle, Star, Radio, Trash2, ShieldCheck, UserMinus, Crown } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-type ActivityKind = "panel" | "chat" | "feedback" | "panel_deleted" | "admin_panel" | "user_deleted";
+type ActivityKind = "panel" | "chat" | "feedback" | "panel_deleted" | "admin_panel" | "user_deleted" | "warranty_approved";
 
 interface ActivityItem {
   id: string;
@@ -85,8 +85,8 @@ const ActivityTicker = () => {
           .limit(10),
         supabase
           .from("activity_events")
-          .select("id, kind, actor_user_id, actor_name, detail, created_at")
-          .in("kind", ["panel_deleted", "admin_panel", "user_deleted"])
+          .select("id, kind, actor_user_id, actor_name, actor_role, detail, created_at")
+          .in("kind", ["panel_deleted", "admin_panel", "user_deleted", "warranty_approved"])
           .order("created_at", { ascending: false })
           .limit(15),
       ]);
@@ -156,7 +156,7 @@ const ActivityTicker = () => {
       }
 
       for (const r of (extraRes.data ?? []) as Array<{
-        id: string; kind: string; actor_user_id: string;
+        id: string; kind: string; actor_user_id: string; actor_role: string | null;
         actor_name: string | null; detail: string | null; created_at: string;
       }>) {
         const name = r.actor_name?.trim() || "Seseorang";
@@ -183,6 +183,15 @@ const ActivityTicker = () => {
             id: `udel-${r.id}`,
             kind: "user_deleted",
             text: `Akun ${name} dihapus`,
+            detail: r.detail || undefined,
+            created_at: r.created_at,
+          });
+        } else if (r.kind === "warranty_approved") {
+          const rl = r.actor_role === "reseller" ? "Reseller" : r.actor_role === "adp_server" ? "Admin Panel (ADP)" : r.actor_role === "premium" ? "Premium" : "Role";
+          collected.push({
+            id: `wrn-${r.id}`,
+            kind: "warranty_approved",
+            text: `Role @${name} sudah dipulihkan ke ${rl}`,
             detail: r.detail || undefined,
             created_at: r.created_at,
           });
@@ -288,6 +297,25 @@ const ActivityTicker = () => {
       )
       .on(
         "postgres_changes",
+        { event: "INSERT", schema: "public", table: "activity_events", filter: "kind=eq.warranty_approved" },
+        async (payload) => {
+          const row = payload.new as {
+            id: string; actor_user_id: string; actor_name: string | null; actor_role: string | null;
+            detail: string | null; created_at: string;
+          };
+          const name = row.actor_name?.trim() || (await nameOf(row.actor_user_id));
+          const rl = row.actor_role === "reseller" ? "Reseller" : row.actor_role === "adp_server" ? "Admin Panel (ADP)" : row.actor_role === "premium" ? "Premium" : "Role";
+          push({
+            id: `wrn-${row.id}`,
+            kind: "warranty_approved",
+            text: `Role @${name} sudah dipulihkan ke ${rl}`,
+            detail: row.detail || undefined,
+            created_at: row.created_at,
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         async (payload) => {
           const row = payload.new as {
@@ -370,6 +398,8 @@ const ActivityTicker = () => {
         return <ShieldCheck className="w-3.5 h-3.5 text-fuchsia-400 shrink-0" />;
       case "user_deleted":
         return <UserMinus className="w-3.5 h-3.5 text-rose-400 shrink-0" />;
+      case "warranty_approved":
+        return <Crown className="w-3.5 h-3.5 text-emerald-400 shrink-0" />;
     }
   };
 
