@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import GlassCard from "@/components/GlassCard";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Wallet, Crown, Megaphone, Heart, Trophy, Loader2 } from "lucide-react";
+import { TrendingUp, Wallet, Crown, Megaphone, Heart, Trophy, Loader2, Server } from "lucide-react";
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend,
 } from "recharts";
@@ -10,11 +10,12 @@ import {
 interface RevenueData {
   total: number;
   reseller: number;
+  adp: number;
   ads: number;
   tips: number;
   orders_count: number;
   days: number;
-  daily: Array<{ day: string; reseller: number; ads: number; tips: number; total: number }>;
+  daily: Array<{ day: string; reseller: number; adp: number; ads: number; tips: number; total: number }>;
   top_spenders: Array<{ user_id: string; name: string; avatar_url: string | null; total: number }>;
 }
 
@@ -61,7 +62,7 @@ export default function AdminRevenue() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-2"><Wallet className="w-4 h-4 text-primary" /><span className="text-xs text-muted-foreground">Total</span></div>
           <p className="text-xl font-bold text-foreground">{fmt(data.total)}</p>
@@ -69,6 +70,10 @@ export default function AdminRevenue() {
         <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-2"><Crown className="w-4 h-4 text-amber" /><span className="text-xs text-muted-foreground">Reseller</span></div>
           <p className="text-xl font-bold text-foreground">{fmt(data.reseller)}</p>
+        </GlassCard>
+        <GlassCard className="p-4">
+          <div className="flex items-center gap-2 mb-2"><Server className="w-4 h-4 text-emerald-400" /><span className="text-xs text-muted-foreground">ADP Server</span></div>
+          <p className="text-xl font-bold text-foreground">{fmt(data.adp || 0)}</p>
         </GlassCard>
         <GlassCard className="p-4">
           <div className="flex items-center gap-2 mb-2"><Megaphone className="w-4 h-4 text-primary" /><span className="text-xs text-muted-foreground">Iklan</span></div>
@@ -118,6 +123,7 @@ export default function AdminRevenue() {
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="reseller" stackId="a" fill="hsl(var(--amber))" name="Reseller" />
+              <Bar dataKey="adp" stackId="a" fill="#10b981" name="ADP" />
               <Bar dataKey="ads" stackId="a" fill="hsl(var(--primary))" name="Iklan" />
               <Bar dataKey="tips" stackId="a" fill="#f43f5e" name="Donasi" />
             </BarChart>
