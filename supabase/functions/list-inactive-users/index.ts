@@ -67,6 +67,20 @@ Deno.serve(async (req) => {
     const roleMap = new Map((roles || []).map((r: any) => [r.user_id, r.role]));
     const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
 
+    // Cleanup: delete orphan auth users (no matching profile row)
+    let orphansDeleted = 0;
+    for (const u of authUsers) {
+      if (!profileMap.has(u.id)) {
+        try {
+          // Belt-and-suspenders: clean any residual rows in public tables too
+          await admin.from("user_panels").delete().eq("user_id", u.id);
+          await admin.from("user_roles").delete().eq("user_id", u.id);
+          const { error: delErr } = await admin.auth.admin.deleteUser(u.id);
+          if (!delErr) orphansDeleted++;
+        } catch { /* ignore individual failures */ }
+      }
+    }
+
     // Panel counts
     const { data: panels } = await admin.from("user_panels").select("user_id");
     const panelCount = new Map<string, number>();
@@ -111,7 +125,14 @@ Deno.serve(async (req) => {
       .sort((a, b) => a._lastActivity - b._lastActivity)
       .map(({ _lastActivity, _created, ...rest }) => rest);
 
-    return new Response(JSON.stringify({ success: true, days, users: inactive, total: inactive.length }), {
+    return new Response(JSON.stringify({
+      success: true,
+      days,
+      users: inactive,
+      total: inactive.length,
+      total_users: (profiles || []).length,
+      orphans_deleted: orphansDeleted,
+    }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
