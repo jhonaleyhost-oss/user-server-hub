@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText } from "lucide-react";
 import {
   Sidebar,
@@ -51,6 +51,20 @@ export function AppSidebar() {
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState<boolean>(() => pathname.startsWith("/admin"));
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Persist sidebar scroll position across route changes
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = sessionStorage.getItem("sidebar:scrollTop");
+    if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+    const onScroll = () => {
+      sessionStorage.setItem("sidebar:scrollTop", String(el.scrollTop));
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (pathname.startsWith("/admin")) setAdminOpen(true);
@@ -187,7 +201,7 @@ export function AppSidebar() {
 
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
           {/* Exclusive Upgrade CTA — always visible, top of nav */}
           <div className="px-3 pt-3 pb-1">
             <NavLink
