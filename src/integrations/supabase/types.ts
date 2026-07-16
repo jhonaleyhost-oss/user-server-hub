@@ -923,6 +923,60 @@ export type Database = {
         }
         Relationships: []
       }
+      role_warranty_claims: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          duration_months: number | null
+          id: string
+          invoice_image_url: string
+          invoice_storage_path: string | null
+          permanent: boolean
+          purchase_at: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["warranty_status"]
+          updated_at: string
+          user_id: string
+          user_note: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          duration_months?: number | null
+          id?: string
+          invoice_image_url: string
+          invoice_storage_path?: string | null
+          permanent?: boolean
+          purchase_at: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["warranty_status"]
+          updated_at?: string
+          user_id: string
+          user_note?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          duration_months?: number | null
+          id?: string
+          invoice_image_url?: string
+          invoice_storage_path?: string | null
+          permanent?: boolean
+          purchase_at?: string
+          requested_role?: Database["public"]["Enums"]["app_role"]
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["warranty_status"]
+          updated_at?: string
+          user_id?: string
+          user_note?: string | null
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           content: string | null
@@ -1205,6 +1259,10 @@ export type Database = {
       activate_ad_rental: { Args: { _order_id: string }; Returns: Json }
       activate_adp_server: { Args: { _order_id: string }; Returns: Json }
       activate_reseller: { Args: { _order_id: string }; Returns: Json }
+      approve_warranty_claim: {
+        Args: { _admin_note?: string; _claim_id: string }
+        Returns: Json
+      }
       can_create_admin_panel: { Args: { _user_id: string }; Returns: boolean }
       can_send_feedback: { Args: never; Returns: boolean }
       compute_effective_role: {
@@ -1402,6 +1460,32 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_warranty_claims: {
+        Args: {
+          _limit?: number
+          _status?: Database["public"]["Enums"]["warranty_status"]
+        }
+        Returns: {
+          active_role: Database["public"]["Enums"]["app_role"]
+          admin_note: string
+          avatar_url: string
+          created_at: string
+          duration_months: number
+          email: string
+          full_name: string
+          id: string
+          invoice_image_url: string
+          invoice_storage_path: string
+          permanent: boolean
+          purchase_at: string
+          requested_role: Database["public"]["Enums"]["app_role"]
+          reviewed_at: string
+          reviewed_by: string
+          status: Database["public"]["Enums"]["warranty_status"]
+          user_id: string
+          user_note: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1431,6 +1515,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      reject_warranty_claim: {
+        Args: { _admin_note?: string; _claim_id: string }
+        Returns: Json
+      }
       store_server_keys: {
         Args: { _plta_key: string; _pltc_key: string; _server_id: string }
         Returns: undefined
@@ -1453,6 +1541,7 @@ export type Database = {
       notification_audience: "all" | "free" | "reseller" | "premium" | "admin"
       promo_discount_type: "percent" | "amount"
       promo_scope: "reseller" | "ads" | "both" | "adp"
+      warranty_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1584,6 +1673,7 @@ export const Constants = {
       notification_audience: ["all", "free", "reseller", "premium", "admin"],
       promo_discount_type: ["percent", "amount"],
       promo_scope: ["reseller", "ads", "both", "adp"],
+      warranty_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
