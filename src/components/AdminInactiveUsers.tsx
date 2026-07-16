@@ -35,6 +35,8 @@ const AdminInactiveUsers = () => {
   const [scanned, setScanned] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [allowReregister, setAllowReregister] = useState(true);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [orphansDeleted, setOrphansDeleted] = useState(0);
 
   const scan = async () => {
     setScanning(true);
@@ -47,8 +49,14 @@ const AdminInactiveUsers = () => {
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Gagal memindai');
       setUsers(data.users || []);
+      setTotalUsers(data.total_users || 0);
+      setOrphansDeleted(data.orphans_deleted || 0);
       setScanned(true);
-      toast({ title: 'Pindai selesai', description: `${data.total} akun tidak aktif ≥ ${days} hari` });
+      toast({
+        title: 'Pindai selesai',
+        description: `${data.total}/${data.total_users || 0} akun tidak aktif ≥ ${days} hari` +
+          (data.orphans_deleted ? ` • ${data.orphans_deleted} orphan dibersihkan` : ''),
+      });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Gagal', description: e.message });
     } finally {
@@ -145,8 +153,18 @@ const AdminInactiveUsers = () => {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3 text-xs">
             <span className="text-muted-foreground">
-              <b className="text-foreground">{users.length}</b> akun tidak aktif
+              <b className="text-foreground">{users.length}</b> nonaktif
+              <span className="text-muted-foreground"> / </span>
+              <b className="text-foreground">{totalUsers}</b> total pengguna
+              {totalUsers > 0 && (
+                <span className="ml-1 text-[10px] text-muted-foreground">
+                  ({Math.round((users.length / totalUsers) * 100)}%)
+                </span>
+              )}
             </span>
+            {orphansDeleted > 0 && (
+              <span className="text-emerald-400">• {orphansDeleted} orphan dibersihkan</span>
+            )}
             {users.length > 0 && (
               <span className="text-muted-foreground">
                 • <b className="text-foreground">{selected.size}</b> dipilih
