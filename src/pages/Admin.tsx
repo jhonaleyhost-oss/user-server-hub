@@ -33,10 +33,12 @@ import {
   TrendingUp,
   Activity,
 } from 'lucide-react';
+import { UserX } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
 import AdminPopupManager from '@/components/AdminPopupManager';
 import AdminActivityLogs from '@/components/AdminActivityLogs';
 import AdminOfflinePanels from '@/components/AdminOfflinePanels';
+import AdminInactiveUsers from '@/components/AdminInactiveUsers';
 import AdminAdRentals from '@/components/AdminAdRentals';
 import AdminBroadcast from '@/components/AdminBroadcast';
 import AdminPromos from '@/components/AdminPromos';
@@ -1111,6 +1113,7 @@ const Admin = () => {
                   { value: 'panels', icon: HardDrive, label: 'Panel', count: filteredPanels.length },
                   { value: 'offline', icon: WifiOff, label: 'Offline' },
                   { value: 'devices', icon: Fingerprint, label: 'Device' },
+                  { value: 'inactive', icon: UserX, label: 'Nonaktif' },
                   { value: 'popup', icon: Megaphone, label: 'Popup' },
                   { value: 'ads', icon: Sparkles, label: 'Iklan' },
                   { value: 'broadcast', icon: Bell, label: 'Broadcast' },
@@ -2063,6 +2066,11 @@ const Admin = () => {
             {/* Offline Panels Tab */}
             <TabsContent value="offline">
               <AdminOfflinePanels />
+            </TabsContent>
+
+            {/* Inactive Users Tab */}
+            <TabsContent value="inactive">
+              <AdminInactiveUsers />
             </TabsContent>
 
             {/* Activity Logs Tab */}
