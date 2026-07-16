@@ -74,6 +74,48 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Check if full name already taken (case-insensitive) to avoid opaque 500 from unique constraint
+    if (fullName && fullName.trim().length > 0) {
+      const { data: nameTaken } = await supabase
+        .from('profiles')
+        .select('id')
+        .ilike('full_name', fullName.trim())
+        .limit(1);
+      if (nameTaken && nameTaken.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `Nama "${fullName}" sudah dipakai. Silakan gunakan nama lain.`,
+          }),
+          {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
+    // Check if email already registered
+    {
+      const { data: emailTaken } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.toLowerCase())
+        .limit(1);
+      if (emailTaken && emailTaken.length > 0) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'Email ini sudah terdaftar. Silakan login atau gunakan email lain.',
+          }),
+          {
+            status: 409,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+    }
+
     // Check if IP already used for registration
     if (clientIp !== 'unknown') {
       const { data: ipProfiles } = await supabase
