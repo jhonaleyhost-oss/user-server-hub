@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -26,6 +26,18 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/NotificationBell";
 
+const ADMIN_SUB_ITEMS = [
+  { title: "Overview", url: "/admin", icon: LayoutDashboard, end: true },
+  { title: "Manajemen", url: "/admin/manage", icon: Settings2 },
+  { title: "Akun Nonaktif", url: "/admin/inactive", icon: UserX },
+  { title: "Panel Offline", url: "/admin/offline-panels", icon: WifiOff },
+  { title: "Broadcast", url: "/admin/broadcast", icon: Bell },
+  { title: "Promo", url: "/admin/promos", icon: Tag },
+  { title: "Iklan", url: "/admin/ads", icon: Sparkles },
+  { title: "Popup", url: "/admin/popup", icon: Megaphone },
+  { title: "Log Aktivitas", url: "/admin/activity", icon: ScrollText },
+];
+
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { signOut, user } = useAuth();
@@ -38,6 +50,11 @@ export function AppSidebar() {
 
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [adminOpen, setAdminOpen] = useState<boolean>(() => pathname.startsWith("/admin"));
+
+  useEffect(() => {
+    if (pathname.startsWith("/admin")) setAdminOpen(true);
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) return;
@@ -70,9 +87,6 @@ export function AppSidebar() {
     { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
     { title: "Promo & Kupon", url: "/promo", icon: Tag },
     { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
-    ...(isAdmin
-      ? [{ title: "Admin Panel", url: "/admin", icon: Crown }]
-      : []),
   ] as Array<{ title: string; url: string; icon: any; badge?: number }>;
 
   const isActive = (path: string) => pathname === path;
@@ -239,6 +253,42 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                {isAdmin && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      onClick={() => setAdminOpen((v) => !v)}
+                      isActive={pathname.startsWith("/admin")}
+                      className="flex items-center gap-3 w-full"
+                    >
+                      <Crown className="h-4 w-4 shrink-0" />
+                      <span className="flex-1 text-left">Admin Panel</span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 transition-transform ${adminOpen ? "rotate-180" : ""}`}
+                      />
+                    </SidebarMenuButton>
+                    {adminOpen && (
+                      <div className="mt-1 ml-3 pl-3 border-l border-sidebar-border/70 flex flex-col gap-0.5">
+                        {ADMIN_SUB_ITEMS.map((sub) => (
+                          <NavLink
+                            key={sub.url}
+                            to={sub.url}
+                            end={sub.end}
+                            className={({ isActive }) =>
+                              `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                isActive
+                                  ? "bg-primary/15 text-primary"
+                                  : "text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60"
+                              }`
+                            }
+                          >
+                            <sub.icon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate">{sub.title}</span>
+                          </NavLink>
+                        ))}
+                      </div>
+                    )}
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
