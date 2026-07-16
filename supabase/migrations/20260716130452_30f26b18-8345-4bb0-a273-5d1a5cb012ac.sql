@@ -1,0 +1,1 @@
+ALTER TABLE public.role_warranty_claims ADD COLUMN IF NOT EXISTS deleted_username TEXT;

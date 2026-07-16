@@ -927,6 +927,7 @@ export type Database = {
         Row: {
           admin_note: string | null
           created_at: string
+          deleted_username: string | null
           duration_months: number | null
           id: string
           invoice_image_paths: string[]
@@ -945,6 +946,7 @@ export type Database = {
         Insert: {
           admin_note?: string | null
           created_at?: string
+          deleted_username?: string | null
           duration_months?: number | null
           id?: string
           invoice_image_paths?: string[]
@@ -963,6 +965,7 @@ export type Database = {
         Update: {
           admin_note?: string | null
           created_at?: string
+          deleted_username?: string | null
           duration_months?: number | null
           id?: string
           invoice_image_paths?: string[]
