@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText } from "lucide-react";
 import {
   Sidebar,
@@ -38,6 +38,8 @@ const ADMIN_SUB_ITEMS = [
   { title: "Log Aktivitas", url: "/admin/activity", icon: ScrollText },
 ];
 
+const SIDEBAR_SCROLL_KEY = "sidebar:scrollTop";
+
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { signOut, user } = useAuth();
@@ -52,19 +54,49 @@ export function AppSidebar() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState<boolean>(() => pathname.startsWith("/admin"));
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const lastScrollTopRef = useRef(0);
+  const ignoreScrollSaveUntilRef = useRef(0);
+
+  const saveSidebarScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    lastScrollTopRef.current = el.scrollTop;
+    sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(el.scrollTop));
+  };
+
+  const restoreSidebarScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = Number(sessionStorage.getItem(SIDEBAR_SCROLL_KEY) ?? lastScrollTopRef.current);
+    if (!Number.isFinite(saved)) return;
+    el.scrollTop = saved;
+  };
 
   // Persist sidebar scroll position across route changes
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
-    const saved = sessionStorage.getItem("sidebar:scrollTop");
-    if (saved) el.scrollTop = parseInt(saved, 10) || 0;
+    restoreSidebarScroll();
     const onScroll = () => {
-      sessionStorage.setItem("sidebar:scrollTop", String(el.scrollTop));
+      if (performance.now() < ignoreScrollSaveUntilRef.current) return;
+      lastScrollTopRef.current = el.scrollTop;
+      sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(el.scrollTop));
     };
     el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+    return () => {
+      saveSidebarScroll();
+      el.removeEventListener("scroll", onScroll);
+    };
   }, []);
+
+  useLayoutEffect(() => {
+    restoreSidebarScroll();
+    const firstFrame = requestAnimationFrame(() => {
+      restoreSidebarScroll();
+      requestAnimationFrame(restoreSidebarScroll);
+    });
+    return () => cancelAnimationFrame(firstFrame);
+  }, [pathname, adminOpen]);
 
   useEffect(() => {
     if (pathname.startsWith("/admin")) setAdminOpen(true);
@@ -287,6 +319,14 @@ export function AppSidebar() {
                             key={sub.url}
                             to={sub.url}
                             end={sub.end}
+                            onPointerDown={() => {
+                              saveSidebarScroll();
+                              ignoreScrollSaveUntilRef.current = performance.now() + 800;
+                            }}
+                            onClick={() => {
+                              saveSidebarScroll();
+                              ignoreScrollSaveUntilRef.current = performance.now() + 800;
+                            }}
                             className={({ isActive }) =>
                               `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
                                 isActive
