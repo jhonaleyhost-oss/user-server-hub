@@ -38,9 +38,9 @@ serve(async (req) => {
       .order('created_at', { ascending: false });
     if (pErr) throw new Error(pErr.message);
 
-    // Bulk fetch all Ptero users
     let serverAlive = false;
     const pteroUserSet = new Set<number>();
+    const pteroUserMap = new Map<number, { username: string; email: string }>();
     try {
       let page = 1;
       for (let i = 0; i < 50; i++) {
@@ -53,8 +53,15 @@ serve(async (req) => {
         serverAlive = true;
         const body = await r.json();
         for (const u of (body?.data || [])) {
-          const id = u?.attributes?.id;
-          if (id) pteroUserSet.add(Number(id));
+          const a = u?.attributes;
+          const id = a?.id;
+          if (id) {
+            pteroUserSet.add(Number(id));
+            pteroUserMap.set(Number(id), {
+              username: String(a?.username || '').toLowerCase(),
+              email: String(a?.email || '').toLowerCase(),
+            });
+          }
         }
         const totalPages = body?.meta?.pagination?.total_pages ?? 1;
         if (page >= totalPages) break;
@@ -81,7 +88,15 @@ serve(async (req) => {
       let status: Result['status'];
       if (!serverAlive) status = 'unreachable';
       else if (!p.ptero_user_id || !pteroUserSet.has(Number(p.ptero_user_id))) status = 'orphan';
-      else status = 'online';
+      else {
+        const pu = pteroUserMap.get(Number(p.ptero_user_id));
+        const dbUsername = String(p.username || '').toLowerCase();
+        const dbEmail = String(p.email || '').toLowerCase();
+        // ID exists — verify username & email match. If either differs, ID has been reused by another user → orphan.
+        const usernameMatch = !!pu && !!dbUsername && pu.username === dbUsername;
+        const emailMatch = !!pu && !!dbEmail && pu.email === dbEmail;
+        status = (usernameMatch || emailMatch) ? 'online' : 'orphan';
+      }
       return {
         id: p.id, username: p.username, email: p.email,
         owner_email: profMap[p.user_id]?.email ?? null,
