@@ -52,10 +52,9 @@ serve(async (req) => {
       .order('created_at', { ascending: false });
     if (panelErr) throw new Error(panelErr.message);
 
-    // Optional pre-check server alive — if dead, mark ALL panels as offline (server unreachable)
     let serverAlive = false;
-    // Bulk fetch ALL servers from Pterodactyl via pagination — much faster & reliable than per-panel checks
-    const pteroServerMap = new Map<number, { suspended: boolean; uuid: string }>();
+    // Bulk fetch ALL servers from Pterodactyl via pagination
+    const pteroServerMap = new Map<number, { suspended: boolean; uuid: string; ownerUserId: number | null }>();
     try {
       let page = 1;
       const perPage = 100;
@@ -76,6 +75,7 @@ serve(async (req) => {
           pteroServerMap.set(Number(attr.id), {
             suspended: !!attr.suspended,
             uuid: String(attr.uuid || ''),
+            ownerUserId: attr.user != null ? Number(attr.user) : null,
           });
         }
         const totalPages = body?.meta?.pagination?.total_pages ?? 1;
@@ -83,6 +83,35 @@ serve(async (req) => {
         page++;
       }
     } catch { /* serverAlive stays false if first page failed */ }
+
+    // Bulk fetch all Ptero users so we can verify username/email of each server's owner
+    const pteroUserMap = new Map<number, { username: string; email: string }>();
+    if (serverAlive) {
+      try {
+        let page = 1;
+        for (let i = 0; i < 50; i++) {
+          const r = await fetchWithTimeout(
+            `${server.domain}/api/application/users?per_page=100&page=${page}`,
+            { headers: { 'Authorization': `Bearer ${server.plta_key}`, 'Accept': 'application/json' } },
+            10000,
+          );
+          if (!r.ok) break;
+          const body = await r.json();
+          for (const u of (body?.data || [])) {
+            const a = u?.attributes;
+            if (a?.id) {
+              pteroUserMap.set(Number(a.id), {
+                username: String(a.username || '').toLowerCase(),
+                email: String(a.email || '').toLowerCase(),
+              });
+            }
+          }
+          const totalPages = body?.meta?.pagination?.total_pages ?? 1;
+          if (page >= totalPages) break;
+          page++;
+        }
+      } catch { /* ignore */ }
+    }
 
     // Fetch profiles map for owner name
     const userIds = Array.from(new Set((panels || []).map(p => p.user_id)));
@@ -124,7 +153,20 @@ serve(async (req) => {
           const info = pteroServerMap.get(Number(p.ptero_server_id));
           if (!info) status = 'orphan';
           else if (info.suspended) status = 'suspended';
-          else { status = 'online'; uuid = info.uuid; }
+          else {
+            // Verify server owner's username/email matches the panel — guards against reused server IDs
+            const owner = info.ownerUserId != null ? pteroUserMap.get(info.ownerUserId) : null;
+            const dbUsername = String(p.username || '').toLowerCase();
+            const dbEmail = String(p.email || '').toLowerCase();
+            const usernameMatch = !!owner && !!dbUsername && owner.username === dbUsername;
+            const emailMatch = !!owner && !!dbEmail && owner.email === dbEmail;
+            if (pteroUserMap.size > 0 && !usernameMatch && !emailMatch) {
+              status = 'orphan';
+            } else {
+              status = 'online';
+              uuid = info.uuid;
+            }
+          }
         }
         const idx = results.length;
         results.push({
