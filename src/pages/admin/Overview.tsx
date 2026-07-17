@@ -14,6 +14,7 @@ import {
   UserX,
   Settings2,
   ArrowRight,
+  Ghost,
 } from 'lucide-react';
 import AdminLayout from '@/components/AdminLayout';
 import GlassCard from '@/components/GlassCard';
@@ -31,6 +32,7 @@ const NAV_CARDS = [
   { to: '/admin/manage', label: 'Manajemen Data', desc: 'User, server, panel, device', icon: Settings2, color: 'text-primary bg-primary/10' },
   { to: '/admin/inactive', label: 'Akun Nonaktif', desc: 'Akun idle >1 bulan', icon: UserX, color: 'text-rose-400 bg-rose-500/10' },
   { to: '/admin/offline-panels', label: 'Panel Offline', desc: 'Scan & hapus panel mati', icon: WifiOff, color: 'text-amber bg-amber/10' },
+  { to: '/admin/orphan-admin-panels', label: 'Orphan ADP', desc: 'Hapus Admin Panel orphan', icon: Ghost, color: 'text-rose-400 bg-rose-500/10' },
   { to: '/admin/broadcast', label: 'Broadcast', desc: 'Pesan ke seluruh user', icon: Bell, color: 'text-blue-400 bg-blue-500/10' },
   { to: '/admin/promos', label: 'Promo Codes', desc: 'Kelola kode promo', icon: Tag, color: 'text-emerald-400 bg-emerald-500/10' },
   { to: '/admin/ads', label: 'Sewa Iklan', desc: 'Manajemen iklan user', icon: Sparkles, color: 'text-purple-400 bg-purple-500/10' },

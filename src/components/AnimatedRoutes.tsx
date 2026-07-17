@@ -13,6 +13,7 @@ import AdminPopupPage from '@/pages/admin/AdminPopupPage';
 import AdminActivityPage from '@/pages/admin/AdminActivityPage';
 import AdminInactivePage from '@/pages/admin/AdminInactivePage';
 import AdminOfflinePanelsPage from '@/pages/admin/AdminOfflinePanelsPage';
+import AdminOrphanAdminPanelsPage from '@/pages/admin/AdminOrphanAdminPanelsPage';
 import AdminRoute from '@/components/AdminRoute';
 import Upgrade from '@/pages/Upgrade';
 import { Navigate } from 'react-router-dom';
@@ -49,6 +50,7 @@ export const AnimatedRoutes = () => {
         <Route path="/admin/activity" element={<AdminRoute><AdminActivityPage /></AdminRoute>} />
         <Route path="/admin/inactive" element={<AdminRoute><AdminInactivePage /></AdminRoute>} />
         <Route path="/admin/offline-panels" element={<AdminRoute><AdminOfflinePanelsPage /></AdminRoute>} />
+        <Route path="/admin/orphan-admin-panels" element={<AdminRoute><AdminOrphanAdminPanelsPage /></AdminRoute>} />
         <Route path="/admin/warranty" element={<AdminRoute><AdminWarrantyPage /></AdminRoute>} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/upgrade-adp" element={<Navigate to="/upgrade?tier=adp" replace />} />

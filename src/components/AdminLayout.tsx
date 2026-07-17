@@ -14,6 +14,7 @@ import {
   ArrowLeft,
   Crown,
   ShieldCheck,
+  Ghost,
 } from 'lucide-react';
 import AppShell from '@/components/AppShell';
 import { PageTransition } from '@/components/PageTransition';
@@ -27,6 +28,7 @@ export const ADMIN_NAV = [
   { to: '/admin/manage', label: 'Manajemen', icon: Settings2 },
   { to: '/admin/inactive', label: 'Nonaktif', icon: UserX },
   { to: '/admin/offline-panels', label: 'Offline', icon: WifiOff },
+  { to: '/admin/orphan-admin-panels', label: 'Orphan ADP', icon: Ghost },
   { to: '/admin/warranty', label: 'Garansi', icon: ShieldCheck },
   { to: '/admin/broadcast', label: 'Broadcast', icon: Bell },
   { to: '/admin/promos', label: 'Promo', icon: Tag },
