@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Zap, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, LogIn, UserPlus, Zap, KeyRound, Home, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { PageTransition } from '@/components/PageTransition';
 
@@ -163,6 +163,29 @@ const Auth = () => {
           className="flex justify-center mb-8"
         >
           <Logo size="lg" />
+        </motion.div>
+
+        {/* Landing page banner */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="mb-4"
+        >
+          <Link
+            to="/landing"
+            className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 transition px-4 py-3"
+          >
+            <div className="flex items-center gap-2 text-sm">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="text-foreground font-medium">Baru di sini?</span>
+              <span className="text-muted-foreground hidden sm:inline">Lihat fitur & harga lengkap</span>
+            </div>
+            <span className="text-xs text-primary font-semibold flex items-center gap-1">
+              <Home className="w-3.5 h-3.5" />
+              Landing
+            </span>
+          </Link>
         </motion.div>
 
         {/* Auth Card */}

@@ -23,6 +23,7 @@ import Chat from '@/pages/Chat';
 import Feedback from '@/pages/Feedback';
 import Activity from '@/pages/Activity';
 import NotFound from '@/pages/NotFound';
+import Landing from '@/pages/Landing';
 import Support from '@/pages/Support';
 import AdsRental from '@/pages/AdsRental';
 import Promos from '@/pages/Promos';
@@ -38,6 +39,7 @@ export const AnimatedRoutes = () => {
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/landing" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/panels" element={<Panels />} />
