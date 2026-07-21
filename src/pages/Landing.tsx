@@ -61,6 +61,15 @@ const faqs = [
 ];
 
 const Landing = () => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { label: 'Keunggulan', href: '#features' },
+    { label: 'Harga', href: '#pricing' },
+    { label: 'Cara Kerja', href: '#how-it-works' },
+    { label: 'FAQ', href: '#faq' },
+  ];
+
   return (
     <PageTransition>
       <div className="min-h-screen bg-background text-foreground">
@@ -68,19 +77,60 @@ const Landing = () => {
         <header className="sticky top-0 z-40 border-b border-border/50 backdrop-blur-xl bg-background/70">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <Logo size="md" />
+
+            <nav className="hidden md:flex items-center gap-1">
+              {navItems.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition rounded-lg hover:bg-accent/50"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 mr-1 sm:mr-2">
+              <div className="hidden sm:flex items-center gap-2 mr-1 sm:mr-2">
                 <AccentColorPicker />
                 <ThemeToggle />
               </div>
               <Link to="/auth">
                 <Button className="btn-primary flex items-center gap-2" size="sm">
                   <LogIn className="w-4 h-4" />
-                  <span className="hidden xs:inline sm:inline">Masuk</span>
+                  <span className="hidden sm:inline">Masuk</span>
                 </Button>
               </Link>
+              <button
+                className="md:hidden p-2 rounded-lg hover:bg-accent/50"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
+
+          {mobileMenuOpen && (
+            <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl">
+              <nav className="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-1">
+                {navItems.map((item) => (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 rounded-lg transition"
+                  >
+                    {item.label}
+                  </a>
+                ))}
+                <div className="flex items-center gap-2 px-3 py-2 sm:hidden">
+                  <AccentColorPicker />
+                  <ThemeToggle />
+                </div>
+              </nav>
+            </div>
+          )}
         </header>
 
         {/* Hero */}
