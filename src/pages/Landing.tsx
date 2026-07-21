@@ -69,7 +69,7 @@ const Landing = () => {
     { label: 'Harga', href: '#pricing' },
     { label: 'Cara Kerja', href: '#how-it-works' },
     { label: 'FAQ', href: '#faq' },
-    { label: 'Kontak', href: '#contact', icon: Mail },
+    { label: 'Kontak', href: '#contact' },
   ];
 
   return (
