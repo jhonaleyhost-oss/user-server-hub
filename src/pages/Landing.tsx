@@ -30,7 +30,7 @@ const plans = [
   },
   {
     name: 'Reseller',
-    price: 'Mulai Rp 5K / Bulan',
+    price: 'Mulai Rp 5.000 / Bulan',
     highlight: true,
     badge: 'Paling Populer',
     features: ['Panel Unlimited', 'Akses Server Private', 'Spec Unlimited', 'Prioritas Support', 'Aktif 1 Bulan / Permanen'],
@@ -38,7 +38,7 @@ const plans = [
   },
   {
     name: 'ADP Server',
-    price: 'Mulai Rp 10K / Bulan',
+    price: 'Mulai Rp 10.000 / Bulan',
     highlight: false,
     features: ['Buat Admin Panel Sendiri', 'Kelola Sub-user', 'Server Dedicated', 'Cocok untuk Reseller Besar'],
     cta: 'Upgrade ADP',
