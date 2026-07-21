@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Lock, Upload, Save, Loader2, Trash2, Clock, Infinity as InfinityIcon, Crown } from "lucide-react";
+import { User, Mail, Lock, Upload, Save, Loader2, Trash2, Clock, Infinity as InfinityIcon, Crown, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useResellerStatus, formatResellerRemaining, formatExpiryDate } from "@/hooks/useResellerStatus";
