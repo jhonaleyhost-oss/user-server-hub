@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { Send, MessageCircle, Loader2, ArrowRight } from "lucide-react";
+import { Send, MessageCircle, Loader2, ArrowRight, Megaphone, BadgeCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,8 @@ const telegramLinks = [
   { label: "Jhonaley Store ID", url: "https://t.me/jhonaleystoreid" },
   { label: "Limit Bot", url: "https://t.me/jhonaleylimitbot" },
 ];
+
+const OFFICIAL_CHANNEL = "https://t.me/jhonaleytesti3";
 
 const ContactSection = () => {
   const [form, setForm] = useState({
@@ -169,6 +171,34 @@ const ContactSection = () => {
                   <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
                 </a>
               ))}
+            </div>
+
+            <div className="pt-2">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-px flex-1 bg-border/60" />
+                <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Channel Resmi</span>
+                <div className="h-px flex-1 bg-border/60" />
+              </div>
+              <a
+                href={OFFICIAL_CHANNEL}
+                target="_blank"
+                rel="noreferrer"
+                className="relative flex items-center justify-between p-4 rounded-xl border border-primary/40 bg-gradient-to-r from-primary/10 via-accent/5 to-transparent hover:border-primary/70 transition group overflow-hidden"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                    <Megaphone className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold">Channel Telegram Resmi</span>
+                      <BadgeCheck className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="text-xs text-muted-foreground">Update, promo & pengumuman resmi</div>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-primary group-hover:translate-x-0.5 transition" />
+              </a>
             </div>
           </motion.div>
         </div>
