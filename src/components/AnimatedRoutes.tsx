@@ -34,6 +34,7 @@ const RootRoute = () => {
 import Support from '@/pages/Support';
 import AdsRental from '@/pages/AdsRental';
 import Promos from '@/pages/Promos';
+import LandingPromos from '@/pages/LandingPromos';
 import Notifications from '@/pages/Notifications';
 import Unsubscribe from '@/pages/Unsubscribe';
 import Warranty from '@/pages/Warranty';
@@ -69,7 +70,7 @@ export const AnimatedRoutes = () => {
         <Route path="/activity" element={<Activity />} />
         <Route path="/support" element={<Support />} />
         <Route path="/sewa-iklan" element={<AdsRental />} />
-        <Route path="/promo" element={<Promos />} />
+        <Route path="/promo" element={<PromoRoute />} />
         <Route path="/notifikasi" element={<Notifications />} />
         <Route path="/unsubscribe" element={<Unsubscribe />} />
         <Route path="/garansi" element={<Warranty />} />
