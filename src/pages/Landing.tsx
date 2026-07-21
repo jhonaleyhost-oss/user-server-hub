@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 import {
   Server, Shield, Zap, Crown, Users, Terminal, Globe, Check,
   ArrowRight, Sparkles, Rocket, Lock, Clock, HeartHandshake,
-  MessageCircle, Star, LogIn, Menu, X,
+  MessageCircle, Star, LogIn, Menu, X, Mail,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
 import AccentColorPicker from '@/components/AccentColorPicker';
+import ContactSection from '@/components/ContactSection';
 import { Button } from '@/components/ui/button';
 import { PageTransition } from '@/components/PageTransition';
 
@@ -68,6 +69,7 @@ const Landing = () => {
     { label: 'Harga', href: '#pricing' },
     { label: 'Cara Kerja', href: '#how-it-works' },
     { label: 'FAQ', href: '#faq' },
+    { label: 'Kontak', href: '#contact' },
   ];
 
   return (
@@ -372,6 +374,8 @@ const Landing = () => {
             </div>
           </div>
         </section>
+
+        <ContactSection />
 
         {/* Footer */}
         <footer className="py-10 border-t border-border/50">
