@@ -471,6 +471,26 @@ export default function Profile() {
               Update Password
             </Button>
           </GlassCard>
+
+          {/* Logout */}
+          <GlassCard className="p-5 space-y-4 border-rose-500/20">
+            <div className="flex items-center gap-2">
+              <LogOut className="w-4 h-4 text-rose-400" />
+              <h2 className="font-semibold text-foreground">Keluar Akun</h2>
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              Logout dari perangkat ini. Kamu bisa masuk kembali kapan saja.
+            </p>
+            <Button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              variant="outline"
+              className="w-full h-11 gap-2 text-rose-400 border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400"
+            >
+              {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+              Log Out
+            </Button>
+          </GlassCard>
         </div>
       </PageTransition>
 
