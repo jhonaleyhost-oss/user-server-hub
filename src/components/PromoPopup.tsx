@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUserRole } from '@/hooks/useUserRole';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface PopupButton { label: string; url: string }
 
@@ -36,6 +36,7 @@ const PromoPopup = () => {
   const [lightbox, setLightbox] = useState<string | null>(null);
   const { isReseller, isAdmin, loading: roleLoading } = useUserRole();
   const navigate = useNavigate();
+  const location = useLocation();
   const canHide = isReseller || isAdmin;
 
   const sessionKey = (id: string) => `promo_session_${id}`;
@@ -61,7 +62,11 @@ const PromoPopup = () => {
       }
 
       // 2) Active rented ads
-      const { data: ads } = await supabase.rpc('get_active_ads');
+      // Skip user-rented ads on public landing page (only admin promo shown there)
+      const isLandingPublic = location.pathname === '/';
+      const { data: ads } = isLandingPublic
+        ? { data: [] as any[] }
+        : await supabase.rpc('get_active_ads');
       if (Array.isArray(ads)) {
         for (const a of ads as any[]) {
           if (!a.content) continue;

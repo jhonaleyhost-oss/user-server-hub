@@ -59,7 +59,7 @@ const ContactSection = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold">Hubungi Kami</h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-            Punya pertanyaan? Kirim pesan langsung ke email support atau hubungi kami via Telegram.
+            Punya pertanyaan? Kirim pesan lewat form di bawah atau hubungi kami via Telegram.
           </p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -169,17 +169,6 @@ const ContactSection = () => {
                   <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
                 </a>
               ))}
-            </div>
-            <div className="pt-4 border-t border-border/50">
-              <p className="text-sm text-muted-foreground">
-                Email support:{" "}
-                <a
-                  href="mailto:danangvalentpratama@gmail.com"
-                  className="text-primary hover:underline"
-                >
-                  danangvalentpratama@gmail.com
-                </a>
-              </p>
             </div>
           </motion.div>
         </div>
