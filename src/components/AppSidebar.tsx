@@ -153,7 +153,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     await signOut();
-    navigate("/auth");
+    navigate("/");
   };
 
   const emailPrefix = user?.email?.split("@")[0] ?? "Guest";
