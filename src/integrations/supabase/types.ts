@@ -1584,7 +1584,7 @@ export type Database = {
       app_role: "free" | "premium" | "reseller" | "admin" | "adp_server"
       notification_audience: "all" | "free" | "reseller" | "premium" | "admin"
       promo_discount_type: "percent" | "amount"
-      promo_scope: "reseller" | "ads" | "both" | "adp"
+      promo_scope: "reseller" | "ads" | "both" | "adp" | "reseller_adp"
       warranty_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -1716,7 +1716,7 @@ export const Constants = {
       app_role: ["free", "premium", "reseller", "admin", "adp_server"],
       notification_audience: ["all", "free", "reseller", "premium", "admin"],
       promo_discount_type: ["percent", "amount"],
-      promo_scope: ["reseller", "ads", "both", "adp"],
+      promo_scope: ["reseller", "ads", "both", "adp", "reseller_adp"],
       warranty_status: ["pending", "approved", "rejected"],
     },
   },
