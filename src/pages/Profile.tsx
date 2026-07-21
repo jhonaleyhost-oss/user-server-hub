@@ -31,6 +31,7 @@ export default function Profile() {
   const [savingEmail, setSavingEmail] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState("");
