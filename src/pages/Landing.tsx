@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Server, Shield, Zap, Crown, Users, Terminal, Globe, Check,
   ArrowRight, Sparkles, Rocket, Lock, Clock, HeartHandshake,
-  MessageCircle, Star, LogIn, Menu, X, Mail,
+  MessageCircle, Star, LogIn, Menu, X, Mail, Tag,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -63,6 +63,14 @@ const faqs = [
 
 const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const navItems = [
     { label: 'Keunggulan', href: '#features' },
@@ -76,35 +84,47 @@ const Landing = () => {
     <PageTransition>
       <div className="min-h-screen bg-background text-foreground">
         {/* Nav */}
-        <header className="sticky top-0 z-40 border-b border-border/50 backdrop-blur-xl bg-background/70">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <header
+          className={`sticky top-0 z-40 backdrop-blur-xl transition-all duration-300 ${
+            scrolled
+              ? 'bg-background/80 border-b border-border/60 shadow-[0_4px_20px_-8px_hsl(var(--primary)/0.15)]'
+              : 'bg-background/40 border-b border-transparent'
+          }`}
+        >
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
             <Logo size="md" />
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-0.5">
               {navItems.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
-                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition rounded-lg hover:bg-accent/50"
+                  className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-accent/40"
                 >
                   {item.label}
                 </a>
               ))}
+              <Link
+                to="/promo"
+                className="px-3 py-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors rounded-lg hover:bg-primary/10 flex items-center gap-1.5"
+              >
+                <Tag className="w-3.5 h-3.5" /> Promo
+              </Link>
             </nav>
 
-            <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 mr-1 sm:mr-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="hidden sm:flex items-center gap-1.5">
                 <AccentColorPicker />
                 <ThemeToggle />
               </div>
               <Link to="/auth">
-                <Button className="btn-primary flex items-center gap-2" size="sm">
+                <Button className="btn-primary flex items-center gap-2 shadow-sm" size="sm">
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">Masuk</span>
                 </Button>
               </Link>
               <button
-                className="md:hidden p-2 rounded-lg hover:bg-accent/50"
+                className="md:hidden p-2 rounded-lg hover:bg-accent/50 transition"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle menu"
               >
@@ -126,6 +146,13 @@ const Landing = () => {
                     {item.label}
                   </a>
                 ))}
+                <Link
+                  to="/promo"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition flex items-center gap-2"
+                >
+                  <Tag className="w-4 h-4" /> Promo
+                </Link>
                 <div className="flex items-center gap-2 px-3 py-2 sm:hidden">
                   <AccentColorPicker />
                   <ThemeToggle />

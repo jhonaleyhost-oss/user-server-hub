@@ -9,6 +9,9 @@ const FROM_DOMAIN = "web.jhonaleystore.id";
 
 const MAX_DAILY_PER_EMAIL = 3;
 const MAX_HOURLY_PER_IP = 5;
+const MAX_PER_MINUTE_PER_IP = 2;
+const MAX_DAILY_PER_IP = 10;
+const MIN_INTERVAL_SECONDS = 20;
 
 function generateUnsubscribeToken(): string {
   return crypto.randomUUID().replace(/-/g, "");
@@ -70,6 +73,28 @@ Deno.serve(async (req) => {
 
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000).toISOString();
+    const minIntervalAgo = new Date(Date.now() - MIN_INTERVAL_SECONDS * 1000).toISOString();
+
+    // Burst protection: hard interval between submissions from same IP
+    const { data: lastFromIp } = await admin
+      .from("contact_submissions")
+      .select("created_at")
+      .eq("ip_address", ipAddress)
+      .gte("created_at", minIntervalAgo)
+      .limit(1);
+    if (lastFromIp && lastFromIp.length > 0) {
+      return json({ error: `Tunggu ${MIN_INTERVAL_SECONDS} detik sebelum mengirim pesan lagi.` }, 429);
+    }
+
+    const { count: ipMinuteCount } = await admin
+      .from("contact_submissions")
+      .select("*", { count: "exact", head: true })
+      .eq("ip_address", ipAddress)
+      .gte("created_at", oneMinuteAgo);
+    if ((ipMinuteCount ?? 0) >= MAX_PER_MINUTE_PER_IP) {
+      return json({ error: "Terlalu banyak pesan dalam waktu singkat. Coba lagi sebentar." }, 429);
+    }
 
     const { count: ipHourCount } = await admin
       .from("contact_submissions")
@@ -79,6 +104,15 @@ Deno.serve(async (req) => {
 
     if ((ipHourCount ?? 0) >= MAX_HOURLY_PER_IP) {
       return json({ error: "Terlalu banyak pengiriman. Silakan coba lagi nanti." }, 429);
+    }
+
+    const { count: ipDayCount } = await admin
+      .from("contact_submissions")
+      .select("*", { count: "exact", head: true })
+      .eq("ip_address", ipAddress)
+      .gte("created_at", oneDayAgo);
+    if ((ipDayCount ?? 0) >= MAX_DAILY_PER_IP) {
+      return json({ error: "Batas harian tercapai. Silakan coba lagi besok." }, 429);
     }
 
     const { count: emailDayCount } = await admin
