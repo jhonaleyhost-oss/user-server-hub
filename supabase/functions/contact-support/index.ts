@@ -10,6 +10,10 @@ const FROM_DOMAIN = "web.jhonaleystore.id";
 const MAX_DAILY_PER_EMAIL = 3;
 const MAX_HOURLY_PER_IP = 5;
 
+function generateUnsubscribeToken(): string {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
 const BodySchema = z.object({
   name: z.string().trim().min(2, "Nama minimal 2 karakter").max(100, "Nama maksimal 100 karakter"),
   email: z.string().trim().email("Email tidak valid").max(255, "Email terlalu panjang"),
