@@ -316,6 +316,42 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_submissions: {
+        Row: {
+          category: string
+          created_at: string
+          email: string
+          forwarded_to_email: string
+          id: string
+          ip_address: string | null
+          message: string
+          name: string
+          user_agent: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          email: string
+          forwarded_to_email: string
+          id?: string
+          ip_address?: string | null
+          message: string
+          name: string
+          user_agent?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          email?: string
+          forwarded_to_email?: string
+          id?: string
+          ip_address?: string | null
+          message?: string
+          name?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
