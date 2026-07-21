@@ -10,11 +10,11 @@ const SITE_NAME = "jhonaleycpanel"
 // SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
 // It MUST match the subdomain delegated to Lovable's nameservers — never the root domain.
 // The email API looks up this exact domain; a mismatch causes "No email domain record found".
-const SENDER_DOMAIN = "store.jhonaleystore.id"
+const SENDER_DOMAIN = "web.jhonaleystore.id"
 // FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
 // When display_from_root is enabled, this can be the root domain for cleaner branding,
 // even though actual sending uses the subdomain above.
-const FROM_DOMAIN = "store.jhonaleystore.id"
+const FROM_DOMAIN = "web.jhonaleystore.id"
 
 // Generate a cryptographically random 32-byte hex token
 function generateToken(): string {
