@@ -108,7 +108,7 @@ export default function Profile() {
     setLoggingOut(true);
     try {
       await signOut();
-      window.location.replace("/auth");
+      window.location.replace("/");
     } catch (error) {
       toast.error("Gagal keluar, coba lagi");
       setLoggingOut(false);
