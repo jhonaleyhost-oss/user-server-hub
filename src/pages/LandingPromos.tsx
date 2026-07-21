@@ -117,6 +117,18 @@ const LandingPromos = () => {
               >
                 Klaim kode promo di bawah dan gunakan saat pembelian Reseller, ADP, atau Iklan.
               </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="mt-6"
+              >
+                <Link to="/">
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <ArrowLeft className="w-4 h-4" /> Kembali ke Beranda
+                  </Button>
+                </Link>
+              </motion.div>
             </div>
           </section>
 
