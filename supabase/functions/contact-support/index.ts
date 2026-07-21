@@ -135,6 +135,12 @@ Deno.serve(async (req) => {
     `;
     const text = `Pesan Kontak Baru\n\nNama: ${name}\nEmail: ${email}\nKategori: ${categoryLabels[category]}\nPesan:\n${message}\n\nDikirim dari landing page Jhonaley Store · IP: ${ipAddress}`;
 
+    const unsubscribeToken = generateUnsubscribeToken();
+    await admin.from("email_unsubscribe_tokens").insert({
+      token: unsubscribeToken,
+      email: SUPPORT_EMAIL,
+    });
+
     await admin.from("email_send_log").insert({
       message_id: messageId,
       template_name: "contact_support",
