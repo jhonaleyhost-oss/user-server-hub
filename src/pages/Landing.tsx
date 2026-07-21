@@ -68,14 +68,14 @@ const Landing = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <Logo size="md" />
             <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 mr-2">
+              <div className="flex items-center gap-2 mr-1 sm:mr-2">
                 <AccentColorPicker />
                 <ThemeToggle />
               </div>
               <Link to="/auth">
-                <Button className="btn-primary flex items-center gap-2">
+                <Button className="btn-primary flex items-center gap-2" size="sm">
                   <LogIn className="w-4 h-4" />
-                  <span>Masuk</span>
+                  <span className="hidden xs:inline sm:inline">Masuk</span>
                 </Button>
               </Link>
             </div>
