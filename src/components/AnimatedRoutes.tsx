@@ -24,6 +24,13 @@ import Feedback from '@/pages/Feedback';
 import Activity from '@/pages/Activity';
 import NotFound from '@/pages/NotFound';
 import Landing from '@/pages/Landing';
+import { useAuth } from '@/hooks/useAuth';
+
+const RootRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user ? <Dashboard /> : <Landing />;
+};
 import Support from '@/pages/Support';
 import AdsRental from '@/pages/AdsRental';
 import Promos from '@/pages/Promos';
@@ -38,7 +45,7 @@ export const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<RootRoute />} />
         <Route path="/landing" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
