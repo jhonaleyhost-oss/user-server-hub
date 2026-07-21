@@ -23,7 +23,7 @@ import GlassCard from "@/components/GlassCard";
 import { PageTransition } from "@/components/PageTransition";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { role, isAdmin } = useUserRole();
   const { status: resellerStatus } = useResellerStatus();
   const [loading, setLoading] = useState(true);
