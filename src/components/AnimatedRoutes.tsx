@@ -31,6 +31,11 @@ const RootRoute = () => {
   if (loading) return null;
   return user ? <Dashboard /> : <Landing />;
 };
+const PromoRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  return user ? <Promos /> : <LandingPromos />;
+};
 import Support from '@/pages/Support';
 import AdsRental from '@/pages/AdsRental';
 import Promos from '@/pages/Promos';
