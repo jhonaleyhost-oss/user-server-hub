@@ -173,7 +173,7 @@ const Auth = () => {
           className="mb-4"
         >
           <Link
-            to="/landing"
+            to="/"
             className="flex items-center justify-between gap-3 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/15 transition px-4 py-3"
           >
             <div className="flex items-center gap-2 text-sm">
@@ -183,7 +183,7 @@ const Auth = () => {
             </div>
             <span className="text-xs text-primary font-semibold flex items-center gap-1">
               <Home className="w-3.5 h-3.5" />
-              Landing
+              Beranda
             </span>
           </Link>
         </motion.div>
