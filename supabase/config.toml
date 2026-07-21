@@ -35,3 +35,6 @@ project_id = "qjkaoghqatkminsufqfn"
     verify_jwt = false
   [functions.contact-support]
     verify_jwt = false
+
+[functions.process-email-queue]
+verify_jwt = true
