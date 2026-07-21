@@ -22,7 +22,7 @@ interface Promo {
   discount_value: number;
   min_amount: number;
   max_discount: number | null;
-  scope: "reseller" | "ads" | "adp" | "both";
+  scope: "reseller" | "ads" | "adp" | "both" | "reseller_adp";
   quota: number | null;
   used_count: number;
   active: boolean;
@@ -39,7 +39,7 @@ const emptyForm = {
   discount_value: 10,
   min_amount: 0,
   max_discount: 0,
-  scope: "both" as "reseller" | "ads" | "adp" | "both",
+  scope: "both" as "reseller" | "ads" | "adp" | "both" | "reseller_adp",
   quota: 0,
   active: true,
   starts_at: "",
@@ -119,6 +119,7 @@ export default function AdminPromos() {
       const scopeLabel = payload.scope === "reseller" ? "upgrade Reseller"
         : payload.scope === "ads" ? "sewa Iklan"
         : payload.scope === "adp" ? "upgrade Admin Panel Server"
+        : payload.scope === "reseller_adp" ? "upgrade Reseller & Admin Panel Server"
         : "upgrade Reseller & sewa Iklan";
       const expiryNote = payload.expires_at
         ? ` Berlaku sampai ${new Date(payload.expires_at).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}.`
@@ -288,6 +289,7 @@ export default function AdminPromos() {
                   <SelectItem value="reseller">Reseller saja</SelectItem>
                   <SelectItem value="ads">Iklan saja</SelectItem>
                     <SelectItem value="adp">Admin Panel Server saja</SelectItem>
+                    <SelectItem value="reseller_adp">Reseller & Admin Panel Server</SelectItem>
                 </SelectContent>
               </Select>
             </div>
