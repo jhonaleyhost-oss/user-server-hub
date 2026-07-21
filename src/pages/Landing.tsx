@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   Server, Shield, Zap, Crown, Users, Terminal, Globe, Check,
   ArrowRight, Sparkles, Rocket, Lock, Clock, HeartHandshake,
-  MessageCircle, Star, LogIn, Menu, X, Mail, Tag,
+  MessageCircle, Star, LogIn, Menu, X, Mail, Tag, Megaphone, Send,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -60,6 +60,8 @@ const faqs = [
   { q: 'Apa itu ADP Server?', a: 'ADP (Admin Panel) memungkinkan Anda punya panel Pterodactyl sendiri untuk dijual ulang ke klien Anda.' },
   { q: 'Apakah ada garansi?', a: 'Ada. Jika role hilang karena error sistem, ajukan klaim di halaman Garansi dengan bukti invoice.' },
 ];
+
+const OFFICIAL_CHANNEL = 'https://t.me/jhonaleytesti3';
 
 const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -117,6 +119,23 @@ const Landing = () => {
                 <AccentColorPicker />
                 <ThemeToggle />
               </div>
+              <a
+                href={OFFICIAL_CHANNEL}
+                target="_blank"
+                rel="noreferrer"
+                className="hidden lg:inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-sm font-medium border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary/60 transition shadow-[0_0_0_0_hsl(var(--primary)/0.4)] hover:shadow-[0_0_20px_-4px_hsl(var(--primary)/0.5)]"
+                title="Channel Telegram Resmi"
+              >
+                <Megaphone className="w-3.5 h-3.5" />
+                Channel
+              </a>
+              <a
+                href="#contact"
+                className="hidden lg:inline-flex items-center gap-1.5 h-9 px-3 rounded-md text-sm font-medium border border-border/60 hover:border-primary/50 hover:bg-accent/40 transition"
+              >
+                <Send className="w-3.5 h-3.5" />
+                Kontak
+              </a>
               <Link to="/auth">
                 <Button className="btn-primary flex items-center gap-2 shadow-sm" size="sm">
                   <LogIn className="w-4 h-4" />
@@ -153,6 +172,15 @@ const Landing = () => {
                 >
                   <Tag className="w-4 h-4" /> Promo
                 </Link>
+                <a
+                  href={OFFICIAL_CHANNEL}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="px-3 py-2.5 text-sm font-medium rounded-lg transition flex items-center gap-2 border border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                >
+                  <Megaphone className="w-4 h-4" /> Channel Telegram Resmi
+                </a>
                 <div className="flex items-center gap-2 px-3 py-2 sm:hidden">
                   <AccentColorPicker />
                   <ThemeToggle />
@@ -414,6 +442,9 @@ const Landing = () => {
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <a href="https://t.me/upgradeuser_bot" target="_blank" rel="noreferrer" className="hover:text-primary flex items-center gap-1">
                 <MessageCircle className="w-3.5 h-3.5" /> Telegram
+              </a>
+              <a href={OFFICIAL_CHANNEL} target="_blank" rel="noreferrer" className="hover:text-primary flex items-center gap-1">
+                <Megaphone className="w-3.5 h-3.5" /> Channel Resmi
               </a>
               <Link to="/auth" className="hover:text-primary">Masuk</Link>
             </div>
