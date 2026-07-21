@@ -69,6 +69,7 @@ const Landing = () => {
     { label: 'Harga', href: '#pricing' },
     { label: 'Cara Kerja', href: '#how-it-works' },
     { label: 'FAQ', href: '#faq' },
+    { label: 'Kontak', href: '#contact', icon: Mail },
   ];
 
   return (
@@ -373,6 +374,8 @@ const Landing = () => {
             </div>
           </div>
         </section>
+
+        <ContactSection />
 
         {/* Footer */}
         <footer className="py-10 border-t border-border/50">
