@@ -104,6 +104,17 @@ export default function Profile() {
     }
   };
 
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await signOut();
+    } catch (error) {
+      toast.error("Gagal keluar, coba lagi");
+    } finally {
+      setLoggingOut(false);
+    }
+  };
+
   const handleUploadAvatar = async (file: File) => {
     if (!user) return;
     if (!file.type.startsWith("image/")) {
