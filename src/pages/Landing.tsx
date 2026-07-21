@@ -273,7 +273,7 @@ const Landing = () => {
         </section>
 
         {/* FAQ */}
-        <section className="py-20 border-t border-border/50">
+        <section id="faq" className="py-20 border-t border-border/50">
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold">Pertanyaan Umum</h2>
