@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Server, Shield, Zap, Crown, Users, Terminal, Globe, Check,
   ArrowRight, Sparkles, Rocket, Lock, Clock, HeartHandshake,
-  MessageCircle, Star, LogIn,
+  MessageCircle, Star, LogIn, Menu, X,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
