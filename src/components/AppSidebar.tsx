@@ -347,45 +347,76 @@ export function AppSidebar() {
             </NavLink>
           </div>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <NavLink
-                        to={item.url}
-                        end
-                        onPointerDown={prepareSidebarNavigation}
-                        onClick={prepareSidebarNavigation}
-                        className="flex items-center gap-3"
+          {NAV_GROUPS.map((group) => {
+            const open = isGroupOpen(group);
+            const groupBadge = group.items.reduce((sum, i) => sum + (i.badge ?? 0), 0);
+            return (
+              <SidebarGroup key={group.key}>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => toggleGroup(group.key)}
+                        className="flex items-center gap-3 w-full text-muted-foreground hover:text-foreground"
                       >
-                        <span className="relative shrink-0">
-                          <item.icon className="h-4 w-4" />
-                          {!!item.badge && item.badge > 0 && (
-                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar animate-pulse" />
-                          )}
+                        <group.icon className="h-4 w-4 shrink-0" />
+                        <span className="flex-1 text-left text-xs font-bold uppercase tracking-wider">
+                          {group.label}
                         </span>
-                        <span className="flex-1">{item.title}</span>
-                        {!!item.badge && item.badge > 0 && (
-                          <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
-                            {item.badge > 99 ? "99+" : item.badge}
+                        {!open && groupBadge > 0 && (
+                          <span className="min-w-[18px] h-4 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                            {groupBadge > 99 ? "99+" : groupBadge}
                           </span>
                         )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-                {isAdmin && (
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                        />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    {open && group.items.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                          <NavLink
+                            to={item.url}
+                            end
+                            onPointerDown={prepareSidebarNavigation}
+                            onClick={prepareSidebarNavigation}
+                            className="flex items-center gap-3 pl-6"
+                          >
+                            <span className="relative shrink-0">
+                              <item.icon className="h-4 w-4" />
+                              {!!item.badge && item.badge > 0 && (
+                                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar animate-pulse" />
+                              )}
+                            </span>
+                            <span className="flex-1">{item.title}</span>
+                            {!!item.badge && item.badge > 0 && (
+                              <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
+                                {item.badge > 99 ? "99+" : item.badge}
+                              </span>
+                            )}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
+
+          {isAdmin && (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => setAdminOpen((v) => !v)}
                       isActive={pathname.startsWith("/admin")}
                       className="flex items-center gap-3 w-full"
                     >
-                      <Crown className="h-4 w-4 shrink-0" />
-                      <span className="flex-1 text-left">Admin Panel</span>
+                      <Crown className="h-4 w-4 shrink-0 text-amber" />
+                      <span className="flex-1 text-left text-xs font-bold uppercase tracking-wider">Admin Panel</span>
                       <ChevronDown
                         className={`h-4 w-4 shrink-0 transition-transform ${adminOpen ? "rotate-180" : ""}`}
                       />
@@ -414,10 +445,10 @@ export function AppSidebar() {
                       </div>
                     )}
                   </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
         </div>
 
         <div className="shrink-0 bg-sidebar">
