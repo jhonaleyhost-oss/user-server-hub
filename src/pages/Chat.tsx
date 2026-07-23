@@ -697,7 +697,7 @@ const Chat = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/50 shrink-0">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/70 shrink-0">
               <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
               <span className="text-xs font-semibold text-foreground">{onlineCount} online</span>
             </div>
@@ -737,7 +737,7 @@ const Chat = () => {
                     <div key={m.id}>
                     {showDateSep && (
                       <div className="flex justify-center my-3">
-                        <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-secondary/70 text-muted-foreground border border-border/40">
+                        <span className="text-[11px] font-medium px-3 py-1 rounded-full bg-secondary/70 text-muted-foreground border border-border/60">
                           {formatDayLabel(m.created_at)}
                         </span>
                       </div>
@@ -848,10 +848,10 @@ const Chat = () => {
                         <div
                           className={`relative min-w-0 max-w-full px-3.5 py-2 rounded-2xl text-sm break-words whitespace-pre-wrap border ${
                             mine
-                              ? "bg-primary/20 text-foreground border-primary/30 rounded-br-md"
+                              ? "bg-primary/20 text-foreground border-primary/40 rounded-br-md"
                               : userRole === "admin"
-                                ? "bg-gradient-to-br from-amber-500/15 via-secondary/70 to-amber-500/10 text-foreground border-amber-400/50 rounded-bl-md shadow-[0_0_0_1px_rgba(251,191,36,0.25),0_4px_24px_-8px_rgba(251,191,36,0.45)] ring-1 ring-amber-400/20"
-                                : "bg-secondary/60 text-foreground border-border/50 rounded-bl-md"
+                                ? "bg-gradient-to-br from-amber-500/15 via-secondary/70 to-amber-500/10 text-foreground border-amber-400/60 rounded-bl-md shadow-[0_0_0_1px_rgba(251,191,36,0.3),0_4px_24px_-8px_rgba(251,191,36,0.45)] ring-1 ring-amber-400/25"
+                                : "bg-secondary/60 text-foreground border-border/70 rounded-bl-md"
                           } ${m.image_url && !m.content ? "!p-1" : ""}`}
                         >
                           {m.deleted ? (
@@ -894,7 +894,7 @@ const Chat = () => {
                             <button
                               type="button"
                               onClick={() => setLightbox(m.image_url!)}
-                              className="block overflow-hidden rounded-xl border border-border/40"
+                              className="block overflow-hidden rounded-xl border border-border/60"
                             >
                               <img
                                 src={m.image_url}
@@ -967,7 +967,7 @@ const Chat = () => {
                                   setReplyTo(m);
                                   setTimeout(() => inputRef.current?.focus(), 0);
                                 }}
-                                className="w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center shadow-md"
+                                className="w-6 h-6 rounded-full bg-secondary text-foreground border border-border/80 flex items-center justify-center shadow-md"
                                 aria-label="Balas pesan"
                               >
                                 <CornerUpLeft className="w-3 h-3" />
@@ -976,7 +976,7 @@ const Chat = () => {
                                 <button
                                   type="button"
                                   onClick={() => startEdit(m)}
-                                  className="w-6 h-6 rounded-full bg-secondary text-foreground border border-border/60 flex items-center justify-center shadow-md"
+                                  className="w-6 h-6 rounded-full bg-secondary text-foreground border border-border/80 flex items-center justify-center shadow-md"
                                   aria-label="Edit pesan"
                                 >
                                   <Pencil className="w-3 h-3" />
@@ -1018,7 +1018,7 @@ const Chat = () => {
               )}
             </div>
 
-            <div className="border-t border-border/50 bg-background/40">
+            <div className="border-t border-border/70 bg-background/40">
               {showJumpBtn && (
                 <div className="relative">
                   <button
@@ -1061,7 +1061,7 @@ const Chat = () => {
                   {pending.map((p) => (
                     <div
                       key={p.id}
-                      className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/50 shrink-0 bg-secondary/40"
+                      className="relative w-16 h-16 rounded-xl overflow-hidden border border-border/70 shrink-0 bg-secondary/40"
                     >
                       <img src={p.preview} alt="" className="w-full h-full object-cover" />
                       <button
@@ -1112,7 +1112,7 @@ const Chat = () => {
                       : "Tulis pesan..."
                   }
                   maxLength={2000}
-                  className="flex-1 rounded-full h-11 bg-secondary/60 border-border/50"
+                  className="flex-1 rounded-full h-11 bg-secondary/60 border-border/70"
                   disabled={sending || !user}
                 />
                 <Button
