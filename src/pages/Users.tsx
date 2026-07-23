@@ -116,6 +116,7 @@ export default function Users() {
 
   const filtered = users
     .filter((u) => {
+      if (roleFilter !== "all" && u.role !== roleFilter) return false;
       const q = search.trim().toLowerCase();
       if (!q) return true;
       return (
