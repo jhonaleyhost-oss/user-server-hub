@@ -60,11 +60,21 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | Role>("all");
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("newest");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
   const { onlineCount } = useOnlinePresence();
+
+  const ROLE_FILTERS: { value: "all" | Role; label: string; color: string }[] = [
+    { value: "all", label: "Semua", color: "text-foreground" },
+    { value: "reseller", label: "Reseller", color: "text-amber" },
+    { value: "adp_server", label: "Admin Panel", color: "text-rose-400" },
+    { value: "premium", label: "Premium", color: "text-purple-400" },
+    { value: "admin", label: "Admin", color: "text-primary" },
+    { value: "free", label: "Free", color: "text-muted-foreground" },
+  ];
 
   useEffect(() => {
     const load = async () => {
