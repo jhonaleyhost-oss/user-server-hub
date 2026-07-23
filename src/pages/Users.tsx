@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown } from "lucide-react";
+import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown, Circle } from "lucide-react";
+import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import AppShell from "@/components/AppShell";
@@ -158,10 +159,19 @@ export default function Users() {
           </motion.div>
 
           {/* Stats */}
-          <GlassCard className="p-4 flex items-center justify-between">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Pengguna</p>
-            <p className="text-2xl font-bold text-foreground">{total}</p>
-          </GlassCard>
+          <div className="grid grid-cols-2 gap-3">
+            <GlassCard className="p-4 flex items-center justify-between">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Pengguna</p>
+              <p className="text-2xl font-bold text-foreground">{total}</p>
+            </GlassCard>
+            <GlassCard className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Circle className="w-2.5 h-2.5 fill-green-500 text-green-500 animate-pulse" />
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Online</p>
+              </div>
+              <p className="text-2xl font-bold text-green-500">{onlineCount}</p>
+            </GlassCard>
+          </div>
 
           {/* Search + Sort */}
           <div className="flex gap-2">
