@@ -376,27 +376,40 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                     {open && group.items.map((item) => (
                       <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                          <NavLink
-                            to={item.url}
-                            end
-                            onPointerDown={prepareSidebarNavigation}
-                            onClick={prepareSidebarNavigation}
-                            className="flex items-center gap-3 pl-6"
-                          >
-                            <span className="relative shrink-0">
-                              <item.icon className="h-4 w-4" />
-                              {!!item.badge && item.badge > 0 && (
-                                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar animate-pulse" />
-                              )}
-                            </span>
-                            <span className="flex-1">{item.title}</span>
-                            {!!item.badge && item.badge > 0 && (
-                              <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
-                                {item.badge > 99 ? "99+" : item.badge}
+                        <SidebarMenuButton asChild isActive={item.external ? false : isActive(item.url)}>
+                          {item.external ? (
+                            <a
+                              href={item.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 pl-6"
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              <span className="flex-1">{item.title}</span>
+                              <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            </a>
+                          ) : (
+                            <NavLink
+                              to={item.url}
+                              end
+                              onPointerDown={prepareSidebarNavigation}
+                              onClick={prepareSidebarNavigation}
+                              className="flex items-center gap-3 pl-6"
+                            >
+                              <span className="relative shrink-0">
+                                <item.icon className="h-4 w-4" />
+                                {!!item.badge && item.badge > 0 && (
+                                  <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar animate-pulse" />
+                                )}
                               </span>
-                            )}
-                          </NavLink>
+                              <span className="flex-1">{item.title}</span>
+                              {!!item.badge && item.badge > 0 && (
+                                <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
+                                  {item.badge > 99 ? "99+" : item.badge}
+                                </span>
+                              )}
+                            </NavLink>
+                          )}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}
