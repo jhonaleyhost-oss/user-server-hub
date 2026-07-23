@@ -179,6 +179,9 @@ export function AppSidebar() {
       items: [
         { title: "Chat", url: "/chat", icon: MessageCircle, badge: unread.chat },
         { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
+        { title: "Channel Telegram Resmi", url: "https://t.me/jhonaleytesti3", icon: Megaphone, external: true },
+        { title: "Contact Admin Telegram 1", url: "https://t.me/jhonaleystorecs", icon: MessageCircle, external: true },
+        { title: "Contact Admin Telegram 2", url: "https://t.me/jhonaleystoreid", icon: MessageCircle, external: true },
       ],
     },
     {
