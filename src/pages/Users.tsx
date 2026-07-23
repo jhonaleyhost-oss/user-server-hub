@@ -228,7 +228,7 @@ export default function Users() {
           </div>
 
           {/* Role filter chips */}
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
             {ROLE_FILTERS.map((r) => {
               const active = roleFilter === r.value;
               return (
