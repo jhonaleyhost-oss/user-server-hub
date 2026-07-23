@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText, ShieldAlert, Ghost, User as UserIcon, Server as ServerIcon, MessagesSquare, Gift } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText, ShieldAlert, Ghost, User as UserIcon, Server as ServerIcon, MessagesSquare, Gift } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -154,23 +154,22 @@ export function AppSidebar() {
 
   const NAV_GROUPS: NavGroup[] = [
     {
-      key: "akun",
-      label: "Akun & Profil",
-      icon: UserIcon,
-      items: [
-        { title: "Dashboard", url: "/", icon: LayoutDashboard },
-        { title: "Profil Saya", url: "/profile", icon: UserCog },
-        { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
-      ],
-    },
-    {
       key: "layanan",
       label: "Panel & Layanan",
       icon: ServerIcon,
       items: [
+        { title: "Dashboard", url: "/", icon: LayoutDashboard },
         { title: "List Panel", url: "/panels", icon: List },
         { title: "Aktivitas", url: "/activity", icon: ActivityIcon },
-        { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
+      ],
+    },
+    {
+      key: "akun",
+      label: "Akun & Profil",
+      icon: UserIcon,
+      items: [
+        { title: "Profil Saya", url: "/profile", icon: UserCog },
+        { title: "Pengguna", url: "/users", icon: UsersIcon },
       ],
     },
     {
@@ -178,19 +177,18 @@ export function AppSidebar() {
       label: "Komunitas",
       icon: MessagesSquare,
       items: [
-        { title: "Pengguna", url: "/users", icon: UsersIcon },
         { title: "Chat", url: "/chat", icon: MessageCircle, badge: unread.chat },
-        { title: "Support", url: "/support", icon: LifeBuoy, badge: unread.support },
-        { title: "Rating & Feedback", url: "/feedback", icon: Star },
+        { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
       ],
     },
     {
       key: "promo",
-      label: "Promo & Iklan",
+      label: "Promo & Sewa Iklan",
       icon: Gift,
       items: [
         { title: "Promo & Kupon", url: "/promo", icon: Tag },
         { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
+        { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
       ],
     },
   ];
@@ -404,6 +402,29 @@ export function AppSidebar() {
               </SidebarGroup>
             );
           })}
+
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive("/feedback")}>
+                    <NavLink
+                      to="/feedback"
+                      end
+                      onPointerDown={prepareSidebarNavigation}
+                      onClick={prepareSidebarNavigation}
+                      className="flex items-center gap-3"
+                    >
+                      <Star className="h-4 w-4 shrink-0 text-amber" />
+                      <span className="flex-1 text-xs font-bold uppercase tracking-wider">
+                        Rating & Feedback
+                      </span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
           {isAdmin && (
             <SidebarGroup>

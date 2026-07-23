@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useResellerStatus } from "@/hooks/useResellerStatus";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import NotificationBell from "@/components/NotificationBell";
+import SupportChatButton from "@/components/SupportChatButton";
 
 const HamburgerTrigger = () => {
   const { toggleSidebar } = useSidebar();
@@ -127,6 +128,7 @@ const AppShell = ({ children }: AppShellProps) => {
           <main className="flex-1 min-w-0">{children}</main>
         </div>
       </div>
+      <SupportChatButton />
     </SidebarProvider>
   );
 };
