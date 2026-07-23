@@ -37,7 +37,7 @@ interface UserRow {
 }
 
 const roleLabel = (role: Role) =>
-  role === "admin" ? "Admin" : role === "reseller" ? "Reseller" : role === "premium" ? "Premium" : "Free";
+  role === "admin" ? "Admin" : role === "adp_server" ? "ADP" : role === "reseller" ? "Reseller" : role === "premium" ? "Premium" : "Free";
 
 type SortKey =
   | "newest"
