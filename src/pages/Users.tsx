@@ -227,6 +227,25 @@ export default function Users() {
             </Select>
           </div>
 
+          {/* Role filter chips */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar">
+            {ROLE_FILTERS.map((r) => {
+              const active = roleFilter === r.value;
+              return (
+                <button
+                  key={r.value}
+                  onClick={() => setRoleFilter(r.value)}
+                  className={`
+                    shrink-0 h-9 px-4 rounded-full text-xs font-medium border transition-all
+                    ${active ? `bg-primary/15 border-primary/50 ${r.color}` : "bg-secondary/40 border-white/5 text-muted-foreground hover:border-white/15"}
+                  `}
+                >
+                  {r.label}
+                </button>
+              );
+            })}
+          </div>
+
           {/* List */}
           {loading ? (
             <div className="flex items-center justify-center py-16">
