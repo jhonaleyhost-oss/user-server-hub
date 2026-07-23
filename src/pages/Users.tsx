@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Role = "admin" | "reseller" | "premium" | "free";
+type Role = "admin" | "adp_server" | "reseller" | "premium" | "free";
 
 interface UserRow {
   user_id: string;
