@@ -112,7 +112,7 @@ export default function Users() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, sortBy]);
+  }, [search, sortBy, roleFilter]);
 
   const filtered = users
     .filter((u) => {
