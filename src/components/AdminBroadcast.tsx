@@ -24,7 +24,6 @@ const AUDIENCES = [
   { v: "all", l: "Semua Pengguna" },
   { v: "free", l: "Free saja" },
   { v: "reseller", l: "Reseller saja" },
-  { v: "premium", l: "Premium saja" },
   { v: "admin", l: "Admin saja" },
 ];
 

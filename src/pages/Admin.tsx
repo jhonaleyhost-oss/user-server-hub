@@ -1257,7 +1257,6 @@ const Admin = () => {
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="free">Free</SelectItem>
-                                        <SelectItem value="premium">Premium</SelectItem>
                                         <SelectItem value="reseller">Reseller</SelectItem>
                                         <SelectItem value="adp_server">
                                           Admin Panel Server (adp_server)
