@@ -38,12 +38,23 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const content: string = (body.content || "").toString().trim().slice(0, 2000);
-    const imageUrl: string | null = body.image_url ? String(body.image_url).slice(0, 500) : null;
-    if (!content && !imageUrl) return json({ error: "empty" }, 400);
+    const imagePath: string | null = body.image_url ? String(body.image_url).slice(0, 500) : null;
+    if (!content && !imagePath) return json({ error: "empty" }, 400);
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Generate signed URL so Telegram (and admin UI) can fetch the private image.
+    let imageUrl: string | null = null;
+    let telegramPhotoUrl: string | null = null;
+    if (imagePath) {
+      const { data: signed } = await admin.storage
+        .from("support-media")
+        .createSignedUrl(imagePath, 60 * 60 * 24 * 7); // 7 days
+      imageUrl = signed?.signedUrl ?? null;
+      telegramPhotoUrl = imageUrl;
+    }
 
     // Get profile + role
     const [{ data: profile }, { data: roleRow }] = await Promise.all([
@@ -78,18 +89,21 @@ Deno.serve(async (req) => {
 
     let tgMessageId: number | null = null;
     try {
-      if (imageUrl) {
-        const r = await fetch(`${TG}/sendPhoto`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: OWNER_ID,
-            photo: imageUrl,
-            caption: header,
-            parse_mode: "HTML",
-          }),
-        });
+      if (imagePath) {
+        // Download bytes and send as multipart so Telegram doesn't need to fetch a signed URL.
+        const { data: fileBlob, error: dlErr } = await admin.storage
+          .from("support-media")
+          .download(imagePath);
+        if (dlErr || !fileBlob) throw new Error(dlErr?.message || "download failed");
+        const form = new FormData();
+        form.append("chat_id", OWNER_ID);
+        form.append("caption", header + "\n\n<i>↩️ Reply pesan ini untuk membalas user.</i>");
+        form.append("parse_mode", "HTML");
+        const filename = imagePath.split("/").pop() || "photo.jpg";
+        form.append("photo", fileBlob, filename);
+        const r = await fetch(`${TG}/sendPhoto`, { method: "POST", body: form });
         const j = await r.json();
+        if (!j?.ok) console.error("telegram sendPhoto failed", j);
         tgMessageId = j?.result?.message_id ?? null;
       } else {
         const r = await fetch(`${TG}/sendMessage`, {
@@ -102,6 +116,7 @@ Deno.serve(async (req) => {
           }),
         });
         const j = await r.json();
+        if (!j?.ok) console.error("telegram sendMessage failed", j);
         tgMessageId = j?.result?.message_id ?? null;
       }
     } catch (e) {
