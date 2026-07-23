@@ -490,73 +490,7 @@ export function AppSidebar() {
         </div>
 
         <div className="shrink-0 bg-sidebar">
-          {role === "free" && (
-            <>
-              <SidebarSeparator />
-              <div className="p-3">
-                <div className="relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br from-amber via-primary to-accent">
-                  <div className="rounded-[11px] bg-background p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Sparkles className="w-4 h-4 text-amber" />
-                      <p className="text-sm font-bold text-foreground">Upgrade Premium</p>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Unlimited RAM, CPU & akses server private.
-                    </p>
-                    <Button
-                      size="sm"
-                      onPointerDown={prepareSidebarNavigation}
-                      onClick={() => {
-                        prepareSidebarNavigation();
-                        navigate("/upgrade");
-                      }}
-                      className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Lihat Detail
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {resellerStatus?.is_reseller && !resellerStatus.permanent && role !== "admin" && (
-            <>
-              <SidebarSeparator />
-              <div className="p-3">
-                <div className={`relative overflow-hidden rounded-xl p-[1px] bg-gradient-to-br ${
-                  (resellerStatus.days_left ?? 99) <= 2
-                    ? "from-destructive via-amber to-destructive"
-                    : "from-primary via-accent to-amber"
-                }`}>
-                  <div className="rounded-[11px] bg-background p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Clock className={`w-4 h-4 ${(resellerStatus.days_left ?? 99) <= 2 ? "text-destructive" : "text-primary"}`} />
-                      <p className="text-sm font-bold text-foreground">
-                        {formatResellerRemaining(resellerStatus)}
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Perpanjang masa aktif reseller kamu sekarang.
-                    </p>
-                    <Button
-                      size="sm"
-                      onPointerDown={prepareSidebarNavigation}
-                      onClick={() => {
-                        prepareSidebarNavigation();
-                        navigate("/upgrade");
-                      }}
-                      className="w-full bg-amber hover:bg-amber/90 text-background font-bold gap-2 h-8"
-                    >
-                      <Crown className="w-3.5 h-3.5" />
-                      Perpanjang Sekarang
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+          <SidebarStatusCard onNavigate={prepareSidebarNavigation} />
 
           <div className="p-3 border-t border-sidebar-border bg-sidebar">
             <div className="flex items-center gap-2">
