@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown, Circle } from "lucide-react";
+import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown, Circle, Crown, LayoutDashboard } from "lucide-react";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
