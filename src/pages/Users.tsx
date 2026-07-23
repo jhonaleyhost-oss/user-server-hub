@@ -136,6 +136,8 @@ export default function Users() {
     });
 
   const total = users.length;
+  const totalReseller = users.filter((u) => u.role === "reseller").length;
+  const totalAdp = users.filter((u) => u.role === "adp_server" || u.role === "admin").length;
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -160,7 +162,7 @@ export default function Users() {
           </motion.div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <GlassCard className="p-4 flex items-center justify-between">
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Total Pengguna</p>
               <p className="text-2xl font-bold text-foreground">{total}</p>
@@ -171,6 +173,20 @@ export default function Users() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Online</p>
               </div>
               <p className="text-2xl font-bold text-green-500">{onlineCount}</p>
+            </GlassCard>
+            <GlassCard className="p-4 flex items-center justify-between border-amber/20">
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber" />
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Reseller</p>
+              </div>
+              <p className="text-2xl font-bold text-amber">{totalReseller}</p>
+            </GlassCard>
+            <GlassCard className="p-4 flex items-center justify-between border-rose-400/20">
+              <div className="flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4 text-rose-400" />
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Admin Panel</p>
+              </div>
+              <p className="text-2xl font-bold text-rose-400">{totalAdp}</p>
             </GlassCard>
           </div>
 
