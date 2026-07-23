@@ -64,6 +64,7 @@ export default function Users() {
   const [sortBy, setSortBy] = useState<SortKey>("newest");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
+  const { onlineCount } = useOnlinePresence();
 
   useEffect(() => {
     const load = async () => {
