@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText, ShieldAlert, Ghost } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, LifeBuoy, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText, ShieldAlert, Ghost, User as UserIcon, Server as ServerIcon, MessagesSquare, Gift } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -41,6 +41,7 @@ const ADMIN_SUB_ITEMS = [
 ];
 
 const SIDEBAR_SCROLL_KEY = "sidebar:scrollTop";
+const SIDEBAR_GROUPS_KEY = "sidebar:groups";
 
 export function AppSidebar() {
   const { pathname } = useLocation();
@@ -55,6 +56,20 @@ export function AppSidebar() {
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState<boolean>(() => pathname.startsWith("/admin"));
+  const [groupsOpen, setGroupsOpen] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = sessionStorage.getItem(SIDEBAR_GROUPS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  });
+  const toggleGroup = (key: string) => {
+    setGroupsOpen((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { sessionStorage.setItem(SIDEBAR_GROUPS_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTopRef = useRef(0);
   const ignoreScrollSaveUntilRef = useRef(0);
@@ -134,20 +149,57 @@ export function AppSidebar() {
     return () => window.removeEventListener("profile:updated", onUpdate);
   }, [user]);
 
-  const items = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "List Panel", url: "/panels", icon: List },
-    { title: "Profil Saya", url: "/profile", icon: UserCog },
-    { title: "Pengguna", url: "/users", icon: UsersIcon },
-    { title: "Chat", url: "/chat", icon: MessageCircle, badge: unread.chat },
-    { title: "Support", url: "/support", icon: LifeBuoy, badge: unread.support },
-    { title: "Aktivitas", url: "/activity", icon: ActivityIcon },
-    { title: "Rating & Feedback", url: "/feedback", icon: Star },
-    { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
-    { title: "Promo & Kupon", url: "/promo", icon: Tag },
-    { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
-    { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
-  ] as Array<{ title: string; url: string; icon: any; badge?: number }>;
+  type NavItem = { title: string; url: string; icon: any; badge?: number };
+  type NavGroup = { key: string; label: string; icon: any; items: NavItem[] };
+
+  const NAV_GROUPS: NavGroup[] = [
+    {
+      key: "akun",
+      label: "Akun & Profil",
+      icon: UserIcon,
+      items: [
+        { title: "Dashboard", url: "/", icon: LayoutDashboard },
+        { title: "Profil Saya", url: "/profile", icon: UserCog },
+        { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
+      ],
+    },
+    {
+      key: "layanan",
+      label: "Panel & Layanan",
+      icon: ServerIcon,
+      items: [
+        { title: "List Panel", url: "/panels", icon: List },
+        { title: "Aktivitas", url: "/activity", icon: ActivityIcon },
+        { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
+      ],
+    },
+    {
+      key: "komunitas",
+      label: "Komunitas",
+      icon: MessagesSquare,
+      items: [
+        { title: "Pengguna", url: "/users", icon: UsersIcon },
+        { title: "Chat", url: "/chat", icon: MessageCircle, badge: unread.chat },
+        { title: "Support", url: "/support", icon: LifeBuoy, badge: unread.support },
+        { title: "Rating & Feedback", url: "/feedback", icon: Star },
+      ],
+    },
+    {
+      key: "promo",
+      label: "Promo & Iklan",
+      icon: Gift,
+      items: [
+        { title: "Promo & Kupon", url: "/promo", icon: Tag },
+        { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
+      ],
+    },
+  ];
+
+  const isGroupOpen = (g: NavGroup) => {
+    if (groupsOpen[g.key] !== undefined) return groupsOpen[g.key];
+    // default: open if it contains the active route
+    return g.items.some((i) => pathname === i.url);
+  };
 
   const isActive = (path: string) => pathname === path;
 
@@ -295,45 +347,76 @@ export function AppSidebar() {
             </NavLink>
           </div>
 
-          <SidebarGroup>
-            <SidebarGroupLabel>Navigasi</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                      <NavLink
-                        to={item.url}
-                        end
-                        onPointerDown={prepareSidebarNavigation}
-                        onClick={prepareSidebarNavigation}
-                        className="flex items-center gap-3"
+          {NAV_GROUPS.map((group) => {
+            const open = isGroupOpen(group);
+            const groupBadge = group.items.reduce((sum, i) => sum + (i.badge ?? 0), 0);
+            return (
+              <SidebarGroup key={group.key}>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => toggleGroup(group.key)}
+                        className="flex items-center gap-3 w-full text-muted-foreground hover:text-foreground"
                       >
-                        <span className="relative shrink-0">
-                          <item.icon className="h-4 w-4" />
-                          {!!item.badge && item.badge > 0 && (
-                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar animate-pulse" />
-                          )}
+                        <group.icon className="h-4 w-4 shrink-0" />
+                        <span className="flex-1 text-left text-xs font-bold uppercase tracking-wider">
+                          {group.label}
                         </span>
-                        <span className="flex-1">{item.title}</span>
-                        {!!item.badge && item.badge > 0 && (
-                          <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
-                            {item.badge > 99 ? "99+" : item.badge}
+                        {!open && groupBadge > 0 && (
+                          <span className="min-w-[18px] h-4 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                            {groupBadge > 99 ? "99+" : groupBadge}
                           </span>
                         )}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-                {isAdmin && (
+                        <ChevronDown
+                          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+                        />
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    {open && group.items.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                          <NavLink
+                            to={item.url}
+                            end
+                            onPointerDown={prepareSidebarNavigation}
+                            onClick={prepareSidebarNavigation}
+                            className="flex items-center gap-3 pl-6"
+                          >
+                            <span className="relative shrink-0">
+                              <item.icon className="h-4 w-4" />
+                              {!!item.badge && item.badge > 0 && (
+                                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-sidebar animate-pulse" />
+                              )}
+                            </span>
+                            <span className="flex-1">{item.title}</span>
+                            {!!item.badge && item.badge > 0 && (
+                              <span className="ml-auto min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center shadow-sm">
+                                {item.badge > 99 ? "99+" : item.badge}
+                              </span>
+                            )}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
+
+          {isAdmin && (
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       onClick={() => setAdminOpen((v) => !v)}
                       isActive={pathname.startsWith("/admin")}
                       className="flex items-center gap-3 w-full"
                     >
-                      <Crown className="h-4 w-4 shrink-0" />
-                      <span className="flex-1 text-left">Admin Panel</span>
+                      <Crown className="h-4 w-4 shrink-0 text-amber" />
+                      <span className="flex-1 text-left text-xs font-bold uppercase tracking-wider">Admin Panel</span>
                       <ChevronDown
                         className={`h-4 w-4 shrink-0 transition-transform ${adminOpen ? "rotate-180" : ""}`}
                       />
@@ -362,10 +445,10 @@ export function AppSidebar() {
                       </div>
                     )}
                   </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
         </div>
 
         <div className="shrink-0 bg-sidebar">
