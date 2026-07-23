@@ -1,74 +1,61 @@
-# Refactor Halaman Admin ke Multi-Route
+# Rapikan Sidebar / Navigasi User
 
-Saat ini `/admin` adalah satu file monolitik (~2100 baris) dengan banyak Tabs (users, servers, panels, devices, popup, activity, offline, inactive, ads, broadcast, promos, dll). Akan dipecah menjadi banyak halaman terpisah supaya lebih rapi, profesional, dan cepat dimuat.
+Sidebar saat ini menampilkan **12 item flat** di satu grup "Navigasi" + submenu Admin. Terasa panjang, sulit dipindai, dan item dengan fungsi mirip berserakan. Akan dikelompokkan ke beberapa kategori kolapsibel — mirip gaya Admin Panel — supaya profesional & rapi.
 
-## Struktur route baru
+## Struktur baru (grup kolapsibel)
 
 ```
-/admin                     → Dashboard Overview (revenue + statistik)
-/admin/users               → Manajemen user & role
-/admin/servers             → Pterodactyl servers
-/admin/panels              → Semua panel user
-/admin/devices             → IP & fingerprint / device management
-/admin/inactive            → Akun nonaktif >1 bulan
-/admin/offline-panels      → Panel offline scan
-/admin/activity            → Activity logs
-/admin/broadcast           → Broadcast pesan
-/admin/promos              → Promo codes
-/admin/ads                 → Sewa iklan (ad_rentals)
-/admin/popup               → Popup manager
-/admin/settings            → App settings (jika ada)
+👤 Akun & Profil
+   • Dashboard              /
+   • Profil Saya            /profile
+   • Notifikasi             /notifikasi  (badge)
+
+🖥️  Panel & Layanan
+   • List Panel             /panels
+   • Aktivitas              /activity
+   • Garansi Role           /garansi
+
+💬 Komunitas
+   • Pengguna               /users
+   • Chat                   /chat        (badge)
+   • Support                /support     (badge)
+   • Rating & Feedback      /feedback
+
+🎁 Promo & Iklan
+   • Promo & Kupon          /promo
+   • Sewa & Beriklan        /sewa-iklan
+
+👑 Admin Panel (khusus admin — sudah ada, tetap)
+   • Overview, Manajemen, dll.
 ```
 
-## Halaman `/admin` (Overview baru)
+## Perilaku
 
-Berisi:
-- Header sambutan admin
-- Ringkasan cepat: total user, total panel, total server, panel online/offline
-- **Komponen `AdminRevenue`** (sudah ada) — analytics pendapatan dari ADP, Reseller, Iklan, Donasi + grafik + top spender
-- Grid kartu navigasi ke semua sub-halaman (dengan icon, label, deskripsi singkat)
-
-## Layout & navigasi admin
-
-Buat `src/components/AdminLayout.tsx`:
-- Sidebar kiri (desktop) / drawer (mobile) berisi link ke semua sub-halaman admin
-- Highlight route aktif
-- Header dengan tombol "Kembali ke Dashboard", tema, accent picker
-- Semua sub-halaman admin dibungkus layout ini agar konsisten
+- Tiap grup punya **header kolapsibel** (label + chevron) — bisa dibuka/tutup.
+- **Default terbuka**: grup yang berisi route aktif. Grup lain tertutup agar sidebar ringkas.
+- State buka/tutup disimpan di `sessionStorage` supaya tidak reset saat pindah halaman.
+- CTA **UPGRADE** premium tetap di paling atas nav (tidak berubah).
+- Kartu profil di header sidebar tetap sama.
+- Badge unread (Chat/Support/Notifikasi) tetap ada + bubble angka di kanan.
+- Grup Admin Panel (untuk admin) tetap seperti sekarang, hanya konsisten dipakai komponen kolapsibel yang sama supaya seragam.
 
 ## Detail teknis
 
-1. **Buat folder `src/pages/admin/`** berisi:
-   - `Overview.tsx` (revenue + stats + navigasi kartu)
-   - `AdminUsers.tsx` — pindahkan tab "Users" dari Admin.tsx (list, edit role, delete, clear all, pagination, search)
-   - `AdminServers.tsx` — tab "Servers" (CRUD pterodactyl_servers, status, form)
-   - `AdminPanels.tsx` — tab "Panels" (list panel user, delete, clear all)
-   - `AdminDevices.tsx` — tab "Devices" (reset IP/fingerprint)
-   - `AdminInactive.tsx` — bungkus `<AdminInactiveUsers />`
-   - `AdminOfflinePanelsPage.tsx` — bungkus `<AdminOfflinePanels />`
-   - `AdminActivityPage.tsx` — bungkus `<AdminActivityLogs />`
-   - `AdminBroadcastPage.tsx` — bungkus `<AdminBroadcast />`
-   - `AdminPromosPage.tsx` — bungkus `<AdminPromos />`
-   - `AdminAdsPage.tsx` — bungkus `<AdminAdRentals />`
-   - `AdminPopupPage.tsx` — bungkus `<AdminPopupManager />`
-
-2. **Ekstrak state fetch dari `Admin.tsx`** ke tiap halaman. Setiap halaman fetch datanya sendiri (users, servers, panels, devices) — tidak lagi semuanya di-load bersamaan → jauh lebih cepat.
-
-3. **Update `AnimatedRoutes.tsx`**: ganti satu route `/admin` menjadi nested routes semua di atas, semuanya dibungkus `<AdminRoute>` + `<AdminLayout>`.
-
-4. **Hapus `src/pages/Admin.tsx`** setelah semua tab dipindah, atau jadikan re-export dari Overview.
-
-5. **Sidebar app** (`AppSidebar.tsx`): tambahkan sub-menu admin (opsional, atau tetap satu link "Admin" yang mengarah ke `/admin` overview).
-
-6. Semua RLS, edge function calls, dan logic tetap sama — hanya pindah tempat.
+- File yang diubah: **`src/components/AppSidebar.tsx`** saja.
+- Definisikan array `NAV_GROUPS` berisi `{ label, icon, items: [...] }`.
+- Render pakai `SidebarGroup` + tombol header custom untuk toggle (chevron animasi).
+- Utility kecil `useCollapsibleGroups(defaultOpenKey)` — state per-grup via `sessionStorage` key `sidebar:groups`.
+- Tidak menyentuh routing, halaman, atau logika bisnis apa pun — hanya presentasi sidebar.
 
 ## Yang tidak berubah
 
-- Semua edge functions, database, RLS policies, komponen `AdminRevenue`, `AdminBroadcast`, `AdminPromos`, `AdminInactiveUsers`, `AdminOfflinePanels`, `AdminPopupManager`, `AdminActivityLogs`, `AdminAdRentals` — dipakai apa adanya.
-- `AdminRoute` guard tetap dipakai untuk semua route `/admin/*`.
+- Semua route & halaman.
+- Sidebar Admin sub-items & logikanya.
+- Kartu profil header, footer reseller countdown, tombol logout.
+- Scroll persistence.
 
 ## Estimasi
 
-Refactor besar — ~12 file baru, 2 file diubah, 1 file dihapus. Setelah selesai, halaman `/admin` load jauh lebih cepat karena tidak fetch semua data sekaligus, dan tiap sub-halaman jadi fokus & profesional.
+Satu file diubah (~150 baris berubah, sisanya tetap). Setelah selesai, sidebar terlihat jauh lebih rapi, cepat dipindai, dan konsisten dengan gaya Admin Panel.
 
-Setujui rencana ini untuk saya mulai kerjakan?
+Setujui rencana ini untuk saya kerjakan?
