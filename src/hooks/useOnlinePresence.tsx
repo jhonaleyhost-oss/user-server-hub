@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface PresenceCtx {
   onlineCount: number;
@@ -11,10 +12,11 @@ const Ctx = createContext<PresenceCtx>({ onlineCount: 0, onlineUserIds: [] });
 
 export const OnlinePresenceProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const [state, setState] = useState<PresenceCtx>({ onlineCount: 0, onlineUserIds: [] });
 
   useEffect(() => {
-    if (!user) {
+    if (!user || roleLoading) {
       setState({ onlineCount: 0, onlineUserIds: [] });
       return;
     }
@@ -34,14 +36,17 @@ export const OnlinePresenceProvider = ({ children }: { children: ReactNode }) =>
       .on("presence", { event: "leave" }, sync)
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+          // Admins subscribe silently so they can see counts without appearing online
+          if (!isAdmin) {
+            await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+          }
         }
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, isAdmin, roleLoading]);
 
   return <Ctx.Provider value={state}>{children}</Ctx.Provider>;
 };
