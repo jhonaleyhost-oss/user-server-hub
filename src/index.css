@@ -126,8 +126,8 @@
     --destructive: 0 62% 31%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
     --ring: 347 77% 50%;
 
     /* Dark gradients */
@@ -142,7 +142,7 @@
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 0 0% 10%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 15%;
+    --sidebar-border: 0 0% 24%;
     --sidebar-ring: 347 77% 50%;
   }
 }
