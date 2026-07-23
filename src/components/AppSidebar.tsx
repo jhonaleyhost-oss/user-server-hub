@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "@/components/NotificationBell";
+import SidebarStatusCard from "@/components/SidebarStatusCard";
 
 const ADMIN_SUB_ITEMS = [
   { title: "Overview", url: "/admin", icon: LayoutDashboard, end: true },
