@@ -403,6 +403,29 @@ export function AppSidebar() {
             );
           })}
 
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={isActive("/feedback")}>
+                    <NavLink
+                      to="/feedback"
+                      end
+                      onPointerDown={prepareSidebarNavigation}
+                      onClick={prepareSidebarNavigation}
+                      className="flex items-center gap-3"
+                    >
+                      <Star className="h-4 w-4 shrink-0 text-amber" />
+                      <span className="flex-1 text-xs font-bold uppercase tracking-wider">
+                        Rating & Feedback
+                      </span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
           {isAdmin && (
             <SidebarGroup>
               <SidebarGroupContent>
