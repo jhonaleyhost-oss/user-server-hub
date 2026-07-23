@@ -370,7 +370,6 @@ const Warranty = () => {
                   <SelectContent>
                     <SelectItem value="reseller">Reseller</SelectItem>
                     <SelectItem value="adp_server">Admin Panel (ADP Server)</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
