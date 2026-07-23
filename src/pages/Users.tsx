@@ -71,8 +71,6 @@ export default function Users() {
     { value: "all", label: "Semua", color: "text-foreground" },
     { value: "reseller", label: "Reseller", color: "text-amber" },
     { value: "adp_server", label: "Admin Panel", color: "text-rose-400" },
-    { value: "admin", label: "Admin", color: "text-primary" },
-    { value: "free", label: "Free", color: "text-muted-foreground" },
   ];
 
   useEffect(() => {
