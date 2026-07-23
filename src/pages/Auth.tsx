@@ -112,9 +112,10 @@ const Auth = () => {
             description: error.message,
           });
         } else {
-          toast({
-            title: 'Berhasil Login',
-            description: 'Selamat datang kembali!',
+          const { toast: sonnerToast } = await import('sonner');
+          sonnerToast.success('Berhasil masuk', {
+            description: 'Selamat datang kembali',
+            duration: 2500,
           });
           navigate('/');
         }
