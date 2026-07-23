@@ -60,11 +60,21 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserRow[]>([]);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | Role>("all");
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("newest");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
   const { onlineCount } = useOnlinePresence();
+
+  const ROLE_FILTERS: { value: "all" | Role; label: string; color: string }[] = [
+    { value: "all", label: "Semua", color: "text-foreground" },
+    { value: "reseller", label: "Reseller", color: "text-amber" },
+    { value: "adp_server", label: "Admin Panel", color: "text-rose-400" },
+    { value: "premium", label: "Premium", color: "text-purple-400" },
+    { value: "admin", label: "Admin", color: "text-primary" },
+    { value: "free", label: "Free", color: "text-muted-foreground" },
+  ];
 
   useEffect(() => {
     const load = async () => {
@@ -102,10 +112,11 @@ export default function Users() {
 
   useEffect(() => {
     setPage(1);
-  }, [search, sortBy]);
+  }, [search, sortBy, roleFilter]);
 
   const filtered = users
     .filter((u) => {
+      if (roleFilter !== "all" && u.role !== roleFilter) return false;
       const q = search.trim().toLowerCase();
       if (!q) return true;
       return (
@@ -214,6 +225,25 @@ export default function Users() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Role filter chips */}
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+            {ROLE_FILTERS.map((r) => {
+              const active = roleFilter === r.value;
+              return (
+                <button
+                  key={r.value}
+                  onClick={() => setRoleFilter(r.value)}
+                  className={`
+                    shrink-0 h-9 px-4 rounded-full text-xs font-medium border transition-all
+                    ${active ? `bg-primary/15 border-primary/50 ${r.color}` : "bg-secondary/40 border-white/5 text-muted-foreground hover:border-white/15"}
+                  `}
+                >
+                  {r.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* List */}
