@@ -127,43 +127,51 @@ export default function Profile() {
     }
     setUploading(true);
     try {
-      // Pastikan sesi masih valid agar RLS storage tidak menolak upload.
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (!sessionData.session) {
-        const { error: refreshErr } = await supabase.auth.refreshSession();
-        if (refreshErr) throw new Error("Sesi kadaluarsa, silakan login ulang.");
+      let { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session?.access_token) {
+        const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr || !refreshed.session?.access_token) {
+          throw new Error("Sesi kadaluarsa, silakan login ulang.");
+        }
+        sessionData = refreshed;
       }
-      const { data: authUserData, error: authUserErr } = await supabase.auth.getUser();
-      if (authUserErr || !authUserData.user) {
-        throw new Error("Gagal memverifikasi sesi, silakan login ulang.");
+
+      const fileBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Gagal membaca file"));
+        reader.readAsDataURL(file);
+      });
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-avatar`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+        },
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+          fileBase64,
+        }),
+      });
+
+      const raw = await response.text();
+      let result: { success?: boolean; publicUrl?: string; error?: string } = {};
+      try {
+        result = raw ? JSON.parse(raw) : {};
+      } catch {
+        result = { error: raw };
       }
-      const uid = authUserData.user.id;
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${uid}/avatar-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("avatars")
-        .upload(path, file, { upsert: true, contentType: file.type });
-      if (upErr) throw upErr;
 
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      const publicUrl = pub.publicUrl;
+      if (!response.ok || !result.success || !result.publicUrl) {
+        throw new Error(result.error || "Gagal upload foto");
+      }
 
-      const { error: dbErr } = await supabase
-        .from("profiles")
-        .update({ avatar_url: publicUrl })
-        .eq("user_id", user.id);
-      if (dbErr) throw dbErr;
-
-      setAvatarUrl(publicUrl);
+      setAvatarUrl(result.publicUrl);
       window.dispatchEvent(new Event("profile:updated"));
       toast.success("Foto profil berhasil diunggah");
-      const { error: logErr } = await supabase.from("user_activity_logs").insert({
-        user_id: user.id,
-        action: "update_avatar",
-        detail: "Mengubah foto profil",
-        new_value: publicUrl,
-      });
-      if (logErr) console.error("log avatar err:", logErr);
     } catch (err: any) {
       toast.error("Gagal upload: " + (err.message || "unknown"));
     } finally {
