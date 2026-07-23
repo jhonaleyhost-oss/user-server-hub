@@ -16,7 +16,7 @@ export const OnlinePresenceProvider = ({ children }: { children: ReactNode }) =>
   const [state, setState] = useState<PresenceCtx>({ onlineCount: 0, onlineUserIds: [] });
 
   useEffect(() => {
-    if (!user || roleLoading || isAdmin) {
+    if (!user || roleLoading) {
       setState({ onlineCount: 0, onlineUserIds: [] });
       return;
     }
@@ -36,7 +36,10 @@ export const OnlinePresenceProvider = ({ children }: { children: ReactNode }) =>
       .on("presence", { event: "leave" }, sync)
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {
-          await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+          // Admins subscribe silently so they can see counts without appearing online
+          if (!isAdmin) {
+            await channel.track({ user_id: user.id, online_at: new Date().toISOString() });
+          }
         }
       });
 
