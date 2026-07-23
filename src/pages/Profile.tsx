@@ -127,8 +127,19 @@ export default function Profile() {
     }
     setUploading(true);
     try {
+      // Pastikan sesi masih valid agar RLS storage tidak menolak upload.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        const { error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr) throw new Error("Sesi kadaluarsa, silakan login ulang.");
+      }
+      const { data: authUserData, error: authUserErr } = await supabase.auth.getUser();
+      if (authUserErr || !authUserData.user) {
+        throw new Error("Gagal memverifikasi sesi, silakan login ulang.");
+      }
+      const uid = authUserData.user.id;
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+      const path = `${uid}/avatar-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("avatars")
         .upload(path, file, { upsert: true, contentType: file.type });
