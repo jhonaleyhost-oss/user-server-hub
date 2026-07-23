@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown, Circle, Crown, LayoutDashboard } from "lucide-react";
+import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown, Circle, Crown, ShieldCheck } from "lucide-react";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -191,7 +191,7 @@ export default function Users() {
             </GlassCard>
             <GlassCard className="p-4 flex items-center justify-between border-rose-400/20">
               <div className="flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-rose-400" />
+                <ShieldCheck className="w-4 h-4 text-rose-400" />
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Admin Panel</p>
               </div>
               <p className="text-2xl font-bold text-rose-400">{totalAdp}</p>
