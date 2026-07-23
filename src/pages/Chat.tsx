@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -88,7 +89,8 @@ const Chat = () => {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const { onlineUserIds } = useOnlinePresence();
+  const onlineUsers = useMemo(() => new Set(onlineUserIds), [onlineUserIds]);
   const [typingUsers, setTypingUsers] = useState<Record<string, number>>({});
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
@@ -278,8 +280,7 @@ const Chat = () => {
         }
       )
       .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState() as Record<string, PresenceState[]>;
-        setOnlineUsers(new Set(Object.keys(state)));
+        // presence handled globally via useOnlinePresence
       })
       .on(
         "postgres_changes",
