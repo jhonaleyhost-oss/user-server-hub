@@ -21,7 +21,10 @@ import Profile from '@/pages/Profile';
 import Users from '@/pages/Users';
 import Chat from '@/pages/Chat';
 import Feedback from '@/pages/Feedback';
-import Activity from '@/pages/Activity';
+import PanelActivityPage from '@/pages/activity/PanelActivityPage';
+import SignupActivityPage from '@/pages/activity/SignupActivityPage';
+import UpgradeActivityPage from '@/pages/activity/UpgradeActivityPage';
+import AdsActivityPage from '@/pages/activity/AdsActivityPage';
 import NotFound from '@/pages/NotFound';
 import Landing from '@/pages/Landing';
 import { useAuth } from '@/hooks/useAuth';
@@ -72,7 +75,11 @@ export const AnimatedRoutes = () => {
         <Route path="/users" element={<Users />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/feedback" element={<Feedback />} />
-        <Route path="/activity" element={<Activity />} />
+        <Route path="/activity" element={<Navigate to="/activity/panel" replace />} />
+        <Route path="/activity/panel" element={<PanelActivityPage />} />
+        <Route path="/activity/signup" element={<SignupActivityPage />} />
+        <Route path="/activity/upgrade" element={<UpgradeActivityPage />} />
+        <Route path="/activity/ads" element={<AdsActivityPage />} />
         <Route path="/support" element={<Support />} />
         <Route path="/sewa-iklan" element={<AdsRental />} />
         <Route path="/promo" element={<PromoRoute />} />
