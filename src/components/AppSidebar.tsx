@@ -56,6 +56,20 @@ export function AppSidebar() {
   const [fullName, setFullName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [adminOpen, setAdminOpen] = useState<boolean>(() => pathname.startsWith("/admin"));
+  const [groupsOpen, setGroupsOpen] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = sessionStorage.getItem(SIDEBAR_GROUPS_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  });
+  const toggleGroup = (key: string) => {
+    setGroupsOpen((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      try { sessionStorage.setItem(SIDEBAR_GROUPS_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTopRef = useRef(0);
   const ignoreScrollSaveUntilRef = useRef(0);
@@ -135,20 +149,57 @@ export function AppSidebar() {
     return () => window.removeEventListener("profile:updated", onUpdate);
   }, [user]);
 
-  const items = [
-    { title: "Dashboard", url: "/", icon: LayoutDashboard },
-    { title: "List Panel", url: "/panels", icon: List },
-    { title: "Profil Saya", url: "/profile", icon: UserCog },
-    { title: "Pengguna", url: "/users", icon: UsersIcon },
-    { title: "Chat", url: "/chat", icon: MessageCircle, badge: unread.chat },
-    { title: "Support", url: "/support", icon: LifeBuoy, badge: unread.support },
-    { title: "Aktivitas", url: "/activity", icon: ActivityIcon },
-    { title: "Rating & Feedback", url: "/feedback", icon: Star },
-    { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
-    { title: "Promo & Kupon", url: "/promo", icon: Tag },
-    { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
-    { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
-  ] as Array<{ title: string; url: string; icon: any; badge?: number }>;
+  type NavItem = { title: string; url: string; icon: any; badge?: number };
+  type NavGroup = { key: string; label: string; icon: any; items: NavItem[] };
+
+  const NAV_GROUPS: NavGroup[] = [
+    {
+      key: "akun",
+      label: "Akun & Profil",
+      icon: UserIcon,
+      items: [
+        { title: "Dashboard", url: "/", icon: LayoutDashboard },
+        { title: "Profil Saya", url: "/profile", icon: UserCog },
+        { title: "Notifikasi", url: "/notifikasi", icon: Bell, badge: unreadNotif },
+      ],
+    },
+    {
+      key: "layanan",
+      label: "Panel & Layanan",
+      icon: ServerIcon,
+      items: [
+        { title: "List Panel", url: "/panels", icon: List },
+        { title: "Aktivitas", url: "/activity", icon: ActivityIcon },
+        { title: "Garansi Role", url: "/garansi", icon: ShieldAlert },
+      ],
+    },
+    {
+      key: "komunitas",
+      label: "Komunitas",
+      icon: MessagesSquare,
+      items: [
+        { title: "Pengguna", url: "/users", icon: UsersIcon },
+        { title: "Chat", url: "/chat", icon: MessageCircle, badge: unread.chat },
+        { title: "Support", url: "/support", icon: LifeBuoy, badge: unread.support },
+        { title: "Rating & Feedback", url: "/feedback", icon: Star },
+      ],
+    },
+    {
+      key: "promo",
+      label: "Promo & Iklan",
+      icon: Gift,
+      items: [
+        { title: "Promo & Kupon", url: "/promo", icon: Tag },
+        { title: "Sewa & Beriklan", url: "/sewa-iklan", icon: Megaphone },
+      ],
+    },
+  ];
+
+  const isGroupOpen = (g: NavGroup) => {
+    if (groupsOpen[g.key] !== undefined) return groupsOpen[g.key];
+    // default: open if it contains the active route
+    return g.items.some((i) => pathname === i.url);
+  };
 
   const isActive = (path: string) => pathname === path;
 
