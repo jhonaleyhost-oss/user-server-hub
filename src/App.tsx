@@ -6,6 +6,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AccentColorProvider } from "@/hooks/useAccentColor";
+import { OnlinePresenceProvider } from "@/hooks/useOnlinePresence";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import PromoPopup from "@/components/PromoPopup";
 import ChatNotifier from "@/components/ChatNotifier";
@@ -17,7 +18,8 @@ const App = () => (
     <ThemeProvider defaultTheme="light" storageKey="jhonaley-ui-theme">
       <AccentColorProvider>
         <AuthProvider>
-          <TooltipProvider>
+          <OnlinePresenceProvider>
+            <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -25,7 +27,8 @@ const App = () => (
               <PromoPopup />
               <AnimatedRoutes />
             </BrowserRouter>
-          </TooltipProvider>
+            </TooltipProvider>
+          </OnlinePresenceProvider>
         </AuthProvider>
       </AccentColorProvider>
     </ThemeProvider>
