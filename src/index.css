@@ -335,7 +335,7 @@
   }
 
   .dark .input-glass {
-    @apply bg-slate-900/50 border-slate-700;
+    @apply bg-slate-900/50 border-slate-600;
   }
 
   :root .input-glass {
