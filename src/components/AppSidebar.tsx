@@ -149,7 +149,7 @@ export function AppSidebar() {
     return () => window.removeEventListener("profile:updated", onUpdate);
   }, [user]);
 
-  type NavItem = { title: string; url: string; icon: any; badge?: number };
+  type NavItem = { title: string; url: string; icon: any; badge?: number; external?: boolean };
   type NavGroup = { key: string; label: string; icon: any; items: NavItem[] };
 
   const NAV_GROUPS: NavGroup[] = [
