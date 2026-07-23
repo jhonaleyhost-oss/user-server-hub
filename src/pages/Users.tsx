@@ -191,7 +191,7 @@ export default function Users() {
             </GlassCard>
             <GlassCard className="p-4 flex items-center justify-between border-rose-400/20">
               <div className="flex items-center gap-2">
-                <LayoutDashboard className="w-4 h-4 text-rose-400" />
+                <ShieldCheck className="w-4 h-4 text-rose-400" />
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Admin Panel</p>
               </div>
               <p className="text-2xl font-bold text-rose-400">{totalAdp}</p>
