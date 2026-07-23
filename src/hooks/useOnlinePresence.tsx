@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 
 interface PresenceCtx {
   onlineCount: number;
@@ -11,10 +12,11 @@ const Ctx = createContext<PresenceCtx>({ onlineCount: 0, onlineUserIds: [] });
 
 export const OnlinePresenceProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
   const [state, setState] = useState<PresenceCtx>({ onlineCount: 0, onlineUserIds: [] });
 
   useEffect(() => {
-    if (!user) {
+    if (!user || roleLoading || isAdmin) {
       setState({ onlineCount: 0, onlineUserIds: [] });
       return;
     }
@@ -41,7 +43,7 @@ export const OnlinePresenceProvider = ({ children }: { children: ReactNode }) =>
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, isAdmin, roleLoading]);
 
   return <Ctx.Provider value={state}>{children}</Ctx.Provider>;
 };
