@@ -20,7 +20,7 @@ interface Promo {
   discount_value: number;
   min_amount: number;
   max_discount: number | null;
-  scope: "reseller" | "ads" | "adp" | "both";
+  scope: "reseller" | "ads" | "adp" | "both" | "reseller_adp";
   quota: number | null;
   used_count: number;
   expires_at: string | null;
@@ -33,6 +33,7 @@ const scopeMeta: Record<string, { label: string; icon: any; color: string }> = {
   ads: { label: "Iklan", icon: Megaphone, color: "text-primary border-primary/30 bg-primary/10" },
   adp: { label: "Admin Panel", icon: Sparkles, color: "text-fuchsia-400 border-fuchsia-400/30 bg-fuchsia-400/10" },
   both: { label: "Reseller & Iklan", icon: Sparkles, color: "text-accent border-accent/30 bg-accent/10" },
+  reseller_adp: { label: "Reseller & Admin Panel", icon: Sparkles, color: "text-accent border-accent/30 bg-accent/10" },
 };
 
 const LandingPromos = () => {
