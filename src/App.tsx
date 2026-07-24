@@ -10,10 +10,12 @@ import { OnlinePresenceProvider } from "@/hooks/useOnlinePresence";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import PromoPopup from "@/components/PromoPopup";
 import ChatNotifier from "@/components/ChatNotifier";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
 const App = () => (
+  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="light" storageKey="jhonaley-ui-theme">
       <AccentColorProvider>
@@ -25,7 +27,9 @@ const App = () => (
             <BrowserRouter>
               <ChatNotifier />
               <PromoPopup />
-              <AnimatedRoutes />
+              <ErrorBoundary>
+                <AnimatedRoutes />
+              </ErrorBoundary>
             </BrowserRouter>
             </TooltipProvider>
           </OnlinePresenceProvider>
@@ -33,6 +37,7 @@ const App = () => (
       </AccentColorProvider>
     </ThemeProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
