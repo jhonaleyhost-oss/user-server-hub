@@ -80,11 +80,18 @@ const AdminAdRentals = () => {
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <Megaphone className="w-4 h-4 text-primary shrink-0" />
                   <span className="font-semibold text-sm text-foreground truncate">{r.title}</span>
-                  <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded border ${
-                    r.status === 'active' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' :
-                    r.status === 'pending' ? 'bg-amber/15 text-amber border-amber/30' :
-                    'bg-muted text-muted-foreground border-border'
-                  }`}>{r.status}</span>
+                  {(() => {
+                    const isExpired = !!r.expires_at && new Date(r.expires_at) <= new Date() && !r.is_admin_slot;
+                    const effective = isExpired ? 'expired' : r.status;
+                    const cfg: Record<string, { label: string; cls: string }> = {
+                      active:   { label: '🟢 On',            cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40' },
+                      expired:  { label: '⚫ Kadaluarsa',     cls: 'bg-destructive/15 text-destructive border-destructive/40' },
+                      disabled: { label: '⏸ Dijeda',         cls: 'bg-muted text-muted-foreground border-border' },
+                      pending:  { label: '⏳ Menunggu Bayar', cls: 'bg-amber/15 text-amber border-amber/40' },
+                    };
+                    const c = cfg[effective] || { label: effective, cls: 'bg-muted text-muted-foreground border-border' };
+                    return <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded border ${c.cls}`}>{c.label}</span>;
+                  })()}
                   {r.is_admin_slot && (
                     <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase rounded border bg-amber/15 text-amber border-amber/30 flex items-center gap-1">
                       <InfinityIcon className="w-2.5 h-2.5" /> Admin
