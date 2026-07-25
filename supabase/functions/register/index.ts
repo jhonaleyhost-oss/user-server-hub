@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateDisplayName } from "../_shared/nameValidation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -45,6 +46,17 @@ serve(async (req) => {
 
     if (!email || !password) {
       throw new Error('Email dan password wajib diisi.');
+    }
+
+    // Validate display name (block links, reserved words, etc.)
+    if (fullName && fullName.trim().length > 0) {
+      const check = validateDisplayName(fullName);
+      if (!check.ok) {
+        return new Response(
+          JSON.stringify({ success: false, error: check.error || 'Nama tidak valid.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Get client IP from headers
