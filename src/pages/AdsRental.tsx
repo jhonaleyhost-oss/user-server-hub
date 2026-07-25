@@ -326,8 +326,12 @@ const AdsRental = () => {
   }
 
   const editableRentals = isAdmin
-    ? myRentals.filter((r) => r.is_admin_slot || r.status === 'active')
-    : activeRental ? [activeRental] : [];
+    ? myRentals.filter((r) => r.is_admin_slot || r.status === 'active' || r.status === 'disabled')
+    : myRentals.filter(
+        (r) =>
+          (r.status === 'active' || r.status === 'disabled') &&
+          (!r.expires_at || new Date(r.expires_at) > new Date()),
+      );
 
   return (
     <AppShell>
