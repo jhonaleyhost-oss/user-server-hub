@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import GlassCard from "@/components/GlassCard";
 import { PageTransition } from "@/components/PageTransition";
+import { validateDisplayName } from "@/lib/nameValidation";
 
 export default function Profile() {
   const { user, signOut } = useAuth();
