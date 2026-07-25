@@ -64,6 +64,11 @@ export default function Profile() {
       toast.error("Username tidak boleh kosong");
       return;
     }
+    const check = validateDisplayName(newName);
+    if (!check.ok) {
+      toast.error(check.error);
+      return;
+    }
     setSavingProfile(true);
     const oldName = (await supabase.from("profiles").select("full_name").eq("user_id", user.id).maybeSingle()).data?.full_name ?? "";
     if (newName.toLowerCase() !== oldName.toLowerCase()) {
