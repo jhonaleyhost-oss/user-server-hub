@@ -211,13 +211,15 @@ const AdsRental = () => {
 
   const startPurchase = async () => {
     if (!user) { toast.error('Silakan login dulu'); return; }
-    if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
-    if (ownedRental) {
-      toast.info(
-        ownedRental.status === 'active'
-          ? 'Kamu sudah punya iklan aktif.'
-          : 'Kamu masih punya iklan yang belum expired. Aktifkan kembali atau tunggu sampai kadaluarsa.',
-      );
+    // Kalau user sudah punya iklan aktif → mode perpanjang (tidak makan slot baru).
+    // Kalau belum → butuh slot kosong.
+    const isExtending = !!activeRental;
+    if (!isExtending && slot.available <= 0) {
+      toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.');
+      return;
+    }
+    if (!isExtending && ownedRental?.status === 'pending') {
+      toast.info('Kamu masih punya order menunggu pembayaran. Selesaikan dulu ya.');
       return;
     }
     const pkg = selectedPkg;
@@ -426,9 +428,22 @@ const AdsRental = () => {
             </div>
           )}
 
-          {/* === MARKETING / PURCHASE (non-admin, no active rental) === */}
-          {!isAdmin && !activeRental && !showQris && (
+          {/* === MARKETING / PURCHASE / EXTEND (non-admin) === */}
+          {!isAdmin && !showQris && (
             <>
+              {activeRental && (
+                <GlassCard className="p-4 border-primary/40 bg-primary/5">
+                  <div className="flex items-start gap-3">
+                    <Clock className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-semibold text-foreground">Perpanjang Masa Aktif Iklan</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Iklan kamu masih aktif. Pilih paket di bawah untuk menambah durasi — harga sama, iklan tidak diganti, hanya masa aktif diperpanjang.
+                      </p>
+                    </div>
+                  </div>
+                </GlassCard>
+              )}
               {/* Pricing card */}
               <GlassCard className="p-6 relative overflow-hidden">
                 <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
@@ -500,13 +515,13 @@ const AdsRental = () => {
 
                   <Button
                     onClick={startPurchase}
-                    disabled={creating || slot.available <= 0}
+                    disabled={creating || (!activeRental && slot.available <= 0)}
                     className="w-full sm:w-auto gap-2 btn-primary h-12 px-8 font-bold"
                   >
                     {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-5 h-5" />}
-                    {slot.available <= 0
+                    {!activeRental && slot.available <= 0
                       ? 'Slot Penuh, Tunggu Ada Expired'
-                      : `Sewa ${selectedPkg.label} — Rp ${(appliedPromo?.final_amount ?? selectedPkg.price).toLocaleString('id-ID')}`}
+                      : `${activeRental ? 'Perpanjang' : 'Sewa'} ${selectedPkg.label} — Rp ${(appliedPromo?.final_amount ?? selectedPkg.price).toLocaleString('id-ID')}`}
                   </Button>
                   <div className="mt-3 max-w-md">
                     <PromoInput scope="ads" amount={selectedPkg.price} applied={appliedPromo} onApply={setAppliedPromo} />
@@ -517,7 +532,7 @@ const AdsRental = () => {
                       </div>
                     )}
                   </div>
-                  {slot.available <= 0 && (
+                  {!activeRental && slot.available <= 0 && (
                     <p className="text-xs text-destructive mt-2 flex items-center gap-1">
                       <AlertTriangle className="w-3.5 h-3.5" />
                       Maks 2 slot aktif sudah terisi. Tunggu sampai ada iklan expired.
