@@ -211,13 +211,15 @@ const AdsRental = () => {
 
   const startPurchase = async () => {
     if (!user) { toast.error('Silakan login dulu'); return; }
-    if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
-    if (ownedRental) {
-      toast.info(
-        ownedRental.status === 'active'
-          ? 'Kamu sudah punya iklan aktif.'
-          : 'Kamu masih punya iklan yang belum expired. Aktifkan kembali atau tunggu sampai kadaluarsa.',
-      );
+    // Kalau user sudah punya iklan aktif → mode perpanjang (tidak makan slot baru).
+    // Kalau belum → butuh slot kosong.
+    const isExtending = !!activeRental;
+    if (!isExtending && slot.available <= 0) {
+      toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.');
+      return;
+    }
+    if (!isExtending && ownedRental?.status === 'pending') {
+      toast.info('Kamu masih punya order menunggu pembayaran. Selesaikan dulu ya.');
       return;
     }
     const pkg = selectedPkg;
