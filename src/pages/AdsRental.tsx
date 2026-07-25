@@ -409,9 +409,11 @@ const AdsRental = () => {
                         ) : null}
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => toggleStatus(r)} className="gap-1.5">
-                          {r.status === 'active' ? <><Pause className="w-3.5 h-3.5" /> Jeda</> : <><Play className="w-3.5 h-3.5" /> Aktifkan</>}
-                        </Button>
+                        {isAdmin && (
+                          <Button variant="outline" size="sm" onClick={() => toggleStatus(r)} className="gap-1.5">
+                            {r.status === 'active' ? <><Pause className="w-3.5 h-3.5" /> Jeda</> : <><Play className="w-3.5 h-3.5" /> Aktifkan</>}
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => deleteRental(r)} className="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
