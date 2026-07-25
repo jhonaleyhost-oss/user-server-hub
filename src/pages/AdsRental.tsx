@@ -400,9 +400,11 @@ const AdsRental = () => {
                         <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md border ${
                           r.status === 'active'
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            : r.status === 'disabled'
+                            ? 'bg-muted text-muted-foreground border-border'
                             : 'bg-muted text-muted-foreground border-border'
                         }`}>
-                          {r.status === 'active' ? 'Aktif' : r.status}
+                          {r.status === 'active' ? 'Aktif' : r.status === 'disabled' ? 'Dijeda' : r.status}
                         </span>
                         {r.is_admin_slot ? (
                           <span className="px-2 py-1 text-[10px] font-bold uppercase rounded-md border bg-amber/15 text-amber border-amber/30 flex items-center gap-1">
