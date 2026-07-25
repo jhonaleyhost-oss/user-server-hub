@@ -127,12 +127,12 @@ const AdsRental = () => {
     [myRentals],
   );
 
-  // Hanya rental aktif / menunggu pembayaran yang memblokir pembelian baru.
-  // Rental yang di-pause (disabled) dianggap selesai supaya user bisa beli lagi.
+  // Rental aktif / dijeda / menunggu pembayaran memblokir pembelian baru
+  // (user tetap punya slot, cukup diaktifkan kembali kalau sedang dijeda).
   const ownedRental = useMemo(
     () => myRentals.find(
       (r) =>
-        (r.status === 'active' || r.status === 'pending') &&
+        (r.status === 'active' || r.status === 'pending' || r.status === 'disabled') &&
         (!r.expires_at || new Date(r.expires_at) > new Date()),
     ),
     [myRentals],
@@ -410,8 +410,8 @@ const AdsRental = () => {
                           </span>
                         ) : null}
                       </div>
-                      <div className="flex gap-2">
-                        {isAdmin && (
+                       <div className="flex gap-2">
+                        {!r.is_admin_slot && (r.status === 'active' || r.status === 'disabled') && (
                           <Button variant="outline" size="sm" onClick={() => toggleStatus(r)} className="gap-1.5">
                             {r.status === 'active' ? <><Pause className="w-3.5 h-3.5" /> Jeda</> : <><Play className="w-3.5 h-3.5" /> Aktifkan</>}
                           </Button>
