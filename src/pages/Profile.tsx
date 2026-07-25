@@ -67,7 +67,7 @@ export default function Profile() {
     }
     const check = validateDisplayName(newName);
     if (!check.ok) {
-      toast.error(check.error);
+      toast.error(check.error ?? "Nama tidak valid");
       return;
     }
     setSavingProfile(true);
