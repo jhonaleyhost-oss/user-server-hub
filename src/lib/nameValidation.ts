@@ -22,7 +22,12 @@ const LINK_PATTERNS: RegExp[] = [
   /\b[a-z0-9-]+\.(com|net|org|id|uk|xyz|io|co|me|link|shop|store|site|online|info|biz|tk|ml|ga|cf|gq|ru|cn|top|club|live|app|dev)\b/i,
 ];
 
-export function validateDisplayName(rawName: string): { ok: true } | { ok: false; error: string } {
+export interface NameValidationResult {
+  ok: boolean;
+  error?: string;
+}
+
+export function validateDisplayName(rawName: string): NameValidationResult {
   const name = (rawName || "").trim();
 
   if (name.length < 3) return { ok: false, error: "Nama minimal 3 karakter." };
