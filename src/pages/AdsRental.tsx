@@ -127,11 +127,13 @@ const AdsRental = () => {
     [myRentals],
   );
 
-  // Any rental that hasn't expired yet (active OR paused/disabled OR pending payment)
-  // — user only gets 1 slot per active period, regardless of pause state.
+  // Hanya rental aktif / menunggu pembayaran yang memblokir pembelian baru.
+  // Rental yang di-pause (disabled) dianggap selesai supaya user bisa beli lagi.
   const ownedRental = useMemo(
     () => myRentals.find(
-      (r) => r.status !== 'expired' && (!r.expires_at || new Date(r.expires_at) > new Date()),
+      (r) =>
+        (r.status === 'active' || r.status === 'pending') &&
+        (!r.expires_at || new Date(r.expires_at) > new Date()),
     ),
     [myRentals],
   );
