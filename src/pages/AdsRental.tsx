@@ -127,12 +127,12 @@ const AdsRental = () => {
     [myRentals],
   );
 
-  // Hanya rental aktif / menunggu pembayaran yang memblokir pembelian baru.
-  // Rental yang di-pause (disabled) dianggap selesai supaya user bisa beli lagi.
+  // Rental aktif / dijeda / menunggu pembayaran memblokir pembelian baru
+  // (user tetap punya slot, cukup diaktifkan kembali kalau sedang dijeda).
   const ownedRental = useMemo(
     () => myRentals.find(
       (r) =>
-        (r.status === 'active' || r.status === 'pending') &&
+        (r.status === 'active' || r.status === 'pending' || r.status === 'disabled') &&
         (!r.expires_at || new Date(r.expires_at) > new Date()),
     ),
     [myRentals],
@@ -326,8 +326,12 @@ const AdsRental = () => {
   }
 
   const editableRentals = isAdmin
-    ? myRentals.filter((r) => r.is_admin_slot || r.status === 'active')
-    : activeRental ? [activeRental] : [];
+    ? myRentals.filter((r) => r.is_admin_slot || r.status === 'active' || r.status === 'disabled')
+    : myRentals.filter(
+        (r) =>
+          (r.status === 'active' || r.status === 'disabled') &&
+          (!r.expires_at || new Date(r.expires_at) > new Date()),
+      );
 
   return (
     <AppShell>
@@ -396,9 +400,11 @@ const AdsRental = () => {
                         <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-wide rounded-md border ${
                           r.status === 'active'
                             ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            : r.status === 'disabled'
+                            ? 'bg-muted text-muted-foreground border-border'
                             : 'bg-muted text-muted-foreground border-border'
                         }`}>
-                          {r.status === 'active' ? 'Aktif' : r.status}
+                          {r.status === 'active' ? 'Aktif' : r.status === 'disabled' ? 'Dijeda' : r.status}
                         </span>
                         {r.is_admin_slot ? (
                           <span className="px-2 py-1 text-[10px] font-bold uppercase rounded-md border bg-amber/15 text-amber border-amber/30 flex items-center gap-1">
@@ -410,8 +416,8 @@ const AdsRental = () => {
                           </span>
                         ) : null}
                       </div>
-                      <div className="flex gap-2">
-                        {isAdmin && (
+                       <div className="flex gap-2">
+                        {!r.is_admin_slot && (r.status === 'active' || r.status === 'disabled') && (
                           <Button variant="outline" size="sm" onClick={() => toggleStatus(r)} className="gap-1.5">
                             {r.status === 'active' ? <><Pause className="w-3.5 h-3.5" /> Jeda</> : <><Play className="w-3.5 h-3.5" /> Aktifkan</>}
                           </Button>
