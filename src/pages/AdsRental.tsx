@@ -127,6 +127,15 @@ const AdsRental = () => {
     [myRentals],
   );
 
+  // Any rental that hasn't expired yet (active OR paused/disabled OR pending payment)
+  // — user only gets 1 slot per active period, regardless of pause state.
+  const ownedRental = useMemo(
+    () => myRentals.find(
+      (r) => r.status !== 'expired' && (!r.expires_at || new Date(r.expires_at) > new Date()),
+    ),
+    [myRentals],
+  );
+
   const fetchAll = async () => {
     if (!user) return;
     const [slotRes, rentalRes] = await Promise.all([
@@ -201,7 +210,14 @@ const AdsRental = () => {
   const startPurchase = async () => {
     if (!user) { toast.error('Silakan login dulu'); return; }
     if (slot.available <= 0) { toast.error('Slot penuh. Tunggu sampai ada iklan yang expired.'); return; }
-    if (activeRental) { toast.info('Kamu sudah punya iklan aktif.'); return; }
+    if (ownedRental) {
+      toast.info(
+        ownedRental.status === 'active'
+          ? 'Kamu sudah punya iklan aktif.'
+          : 'Kamu masih punya iklan yang belum expired. Aktifkan kembali atau tunggu sampai kadaluarsa.',
+      );
+      return;
+    }
     const pkg = selectedPkg;
     const payAmount = appliedPromo?.final_amount ?? pkg.price;
     setCreating(true);
