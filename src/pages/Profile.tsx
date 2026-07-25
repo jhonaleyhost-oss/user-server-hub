@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import GlassCard from "@/components/GlassCard";
 import { PageTransition } from "@/components/PageTransition";
+import { validateDisplayName } from "@/lib/nameValidation";
 
 export default function Profile() {
   const { user, signOut } = useAuth();
@@ -62,6 +63,11 @@ export default function Profile() {
     const newName = fullName.trim();
     if (!newName) {
       toast.error("Username tidak boleh kosong");
+      return;
+    }
+    const check = validateDisplayName(newName);
+    if (!check.ok) {
+      toast.error(check.error ?? "Nama tidak valid");
       return;
     }
     setSavingProfile(true);
