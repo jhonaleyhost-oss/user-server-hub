@@ -183,6 +183,7 @@ export function AppSidebar() {
         { title: "Channel Telegram Resmi", url: "https://t.me/jhonaleytesti3", icon: Megaphone, external: true },
         { title: "Contact Admin Telegram 1", url: "https://t.me/jhonaleystorecs", icon: MessageCircle, external: true },
         { title: "Contact Admin Telegram 2", url: "https://t.me/jhonaleystoreid", icon: MessageCircle, external: true },
+        { title: "Beli Panel legal anti mokad", url: "https://t.me/upgradeuser_bot", icon: ShieldCheck, external: true },
       ],
     },
     {
