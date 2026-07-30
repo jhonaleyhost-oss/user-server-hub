@@ -41,10 +41,14 @@ const PromoPopup = () => {
   const location = useLocation();
   const canHide = isReseller || isAdmin;
 
-  const hiddenKey = (id: string) => `promo_hidden_until_${id}`;
+  // Version the preference key so stale dismissals from the previous popup
+  // behaviour cannot silently hide active promos after refresh/navigation.
+  const hiddenKey = (id: string) => `promo_hidden_v2_until_${id}`;
   const isAdminPage = location.pathname.startsWith('/admin');
 
   useEffect(() => {
+    setDontShow(false);
+    setPopup(null);
     if (isAdminPage) {
       setOpen(false);
       return;
@@ -91,6 +95,9 @@ const PromoPopup = () => {
       // Filter dismissed
       const now = Date.now();
       const available = candidates.filter((p) => {
+        // Regular users cannot opt out, so old browser preferences must never
+        // prevent an active promo/ad from appearing for them.
+        if (!canHide) return true;
         try {
           const hideUntil = localStorage.getItem(hiddenKey(p.id));
           if (hideUntil && parseInt(hideUntil, 10) > now) return false;
@@ -108,7 +115,7 @@ const PromoPopup = () => {
     if (roleLoading) return;
     const timer = setTimeout(fetchAll, 600);
     return () => clearTimeout(timer);
-  }, [roleLoading, user?.id, location.pathname, isAdminPage]);
+  }, [roleLoading, user?.id, location.pathname, isAdminPage, canHide]);
 
   const handleClose = () => {
     if (popup) {
