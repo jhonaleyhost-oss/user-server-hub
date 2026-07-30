@@ -106,8 +106,10 @@ const PromoPopup = () => {
       });
       if (available.length === 0) return;
 
-      // Random rotation
-      const pick = available[Math.floor(Math.random() * available.length)];
+      // Admin popups take priority; user ads only show when no admin popup is available
+      const adminOnes = available.filter((p) => !p.isAd);
+      const pool = adminOnes.length > 0 ? adminOnes : available;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
       setPopup(pick);
       setOpen(true);
     };
