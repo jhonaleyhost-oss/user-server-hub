@@ -30,9 +30,6 @@ const nextSevenAm = () => {
   return target.getTime();
 };
 
-// How long a simple "close" suppresses a popup within the same tab.
-const CLOSE_COOLDOWN_MS = 45 * 60 * 1000;
-
 const PromoPopup = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [open, setOpen] = useState(false);
@@ -44,25 +41,14 @@ const PromoPopup = () => {
   const location = useLocation();
   const canHide = isReseller || isAdmin;
 
-  const sessionKey = (id: string) => `promo_session_${id}`;
   const hiddenKey = (id: string) => `promo_hidden_until_${id}`;
-
-  // Reset per-tab suppression whenever the signed-in identity changes
-  // (login / logout), so popups reappear for the new session.
-  useEffect(() => {
-    try {
-      const marker = 'promo_identity';
-      const current = user?.id || 'guest';
-      if (sessionStorage.getItem(marker) !== current) {
-        Object.keys(sessionStorage)
-          .filter((k) => k.startsWith('promo_session_'))
-          .forEach((k) => sessionStorage.removeItem(k));
-        sessionStorage.setItem(marker, current);
-      }
-    } catch {}
-  }, [user?.id]);
+  const isAdminPage = location.pathname.startsWith('/admin');
 
   useEffect(() => {
+    if (isAdminPage) {
+      setOpen(false);
+      return;
+    }
     const fetchAll = async () => {
       const candidates: PopupData[] = [];
 
@@ -106,8 +92,6 @@ const PromoPopup = () => {
       const now = Date.now();
       const available = candidates.filter((p) => {
         try {
-          const closedAt = parseInt(sessionStorage.getItem(sessionKey(p.id)) || '0', 10);
-          if (closedAt && now - closedAt < CLOSE_COOLDOWN_MS) return false;
           const hideUntil = localStorage.getItem(hiddenKey(p.id));
           if (hideUntil && parseInt(hideUntil, 10) > now) return false;
         } catch {}
@@ -124,13 +108,11 @@ const PromoPopup = () => {
     if (roleLoading) return;
     const timer = setTimeout(fetchAll, 600);
     return () => clearTimeout(timer);
-  }, [roleLoading, user?.id]);
+  }, [roleLoading, user?.id, location.pathname, isAdminPage]);
 
   const handleClose = () => {
     if (popup) {
       try {
-        // Suppress this popup for a while in the same tab (not forever)
-        sessionStorage.setItem(sessionKey(popup.id), String(Date.now()));
         // Reseller "hide until 7AM tomorrow"
         if (canHide && dontShow) {
           localStorage.setItem(hiddenKey(popup.id), String(nextSevenAm()));
