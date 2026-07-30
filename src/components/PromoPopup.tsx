@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface PopupButton { label: string; url: string }
@@ -29,18 +30,37 @@ const nextSevenAm = () => {
   return target.getTime();
 };
 
+// How long a simple "close" suppresses a popup within the same tab.
+const CLOSE_COOLDOWN_MS = 45 * 60 * 1000;
+
 const PromoPopup = () => {
   const [popup, setPopup] = useState<PopupData | null>(null);
   const [open, setOpen] = useState(false);
   const [dontShow, setDontShow] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const { isReseller, isAdmin, loading: roleLoading } = useUserRole();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const canHide = isReseller || isAdmin;
 
   const sessionKey = (id: string) => `promo_session_${id}`;
   const hiddenKey = (id: string) => `promo_hidden_until_${id}`;
+
+  // Reset per-tab suppression whenever the signed-in identity changes
+  // (login / logout), so popups reappear for the new session.
+  useEffect(() => {
+    try {
+      const marker = 'promo_identity';
+      const current = user?.id || 'guest';
+      if (sessionStorage.getItem(marker) !== current) {
+        Object.keys(sessionStorage)
+          .filter((k) => k.startsWith('promo_session_'))
+          .forEach((k) => sessionStorage.removeItem(k));
+        sessionStorage.setItem(marker, current);
+      }
+    } catch {}
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -86,7 +106,8 @@ const PromoPopup = () => {
       const now = Date.now();
       const available = candidates.filter((p) => {
         try {
-          if (sessionStorage.getItem(sessionKey(p.id)) === '1') return false;
+          const closedAt = parseInt(sessionStorage.getItem(sessionKey(p.id)) || '0', 10);
+          if (closedAt && now - closedAt < CLOSE_COOLDOWN_MS) return false;
           const hideUntil = localStorage.getItem(hiddenKey(p.id));
           if (hideUntil && parseInt(hideUntil, 10) > now) return false;
         } catch {}
@@ -103,13 +124,13 @@ const PromoPopup = () => {
     if (roleLoading) return;
     const timer = setTimeout(fetchAll, 600);
     return () => clearTimeout(timer);
-  }, [roleLoading]);
+  }, [roleLoading, user?.id]);
 
   const handleClose = () => {
     if (popup) {
       try {
-        // Always set session-dismiss so it doesn't reopen in same tab
-        sessionStorage.setItem(sessionKey(popup.id), '1');
+        // Suppress this popup for a while in the same tab (not forever)
+        sessionStorage.setItem(sessionKey(popup.id), String(Date.now()));
         // Reseller "hide until 7AM tomorrow"
         if (canHide && dontShow) {
           localStorage.setItem(hiddenKey(popup.id), String(nextSevenAm()));
