@@ -235,13 +235,13 @@ const PromoPopup = () => {
               </div>
             </div>
 
-            {/* Image (click to view full size) */}
-            {popup.image_url && (
-              <div className="px-4 shrink-0">
+            {/* Content - scrollable (image scrolls along) */}
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 text-[13px] space-y-0.5">
+              {popup.image_url && (
                 <button
                   type="button"
                   onClick={() => setLightbox(popup.image_url!)}
-                  className="block w-full cursor-zoom-in"
+                  className="block w-full cursor-zoom-in mb-3"
                   title="Klik untuk lihat gambar full"
                 >
                   <img
@@ -250,11 +250,7 @@ const PromoPopup = () => {
                     className="w-full rounded-xl object-cover max-h-44 border border-border/30 transition-transform hover:scale-[1.01]"
                   />
                 </button>
-              </div>
-            )}
-
-            {/* Content - scrollable */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-5 py-3 text-[13px] space-y-0.5">
+              )}
               {renderContent(popup.content)}
             </div>
 
