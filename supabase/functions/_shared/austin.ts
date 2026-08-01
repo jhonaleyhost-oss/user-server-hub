@@ -60,14 +60,20 @@ export async function austinRequest<T = any>(
 
 /** Create a dynamic QRIS deposit. Returns final amount (incl. unique fee) + QR payload. */
 export async function austinCreateDeposit(amount: number) {
-  return await austinRequest("POST", "/api/v1/deposit/create", { amount });
+  return await austinRequest("POST", "/api/v2/deposit/create", { amount });
 }
 
-/** Poll payment status: paid | pending | expired | cancel */
+/** Poll payment status: paid | pending | expired | cancel (v2 first, falls back to v1) */
 export async function austinCheckDeposit(transactionId: string) {
-  return await austinRequest("GET", `/api/v1/deposit/check/${encodeURIComponent(transactionId)}`);
+  const id = encodeURIComponent(transactionId);
+  const v2 = await austinRequest("GET", `/api/v2/deposit/check/${id}`);
+  if (v2.ok) return v2;
+  return await austinRequest("GET", `/api/v1/deposit/check/${id}`);
 }
 
 export async function austinCancelDeposit(transactionId: string) {
-  return await austinRequest("POST", `/api/v1/deposit/cancel/${encodeURIComponent(transactionId)}`);
+  const id = encodeURIComponent(transactionId);
+  const v2 = await austinRequest("POST", `/api/v2/deposit/cancel/${id}`);
+  if (v2.ok) return v2;
+  return await austinRequest("POST", `/api/v1/deposit/cancel/${id}`);
 }
