@@ -499,6 +499,11 @@ const Upgrade = () => {
   )}`;
 
   const handleCopyUrl = async () => {
+    if (qrisPayload) {
+      await navigator.clipboard.writeText(qrisPayload);
+      toast.success('Kode QRIS disalin');
+      return;
+    }
     await navigator.clipboard.writeText(pakasirUrl);
     toast.success('Link pembayaran disalin');
   };
