@@ -310,9 +310,11 @@ const AdsRental = () => {
   };
 
   const handleCopy = async () => {
-    const url = `https://app.pakasir.com/pay/jhonaley-store/${qrisAmount}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
-    await navigator.clipboard.writeText(url);
-    toast.success('Link pembayaran disalin');
+    const value =
+      qrisPayload ||
+      `https://app.pakasir.com/pay/jhonaley-store/${qrisAmount}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
+    await navigator.clipboard.writeText(value);
+    toast.success(qrisPayload ? 'Kode QRIS disalin' : 'Link pembayaran disalin');
   };
 
   if (loading) {
