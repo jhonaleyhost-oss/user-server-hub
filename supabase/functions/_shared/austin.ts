@@ -53,12 +53,10 @@ async function ipv4Fetch(
 ): Promise<{ status: number; text: string }> {
   const u = new URL(url);
   const ip = await resolveIPv4(u.hostname);
-  const conn = await Deno.connectTls({
-    hostname: ip,
-    port: 443,
-    // deno-lint-ignore no-explicit-any
-    ...( { serverName: u.hostname } as any ),
-  });
+  // Connect the TCP socket to the explicit IPv4 address, then upgrade to TLS
+  // using the real hostname so SNI / cert validation still work.
+  const tcp = await Deno.connect({ hostname: ip, port: 443 });
+  const conn = await Deno.startTls(tcp, { hostname: u.hostname });
 
   try {
     const bodyBytes = init.body ? new TextEncoder().encode(init.body) : new Uint8Array(0);
