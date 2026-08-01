@@ -292,6 +292,45 @@ export type Database = {
         }
         Relationships: []
       }
+      austin_payments: {
+        Row: {
+          base_amount: number
+          created_at: string
+          expired_at: string | null
+          final_amount: number
+          id: string
+          order_id: string
+          qr_string: string | null
+          status: string
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          base_amount: number
+          created_at?: string
+          expired_at?: string | null
+          final_amount: number
+          id?: string
+          order_id: string
+          qr_string?: string | null
+          status?: string
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          base_amount?: number
+          created_at?: string
+          expired_at?: string | null
+          final_amount?: number
+          id?: string
+          order_id?: string
+          qr_string?: string | null
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blocked_devices: {
         Row: {
           archived_at: string
