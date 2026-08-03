@@ -111,17 +111,14 @@ const ChatNotifier = () => {
             content: string | null;
             image_url: string | null;
           };
-          if (m.sender_user_id && m.sender_user_id === user.id) return;
-
           const admin = isAdminRef.current;
           // Regular users only care about replies in their own thread.
           if (!admin && m.thread_user_id !== user.id) return;
+          // Ignore a regular user's own message. Admin test messages can use
+          // the same account ID, so do not discard them before checking role.
+          if (!admin && m.sender_user_id === user.id) return;
           // Admins only care about messages coming from users.
           if (admin && m.sender_role !== "user") return;
-
-          const focused = document.visibilityState === "visible" && document.hasFocus();
-          const onSupport = locationRef.current.startsWith("/support");
-          if (admin && onSupport && focused) return;
 
           let title = admin ? "Pesan support baru" : "Balasan dari Support";
           let icon: string | undefined;
@@ -134,7 +131,7 @@ const ChatNotifier = () => {
           await showAppNotification(title, {
             body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
             icon,
-            tag: `support-${m.thread_user_id}`,
+            tag: `support-${m.id}`,
             url: admin ? "/support" : "/dashboard",
           });
         }
