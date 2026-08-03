@@ -11,6 +11,7 @@ import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import PromoPopup from "@/components/PromoPopup";
 import ChatNotifier from "@/components/ChatNotifier";
 import PushRegistrar from "@/components/PushRegistrar";
+import EnableNotificationsPrompt from "@/components/EnableNotificationsPrompt";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <BrowserRouter>
               <ChatNotifier />
               <PushRegistrar />
+              <EnableNotificationsPrompt />
               <PromoPopup />
               <ErrorBoundary>
                 <AnimatedRoutes />
