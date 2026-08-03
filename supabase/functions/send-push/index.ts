@@ -24,10 +24,16 @@ Deno.serve(async (req) => {
     );
 
     const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userErr } = await admin.auth.getUser(token);
-    if (userErr || !userData.user) return json({ error: "unauthorized" }, 401);
-
-    const { data: isAdmin } = await admin.rpc("is_admin", { _user_id: userData.user.id });
+    const isServiceRole = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    let isAdmin = false;
+    if (isServiceRole) {
+      isAdmin = true;
+    } else {
+      const { data: userData, error: userErr } = await admin.auth.getUser(token);
+      if (userErr || !userData.user) return json({ error: "unauthorized" }, 401);
+      const { data: adminFlag } = await admin.rpc("is_admin", { _user_id: userData.user.id });
+      isAdmin = !!adminFlag;
+    }
 
     const body = await req.json().catch(() => ({}));
     const title = String(body.title ?? "").trim();
