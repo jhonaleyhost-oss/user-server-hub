@@ -28,23 +28,63 @@ Deno.serve(async (req) => {
     if (userErr || !userData.user) return json({ error: "unauthorized" }, 401);
 
     const { data: isAdmin } = await admin.rpc("is_admin", { _user_id: userData.user.id });
-    if (!isAdmin) return json({ error: "admin_only" }, 403);
 
     const body = await req.json().catch(() => ({}));
     const title = String(body.title ?? "").trim();
     const message = String(body.body ?? "").trim();
     const url = body.url ? String(body.url).trim() : "/";
     const image = body.image ? String(body.image).trim() : undefined;
+    const target_user_id = body.target_user_id ? String(body.target_user_id).trim() : undefined;
+    const exclude_user_id = body.exclude_user_id ? String(body.exclude_user_id).trim() : undefined;
+    const role = body.role ? String(body.role).trim() : undefined;
+    const broadcast = !(target_user_id || exclude_user_id || role);
+
+    if (broadcast && !isAdmin) return json({ error: "admin_only" }, 403);
+    if (target_user_id && !isAdmin) return json({ error: "target_user_id requires admin" }, 403);
+    if (role && role !== "admin" && !isAdmin) return json({ error: "role selain admin memerlukan admin" }, 403);
 
     if (!title || title.length > 120) return json({ error: "title wajib diisi (maks 120 karakter)" }, 400);
     if (!message || message.length > 500) return json({ error: "isi pesan wajib diisi (maks 500 karakter)" }, 400);
 
-    const { data: subs, error: subErr } = await admin
-      .from("push_subscriptions")
-      .select("id, endpoint, p256dh, auth");
-    if (subErr) return json({ error: subErr.message }, 500);
+    let subs: Array<{ id: string; endpoint: string; p256dh: string; auth: string }> = [];
 
-    const payload = JSON.stringify({ title, body: message, url, image, tag: `bc-${Date.now()}` });
+    if (target_user_id) {
+      const { data, error } = await admin
+        .from("push_subscriptions")
+        .select("id, endpoint, p256dh, auth")
+        .eq("user_id", target_user_id);
+      if (error) return json({ error: error.message }, 500);
+      subs = data ?? [];
+    } else if (role) {
+      const { data: userIds, error: roleErr } = await admin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", role);
+      if (roleErr) return json({ error: roleErr.message }, 500);
+      const ids = (userIds ?? []).map((u) => u.user_id).filter(Boolean);
+      if (ids.length) {
+        const { data, error } = await admin
+          .from("push_subscriptions")
+          .select("id, endpoint, p256dh, auth")
+          .in("user_id", ids);
+        if (error) return json({ error: error.message }, 500);
+        subs = data ?? [];
+      }
+    } else {
+      let q = admin.from("push_subscriptions").select("id, endpoint, p256dh, auth");
+      if (exclude_user_id) q = q.neq("user_id", exclude_user_id);
+      const { data, error } = await q;
+      if (error) return json({ error: error.message }, 500);
+      subs = data ?? [];
+    }
+
+    const payload = JSON.stringify({
+      title,
+      body: message,
+      url,
+      image,
+      tag: body.tag ? String(body.tag).trim() : `bc-${Date.now()}`,
+    });
 
     let sent = 0;
     let failed = 0;
