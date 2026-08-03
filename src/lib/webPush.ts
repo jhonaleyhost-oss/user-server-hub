@@ -74,3 +74,17 @@ export async function enablePushNotifications(): Promise<boolean> {
   }
   return subscribeToPush();
 }
+
+/** True when THIS device already has an active push subscription.
+ *  Used to avoid showing a duplicate local notification on top of the push. */
+export async function hasPushSubscription(): Promise<boolean> {
+  if (!webPushSupported()) return false;
+  if (Notification.permission !== "granted") return false;
+  try {
+    const reg = await ensureNotificationSW();
+    if (!reg) return false;
+    return !!(await reg.pushManager.getSubscription());
+  } catch {
+    return false;
+  }
+}
