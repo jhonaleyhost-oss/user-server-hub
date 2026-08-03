@@ -7,6 +7,7 @@ import Panels from '@/pages/Panels';
 import Admin from '@/pages/Admin';
 import AdminOverview from '@/pages/admin/Overview';
 import AdminBroadcastPage from '@/pages/admin/AdminBroadcastPage';
+import AdminNotifyAllPage from '@/pages/admin/AdminNotifyAllPage';
 import AdminPromosPage from '@/pages/admin/AdminPromosPage';
 import AdminAdsPage from '@/pages/admin/AdminAdsPage';
 import AdminPopupPage from '@/pages/admin/AdminPopupPage';
@@ -61,6 +62,7 @@ export const AnimatedRoutes = () => {
         <Route path="/admin" element={<AdminRoute><AdminOverview /></AdminRoute>} />
         <Route path="/admin/manage" element={<AdminRoute><Admin /></AdminRoute>} />
         <Route path="/admin/broadcast" element={<AdminRoute><AdminBroadcastPage /></AdminRoute>} />
+        <Route path="/admin/notify" element={<AdminRoute><AdminNotifyAllPage /></AdminRoute>} />
         <Route path="/admin/promos" element={<AdminRoute><AdminPromosPage /></AdminRoute>} />
         <Route path="/admin/ads" element={<AdminRoute><AdminAdsPage /></AdminRoute>} />
         <Route path="/admin/popup" element={<AdminRoute><AdminPopupPage /></AdminRoute>} />
