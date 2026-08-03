@@ -35,6 +35,17 @@ const sendPush = async (payload: {
   tag?: string;
 }) => {
   try {
+    // Guard: the same user may have several tabs open — each one receives the
+    // realtime INSERT and would fire an identical push. Only the first wins.
+    if (payload.tag) {
+      const key = `push-sent-${payload.tag}`;
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+      // keep storage tidy
+      const stamps = Object.keys(localStorage).filter((k) => k.startsWith("push-sent-"));
+      if (stamps.length > 100) stamps.slice(0, 50).forEach((k) => localStorage.removeItem(k));
+    }
+
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) return;
