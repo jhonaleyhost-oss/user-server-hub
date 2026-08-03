@@ -16,7 +16,10 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader) return json({ error: "unauthorized" }, 401);
+    const triggerSecret = Deno.env.get("PUSH_TRIGGER_SECRET");
+    const providedSecret = req.headers.get("x-push-secret") ?? "";
+    const viaTrigger = !!triggerSecret && providedSecret === triggerSecret;
+    if (!authHeader && !viaTrigger) return json({ error: "unauthorized" }, 401);
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -24,9 +27,9 @@ Deno.serve(async (req) => {
     );
 
     const token = authHeader.replace("Bearer ", "");
-    const isServiceRole = token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const isServiceRole = !!token && token === Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     let isAdmin = false;
-    if (isServiceRole) {
+    if (viaTrigger || isServiceRole) {
       isAdmin = true;
     } else {
       const { data: userData, error: userErr } = await admin.auth.getUser(token);
