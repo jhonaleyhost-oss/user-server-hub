@@ -1,41 +1,76 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  notificationsSupported,
+  requestNotificationPermission,
+  ensureNotificationSW,
+  showAppNotification,
+} from "@/lib/notify";
 
 const PERMISSION_ASK_KEY = "chat-notif-asked";
 
 /**
- * Globally listens to new chat messages and shows a browser notification
- * when the user is not currently focused on the /chat page.
+ * Globally listens to new chat + support messages and shows a browser/mobile
+ * notification when the user is not actively viewing that conversation.
  */
 const ChatNotifier = () => {
   const { user } = useAuth();
+  const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
   const locationRef = useRef(location.pathname);
+  const isAdminRef = useRef(isAdmin);
 
   useEffect(() => {
     locationRef.current = location.pathname;
   }, [location.pathname]);
 
-  // Ask for permission once when user is logged in
+  useEffect(() => {
+    isAdminRef.current = isAdmin;
+  }, [isAdmin]);
+
+  // Ask for permission once when user is logged in, and make sure the
+  // notification service worker is registered (required on mobile).
   useEffect(() => {
     if (!user) return;
-    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (!notificationsSupported()) return;
+
+    if (Notification.permission === "granted") {
+      ensureNotificationSW();
+      return;
+    }
     if (Notification.permission !== "default") return;
     if (sessionStorage.getItem(PERMISSION_ASK_KEY)) return;
 
     const t = setTimeout(() => {
       sessionStorage.setItem(PERMISSION_ASK_KEY, "1");
-      Notification.requestPermission().catch(() => {});
+      requestNotificationPermission();
     }, 2500);
     return () => clearTimeout(t);
   }, [user]);
 
-  // Subscribe to new chat messages globally
+  // Subscribe to new chat + support messages globally
   useEffect(() => {
     if (!user) return;
+
+    const senderProfile = async (uid: string | null) => {
+      if (!uid) return { name: null as string | null, avatar: undefined as string | undefined };
+      try {
+        const { data } = await supabase.rpc("get_public_users");
+        const list = (data ?? []) as Array<{
+          user_id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+        }>;
+        const p = list.find((u) => u.user_id === uid);
+        return { name: p?.full_name ?? null, avatar: p?.avatar_url ?? undefined };
+      } catch {
+        return { name: null, avatar: undefined };
+      }
+    };
 
     const channel = supabase
       .channel("chat-notifier")
@@ -55,41 +90,53 @@ const ChatNotifier = () => {
           const focused = document.visibilityState === "visible" && document.hasFocus();
           if (onChat && focused) return;
 
-          if (!("Notification" in window) || Notification.permission !== "granted") return;
+          const p = await senderProfile(m.user_id);
+          await showAppNotification(p.name || "Pesan baru", {
+            body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
+            icon: p.avatar,
+            tag: "chat-message",
+            url: "/chat",
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "support_messages" },
+        async (payload) => {
+          const m = payload.new as {
+            id: string;
+            sender_role: string;
+            sender_user_id: string | null;
+            thread_user_id: string;
+            content: string | null;
+            image_url: string | null;
+          };
+          if (m.sender_user_id && m.sender_user_id === user.id) return;
 
-          // Try fetch sender profile for nicer notification
-          let title = "Pesan baru";
+          const admin = isAdminRef.current;
+          // Regular users only care about replies in their own thread.
+          if (!admin && m.thread_user_id !== user.id) return;
+          // Admins only care about messages coming from users.
+          if (admin && m.sender_role !== "user") return;
+
+          const focused = document.visibilityState === "visible" && document.hasFocus();
+          const onSupport = locationRef.current.startsWith("/support");
+          if (admin && onSupport && focused) return;
+
+          let title = admin ? "Pesan support baru" : "Balasan dari Support";
           let icon: string | undefined;
-          try {
-            const { data } = await supabase.rpc("get_public_users");
-            const list = (data ?? []) as Array<{
-              user_id: string;
-              full_name: string | null;
-              avatar_url: string | null;
-            }>;
-            const p = list.find((u) => u.user_id === m.user_id);
-            if (p?.full_name) title = p.full_name;
-            if (p?.avatar_url) icon = p.avatar_url;
-          } catch {
-            // ignore
+          if (admin) {
+            const p = await senderProfile(m.thread_user_id);
+            if (p.name) title = `${p.name} • Support`;
+            icon = p.avatar;
           }
 
-          const body = m.image_url ? "📷 Mengirim foto" : (m.content ?? "");
-          try {
-            const n = new Notification(title, {
-              body,
-              icon: icon ?? "/favicon.ico",
-              tag: "chat-message",
-              badge: "/favicon.ico",
-            });
-            n.onclick = () => {
-              window.focus();
-              navigate("/chat");
-              n.close();
-            };
-          } catch {
-            // ignore
-          }
+          await showAppNotification(title, {
+            body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
+            icon,
+            tag: `support-${m.thread_user_id}`,
+            url: admin ? "/support" : "/dashboard",
+          });
         }
       )
       .subscribe();
