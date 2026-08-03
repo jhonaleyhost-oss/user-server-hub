@@ -35,7 +35,7 @@ const ADMIN_SUB_ITEMS = [
   { title: "Orphan ADP", url: "/admin/orphan-admin-panels", icon: Ghost },
   { title: "Garansi Role", url: "/admin/warranty", icon: ShieldCheck },
   { title: "Broadcast", url: "/admin/broadcast", icon: Bell },
-  { title: "Kirim Notifikasi", url: "/admin/notify", icon: Send },
+  { title: "Push HP", url: "/admin/notify", icon: Send },
   { title: "Promo", url: "/admin/promos", icon: Tag },
   { title: "Iklan", url: "/admin/ads", icon: Sparkles },
   { title: "Popup", url: "/admin/popup", icon: Megaphone },
