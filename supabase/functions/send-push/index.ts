@@ -78,7 +78,13 @@ Deno.serve(async (req) => {
       subs = data ?? [];
     }
 
-    const payload = JSON.stringify({ title, body: message, url, image, tag: `bc-${Date.now()}` });
+    const payload = JSON.stringify({
+      title,
+      body: message,
+      url,
+      image,
+      tag: body.tag ? String(body.tag).trim() : `bc-${Date.now()}`,
+    });
 
     let sent = 0;
     let failed = 0;
