@@ -20,7 +20,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useResellerStatus, formatResellerRemaining } from "@/hooks/useResellerStatus";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useNotifications } from "@/hooks/useNotifications";
-import { Clock, Infinity as InfinityIcon } from "lucide-react";
+import { Clock, Infinity as InfinityIcon, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
