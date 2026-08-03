@@ -52,7 +52,6 @@ const sendPush = async (payload: {
 const ChatNotifier = () => {
   const { user } = useAuth();
   const { isAdmin } = useUserRole();
-  const navigate = useNavigate();
   const location = useLocation();
   const locationRef = useRef(location.pathname);
   const isAdminRef = useRef(isAdmin);
