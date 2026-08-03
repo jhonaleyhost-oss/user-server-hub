@@ -9,8 +9,19 @@ import {
   ensureNotificationSW,
   showAppNotification,
 } from "@/lib/notify";
+import { hasPushSubscription } from "@/lib/webPush";
 
 const PERMISSION_ASK_KEY = "chat-notif-asked";
+
+/** Show a local notification only when web push will NOT deliver one,
+ *  otherwise the user receives the same alert twice. */
+const showIfNoPush = async (
+  title: string,
+  opts: Parameters<typeof showAppNotification>[1]
+) => {
+  if (await hasPushSubscription()) return;
+  await showAppNotification(title, opts);
+};
 
 /** Send a targeted/broadcast push via the send-push edge function. */
 const sendPush = async (payload: {
@@ -24,6 +35,17 @@ const sendPush = async (payload: {
   tag?: string;
 }) => {
   try {
+    // Guard: the same user may have several tabs open — each one receives the
+    // realtime INSERT and would fire an identical push. Only the first wins.
+    if (payload.tag) {
+      const key = `push-sent-${payload.tag}`;
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+      // keep storage tidy
+      const stamps = Object.keys(localStorage).filter((k) => k.startsWith("push-sent-"));
+      if (stamps.length > 100) stamps.slice(0, 50).forEach((k) => localStorage.removeItem(k));
+    }
+
     const { data: sessionData } = await supabase.auth.getSession();
     const token = sessionData.session?.access_token;
     if (!token) return;
@@ -136,10 +158,10 @@ const ChatNotifier = () => {
           if (onChat && focused) return;
 
           const p = await senderProfile(m.user_id);
-          await showAppNotification(p.name || "Pesan baru", {
+          await showIfNoPush(p.name || "Pesan baru", {
             body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
             icon: p.avatar,
-            tag: "chat-message",
+            tag: `chat-${m.id}`,
             url: "/chat",
           });
         }
@@ -195,7 +217,7 @@ const ChatNotifier = () => {
             icon = p.avatar;
           }
 
-          await showAppNotification(title, {
+          await showIfNoPush(title, {
             body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
             icon,
             tag: `support-${m.id}`,
