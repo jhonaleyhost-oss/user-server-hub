@@ -10,6 +10,7 @@ import { OnlinePresenceProvider } from "@/hooks/useOnlinePresence";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import PromoPopup from "@/components/PromoPopup";
 import ChatNotifier from "@/components/ChatNotifier";
+import PushRegistrar from "@/components/PushRegistrar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <ChatNotifier />
+              <PushRegistrar />
               <PromoPopup />
               <ErrorBoundary>
                 <AnimatedRoutes />
