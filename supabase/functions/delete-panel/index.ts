@@ -205,6 +205,19 @@ serve(async (req) => {
 
     log('Panel berhasil dihapus dari database');
 
+    // Notify the owner when an admin deletes someone else's panel
+    if (isAdmin && panelData.user_id && panelData.user_id !== user.id) {
+      const { error: notifErr } = await supabase.from('notifications').insert({
+        title: 'Panel Dihapus',
+        body: `Panel "${panelData.username}" telah dihapus oleh admin.`,
+        audience: 'all',
+        target_user_id: panelData.user_id,
+        created_by: user.id,
+        link_url: '/dashboard',
+      });
+      if (notifErr) log(`Gagal membuat notifikasi: ${notifErr.message}`);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
