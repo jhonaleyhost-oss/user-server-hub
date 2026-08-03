@@ -23,3 +23,21 @@ self.addEventListener("notificationclick", (event) => {
     })()
   );
 });
+
+// ---- Web Push (works even when the site is closed) ----
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch { payload = { title: "Notifikasi", body: event.data ? event.data.text() : "" }; }
+  const title = payload.title || "Notifikasi";
+  const options = {
+    body: payload.body || "",
+    icon: payload.icon || "/icon-192.png",
+    badge: "/favicon-64x64.png",
+    image: payload.image || undefined,
+    tag: payload.tag || "broadcast",
+    renotify: true,
+    vibrate: [80, 40, 80],
+    data: { url: payload.url || "/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
