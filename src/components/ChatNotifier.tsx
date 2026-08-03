@@ -163,23 +163,23 @@ const ChatNotifier = () => {
           // the recipient so they get a popup even when the site is closed.
           if (m.sender_user_id === user.id) {
             const p = await senderProfile(user.id);
-              if (admin) {
-                await sendPush({
-                  title: "Balasan dari Support",
-                  body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
-                  url: "/dashboard",
-                  target_user_id: m.thread_user_id,
-                  tag: `support-${m.id}`,
-                });
-              } else {
-                await sendPush({
-                  title: p.name ? `${p.name} • Support` : "Pesan support baru",
-                  body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
-                  url: "/support",
-                  role: "admin",
-                  tag: `support-${m.id}`,
-                });
-              }
+            if (admin) {
+              await sendPush({
+                title: "Balasan dari Support",
+                body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
+                url: "/dashboard",
+                target_user_id: m.thread_user_id,
+                tag: `support-${m.id}`,
+              });
+            } else {
+              await sendPush({
+                title: p.name ? `${p.name} • Support` : "Pesan support baru",
+                body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
+                url: "/support",
+                role: "admin",
+                tag: `support-${m.id}`,
+              });
+            }
             return;
           }
 
