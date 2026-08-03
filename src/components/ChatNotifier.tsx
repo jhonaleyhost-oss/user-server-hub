@@ -12,9 +12,41 @@ import {
 
 const PERMISSION_ASK_KEY = "chat-notif-asked";
 
+/** Send a targeted/broadcast push via the send-push edge function. */
+const sendPush = async (payload: {
+  title: string;
+  body: string;
+  url?: string;
+  image?: string;
+  target_user_id?: string;
+  exclude_user_id?: string;
+  role?: string;
+}) => {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) return;
+
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(await res.text());
+  } catch {
+    /* ignore: push is best-effort */
+  }
+};
+
 /**
  * Globally listens to new chat + support messages and shows a browser/mobile
  * notification when the user is not actively viewing that conversation.
+ * Also triggers Web Push to recipients so the popup appears even when the site
+ * is closed.
  */
 const ChatNotifier = () => {
   const { user } = useAuth();
@@ -84,7 +116,20 @@ const ChatNotifier = () => {
             content: string | null;
             image_url: string | null;
           };
-          if (m.user_id === user.id) return;
+
+          // If this is the current user's own message, trigger a push to
+          // everyone else so offline users still get a popup.
+          if (m.user_id === user.id) {
+            const p = await senderProfile(m.user_id);
+            await sendPush({
+              title: p.name ? `${p.name} • Chat` : "Pesan baru di Chat",
+              body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
+              url: "/chat",
+              exclude_user_id: user.id,
+              tag: `chat-${m.id}`,
+            } as any);
+            return;
+          }
 
           const onChat = locationRef.current.startsWith("/chat");
           const focused = document.visibilityState === "visible" && document.hasFocus();
@@ -112,11 +157,33 @@ const ChatNotifier = () => {
             image_url: string | null;
           };
           const admin = isAdminRef.current;
+
+          // If the current user sent this support message, trigger a push to
+          // the recipient so they get a popup even when the site is closed.
+          if (m.sender_user_id === user.id) {
+            const p = await senderProfile(user.id);
+            if (admin) {
+              await sendPush({
+                title: "Balasan dari Support",
+                body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
+                url: "/dashboard",
+                target_user_id: m.thread_user_id,
+                tag: `support-${m.id}`,
+              } as any);
+            } else {
+              await sendPush({
+                title: p.name ? `${p.name} • Support` : "Pesan support baru",
+                body: m.image_url ? "📷 Mengirim foto" : m.content ?? "",
+                url: "/support",
+                role: "admin",
+                tag: `support-${m.id}`,
+              } as any);
+            }
+            return;
+          }
+
           // Regular users only care about replies in their own thread.
           if (!admin && m.thread_user_id !== user.id) return;
-          // Ignore a regular user's own message. Admin test messages can use
-          // the same account ID, so do not discard them before checking role.
-          if (!admin && m.sender_user_id === user.id) return;
           // Admins only care about messages coming from users.
           if (admin && m.sender_role !== "user") return;
 
