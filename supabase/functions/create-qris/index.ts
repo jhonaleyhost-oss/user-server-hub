@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     }
 
     const { ok, status, data } = await austinCreateDeposit(Number(amount));
-    const dep = data?.deposit;
+    const dep = data?.deposit ?? data?.data ?? data?.result ?? null;
     if (!ok || !dep?.qr_string) {
       let hint: string | undefined;
       if (status === 403) {

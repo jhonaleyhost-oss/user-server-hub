@@ -4,6 +4,33 @@
 export const AUSTIN_BASE = "https://austinstore.id";
 
 // ---------------------------------------------------------------------------
+// API version switch (admin-controlled via public.app_settings key
+// `austin_api_version`, value "v1" | "v2"). Cached briefly per isolate.
+// ---------------------------------------------------------------------------
+let cachedVersion: { v: "v1" | "v2"; at: number } | null = null;
+
+export async function getAustinVersion(): Promise<"v1" | "v2"> {
+  if (cachedVersion && Date.now() - cachedVersion.at < 30_000) return cachedVersion.v;
+  let v: "v1" | "v2" = "v2";
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (url && key) {
+      const r = await fetch(
+        `${url}/rest/v1/app_settings?key=eq.austin_api_version&select=value`,
+        { headers: { apikey: key, Authorization: `Bearer ${key}` } },
+      );
+      const j = await r.json();
+      if (Array.isArray(j) && j[0]?.value === "v1") v = "v1";
+    }
+  } catch (e) {
+    console.error("[austin] version lookup failed", e);
+  }
+  cachedVersion = { v, at: Date.now() };
+  return v;
+}
+
+// ---------------------------------------------------------------------------
 // Austin Pay only supports IPv4 whitelisting, but the edge runtime frequently
 // egresses over IPv6. We therefore resolve the A record ourselves and speak
 // HTTP/1.1 over an explicit IPv4 TLS socket.
@@ -167,20 +194,25 @@ export async function austinRequest<T = any>(
 
 /** Create a dynamic QRIS deposit. Returns final amount (incl. unique fee) + QR payload. */
 export async function austinCreateDeposit(amount: number) {
-  return await austinRequest("POST", "/api/v2/deposit/create", { amount });
+  const v = await getAustinVersion();
+  return await austinRequest("POST", `/api/${v}/deposit/create`, { amount });
 }
 
-/** Poll payment status: paid | pending | expired | cancel (v2 first, falls back to v1) */
+/** Poll payment status: paid | pending | expired | cancel (selected version first, then the other) */
 export async function austinCheckDeposit(transactionId: string) {
   const id = encodeURIComponent(transactionId);
-  const v2 = await austinRequest("GET", `/api/v2/deposit/check/${id}`);
-  if (v2.ok) return v2;
-  return await austinRequest("GET", `/api/v1/deposit/check/${id}`);
+  const v = await getAustinVersion();
+  const other = v === "v2" ? "v1" : "v2";
+  const first = await austinRequest("GET", `/api/${v}/deposit/check/${id}`);
+  if (first.ok) return first;
+  return await austinRequest("GET", `/api/${other}/deposit/check/${id}`);
 }
 
 export async function austinCancelDeposit(transactionId: string) {
   const id = encodeURIComponent(transactionId);
-  const v2 = await austinRequest("POST", `/api/v2/deposit/cancel/${id}`);
-  if (v2.ok) return v2;
-  return await austinRequest("POST", `/api/v1/deposit/cancel/${id}`);
+  const v = await getAustinVersion();
+  const other = v === "v2" ? "v1" : "v2";
+  const first = await austinRequest("POST", `/api/${v}/deposit/cancel/${id}`);
+  if (first.ok) return first;
+  return await austinRequest("POST", `/api/${other}/deposit/cancel/${id}`);
 }

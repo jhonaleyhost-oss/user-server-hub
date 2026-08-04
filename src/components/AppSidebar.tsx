@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText, ShieldAlert, Ghost, User as UserIcon, Server as ServerIcon, MessagesSquare, Gift, ExternalLink } from "lucide-react";
+import { LogOut, LayoutDashboard, List, Crown, Sparkles, UserCog, Users as UsersIcon, MessageCircle, Star, Activity as ActivityIcon, Megaphone, Tag, Bell, ShieldCheck, Rocket, ChevronDown, Settings2, UserX, WifiOff, ScrollText, ShieldAlert, Ghost, User as UserIcon, Server as ServerIcon, MessagesSquare, Gift, ExternalLink, CreditCard } from "lucide-react";
 import {
   Sidebar,
   SidebarGroup,
@@ -39,6 +39,7 @@ const ADMIN_SUB_ITEMS = [
   { title: "Promo", url: "/admin/promos", icon: Tag },
   { title: "Iklan", url: "/admin/ads", icon: Sparkles },
   { title: "Popup", url: "/admin/popup", icon: Megaphone },
+  { title: "Payment Gateway", url: "/admin/payment", icon: CreditCard },
   { title: "Log Aktivitas", url: "/admin/activity", icon: ScrollText },
 ];
 
