@@ -195,9 +195,7 @@ export async function austinRequest<T = any>(
 /** Create a dynamic QRIS deposit. Returns final amount (incl. unique fee) + QR payload. */
 export async function austinCreateDeposit(amount: number) {
   const v = await getAustinVersion();
-  const primary = await austinRequest("POST", `/api/${v}/deposit/create`, { amount });
-  if (primary.ok || v === "v1") return primary;
-  return primary;
+  return await austinRequest("POST", `/api/${v}/deposit/create`, { amount });
 }
 
 /** Poll payment status: paid | pending | expired | cancel (selected version first, then the other) */
