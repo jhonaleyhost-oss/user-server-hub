@@ -11,6 +11,7 @@ import AdminNotifyAllPage from '@/pages/admin/AdminNotifyAllPage';
 import AdminPromosPage from '@/pages/admin/AdminPromosPage';
 import AdminAdsPage from '@/pages/admin/AdminAdsPage';
 import AdminPopupPage from '@/pages/admin/AdminPopupPage';
+import AdminPaymentPage from '@/pages/admin/AdminPaymentPage';
 import AdminActivityPage from '@/pages/admin/AdminActivityPage';
 import AdminInactivePage from '@/pages/admin/AdminInactivePage';
 import AdminOfflinePanelsPage from '@/pages/admin/AdminOfflinePanelsPage';
@@ -66,6 +67,7 @@ export const AnimatedRoutes = () => {
         <Route path="/admin/promos" element={<AdminRoute><AdminPromosPage /></AdminRoute>} />
         <Route path="/admin/ads" element={<AdminRoute><AdminAdsPage /></AdminRoute>} />
         <Route path="/admin/popup" element={<AdminRoute><AdminPopupPage /></AdminRoute>} />
+        <Route path="/admin/payment" element={<AdminRoute><AdminPaymentPage /></AdminRoute>} />
         <Route path="/admin/activity" element={<AdminRoute><AdminActivityPage /></AdminRoute>} />
         <Route path="/admin/inactive" element={<AdminRoute><AdminInactivePage /></AdminRoute>} />
         <Route path="/admin/offline-panels" element={<AdminRoute><AdminOfflinePanelsPage /></AdminRoute>} />
