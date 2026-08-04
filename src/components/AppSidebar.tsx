@@ -39,6 +39,7 @@ const ADMIN_SUB_ITEMS = [
   { title: "Promo", url: "/admin/promos", icon: Tag },
   { title: "Iklan", url: "/admin/ads", icon: Sparkles },
   { title: "Popup", url: "/admin/popup", icon: Megaphone },
+  { title: "Payment Gateway", url: "/admin/payment", icon: CreditCard },
   { title: "Log Aktivitas", url: "/admin/activity", icon: ScrollText },
 ];
 
