@@ -194,20 +194,27 @@ export async function austinRequest<T = any>(
 
 /** Create a dynamic QRIS deposit. Returns final amount (incl. unique fee) + QR payload. */
 export async function austinCreateDeposit(amount: number) {
-  return await austinRequest("POST", "/api/v2/deposit/create", { amount });
+  const v = await getAustinVersion();
+  const primary = await austinRequest("POST", `/api/${v}/deposit/create`, { amount });
+  if (primary.ok || v === "v1") return primary;
+  return primary;
 }
 
-/** Poll payment status: paid | pending | expired | cancel (v2 first, falls back to v1) */
+/** Poll payment status: paid | pending | expired | cancel (selected version first, then the other) */
 export async function austinCheckDeposit(transactionId: string) {
   const id = encodeURIComponent(transactionId);
-  const v2 = await austinRequest("GET", `/api/v2/deposit/check/${id}`);
-  if (v2.ok) return v2;
-  return await austinRequest("GET", `/api/v1/deposit/check/${id}`);
+  const v = await getAustinVersion();
+  const other = v === "v2" ? "v1" : "v2";
+  const first = await austinRequest("GET", `/api/${v}/deposit/check/${id}`);
+  if (first.ok) return first;
+  return await austinRequest("GET", `/api/${other}/deposit/check/${id}`);
 }
 
 export async function austinCancelDeposit(transactionId: string) {
   const id = encodeURIComponent(transactionId);
-  const v2 = await austinRequest("POST", `/api/v2/deposit/cancel/${id}`);
-  if (v2.ok) return v2;
-  return await austinRequest("POST", `/api/v1/deposit/cancel/${id}`);
+  const v = await getAustinVersion();
+  const other = v === "v2" ? "v1" : "v2";
+  const first = await austinRequest("POST", `/api/${v}/deposit/cancel/${id}`);
+  if (first.ok) return first;
+  return await austinRequest("POST", `/api/${other}/deposit/cancel/${id}`);
 }
