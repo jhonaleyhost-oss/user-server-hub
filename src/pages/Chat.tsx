@@ -516,6 +516,26 @@ const Chat = () => {
     const text = input.trim();
     if (!text && pending.length === 0) return;
     if (text.length > 2000) return;
+    if (muteStatus.muted) {
+      toast.error(
+        muteStatus.permanent
+          ? "Kamu dibisukan permanen dari Chat Global."
+          : `Kamu dibisukan sampai ${formatMuteUntil(muteStatus.muted_until)}.`,
+        { id: "chat-muted" },
+      );
+      return;
+    }
+    if (text && role !== "admin") {
+      const bad = findProfanity(text);
+      if (bad) {
+        toast.error("Pesan mengandung kata kasar", {
+          id: "chat-profanity",
+          description:
+            "Tolong gunakan bahasa yang sopan. Pelanggaran berulang akan otomatis dibisukan.",
+        });
+        return;
+      }
+    }
     if (role !== "admin") {
       const now = Date.now();
       const elapsed = now - lastSentAtRef.current;
