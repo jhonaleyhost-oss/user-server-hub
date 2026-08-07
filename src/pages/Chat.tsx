@@ -623,6 +623,13 @@ const Chat = () => {
       setReplyTo(null);
     } catch (err: any) {
       const msg = String(err?.message || "");
+      const moderation = mapModerationError(msg);
+      if (moderation) {
+        toast.error(moderation.title, { id: "chat-moderation", description: moderation.description });
+        refetchMute();
+        setSending(false);
+        return;
+      }
       const friendly = /failed to fetch|networkerror|load failed/i.test(msg)
         ? "Tidak ada koneksi internet. Coba lagi setelah online."
         : msg || "Gagal mengirim pesan";
