@@ -1530,6 +1530,61 @@ const Chat = () => {
                           : "-"}
                       </span>
                     </div>
+                    {role === "admin" && selectedProfile.role !== "admin" && (
+                      <div className="p-3 rounded-2xl border border-border/70 bg-secondary/30 space-y-2.5">
+                        <div className="flex items-center gap-2">
+                          <MicOff className="w-4 h-4 text-rose-500" />
+                          <span className="text-sm font-semibold text-foreground">Moderasi Chat</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {targetIsMuted
+                            ? targetMute?.muted_until
+                              ? `Dibisukan sampai ${formatMuteUntil(targetMute.muted_until)}`
+                              : "Dibisukan permanen"
+                            : "Tidak dibisukan"}
+                          {typeof targetMute?.strikes === "number" && targetMute.strikes > 0
+                            ? ` • ${targetMute.strikes}x pelanggaran kata kasar`
+                            : ""}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "10 menit", mins: 10 },
+                            { label: "1 jam", mins: 60 },
+                            { label: "24 jam", mins: 1440 },
+                            { label: "Permanen", mins: 525600 },
+                          ].map((opt) => (
+                            <Button
+                              key={opt.mins}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={muteBusy}
+                              onClick={() => applyMute(opt.mins)}
+                              className="rounded-full h-9 text-xs"
+                            >
+                              <MicOff className="w-3.5 h-3.5 mr-1" />
+                              {opt.label}
+                            </Button>
+                          ))}
+                        </div>
+                        {targetIsMuted && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={muteBusy}
+                            onClick={() => applyMute(0)}
+                            className="w-full rounded-full h-9 text-xs"
+                          >
+                            {muteBusy ? (
+                              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                            ) : (
+                              <Mic className="w-3.5 h-3.5 mr-1" />
+                            )}
+                            Buka bisu
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
