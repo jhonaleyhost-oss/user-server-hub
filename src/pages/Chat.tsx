@@ -727,6 +727,13 @@ const Chat = () => {
       toast.error("Pesan terlalu panjang");
       return;
     }
+    if (role !== "admin" && findProfanity(text)) {
+      toast.error("Pesan mengandung kata kasar", {
+        id: "chat-profanity",
+        description: "Gunakan bahasa yang sopan.",
+      });
+      return;
+    }
     const target = messagesRef.current.find((m) => m.id === editingId);
     if (target && target.content === text) {
       cancelEdit();
@@ -749,6 +756,12 @@ const Chat = () => {
       cancelEdit();
     } catch (err: any) {
       const msg = String(err?.message || "");
+      const moderation = mapModerationError(msg);
+      if (moderation) {
+        toast.error(moderation.title, { id: "chat-moderation", description: moderation.description });
+        setSavingEdit(false);
+        return;
+      }
       const friendly = /failed to fetch|networkerror|load failed/i.test(msg)
         ? "Tidak ada koneksi internet. Coba lagi setelah online."
         : msg || "Gagal mengedit pesan";
