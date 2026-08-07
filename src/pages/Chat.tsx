@@ -1264,6 +1264,24 @@ const Chat = () => {
                   ))}
                 </div>
               )}
+              {muteStatus.muted && (
+                <div className="mx-2.5 mt-2.5 flex items-start gap-2 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-3 py-2.5">
+                  <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground">
+                      {muteStatus.permanent
+                        ? "Kamu dibisukan permanen dari Chat Global"
+                        : `Kamu dibisukan sampai ${formatMuteUntil(muteStatus.muted_until)}`}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {muteStatus.reason && muteStatus.reason !== "__permanent__"
+                        ? `Alasan: ${muteStatus.reason}. `
+                        : ""}
+                      Gunakan bahasa yang sopan agar bisa mengobrol kembali.
+                    </p>
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2">
                 <input
                   ref={fileInputRef}
@@ -1278,7 +1296,7 @@ const Chat = () => {
                   size="icon"
                   variant="outline"
                   onClick={handleImagePick}
-                  disabled={sending || !user || pending.length >= MAX_FILES}
+                  disabled={sending || !user || muteStatus.muted || pending.length >= MAX_FILES}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label="Kirim foto"
                 >
@@ -1292,7 +1310,9 @@ const Chat = () => {
                     sendTyping();
                   }}
                   placeholder={
-                    replyTo
+                    muteStatus.muted
+                      ? "Kamu sedang dibisukan..."
+                      : replyTo
                       ? "Tulis balasan..."
                       : pending.length > 0
                       ? "Tambah caption (opsional)..."
@@ -1300,12 +1320,12 @@ const Chat = () => {
                   }
                   maxLength={2000}
                   className="flex-1 rounded-full h-11 bg-secondary/60 border-border/70"
-                  disabled={sending || !user}
+                  disabled={sending || !user || muteStatus.muted}
                 />
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={sending || cooldownLeft > 0 || (!input.trim() && pending.length === 0)}
+                  disabled={sending || muteStatus.muted || cooldownLeft > 0 || (!input.trim() && pending.length === 0)}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label={cooldownLeft > 0 ? `Tunggu ${cooldownLeft}d` : "Kirim"}
                 >
