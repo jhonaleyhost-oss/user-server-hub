@@ -91,6 +91,45 @@ const formatMuteUntil = (iso: string | null) => {
   });
 };
 
+/** Maps database moderation errors into friendly Indonesian toasts. */
+const mapModerationError = (
+  msg: string,
+): { title: string; description?: string } | null => {
+  if (msg.includes("MUTED_PERMANENT")) {
+    return {
+      title: "Kamu dibisukan permanen",
+      description: "Hubungi admin lewat Live Chat jika ingin mengajukan banding.",
+    };
+  }
+  const until = msg.match(/MUTED_UNTIL:([^\s"]+ ?[\d:]*)/);
+  if (until) {
+    return {
+      title: "Kamu sedang dibisukan",
+      description: `Bisa mengirim pesan lagi pada ${until[1].trim()} WIB.`,
+    };
+  }
+  const muted = msg.match(/PROFANITY_MUTED:(\d+)\|(\d+)/);
+  if (muted) {
+    const mins = parseInt(muted[2], 10);
+    const dur = mins >= 1440 ? `${Math.round(mins / 1440)} hari` : mins >= 60 ? `${mins / 60} jam` : `${mins} menit`;
+    return {
+      title: `Pesan diblokir & kamu dibisukan ${dur}`,
+      description: `Pelanggaran ke-${muted[1]}: pesan mengandung kata kasar.`,
+    };
+  }
+  const warn = msg.match(/PROFANITY_WARN:(\d+)/);
+  if (warn) {
+    return {
+      title: "Peringatan: kata kasar terdeteksi",
+      description: "Pesan tidak dikirim. Pelanggaran berikutnya akan otomatis dibisukan.",
+    };
+  }
+  if (msg.includes("PROFANITY_EDIT")) {
+    return { title: "Pesan mengandung kata kasar", description: "Perubahan tidak disimpan." };
+  }
+  return null;
+};
+
 const legacyFormatDayLabel = (iso: string) => {
   const d = new Date(iso);
   const today = new Date();
