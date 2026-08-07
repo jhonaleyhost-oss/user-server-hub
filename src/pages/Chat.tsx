@@ -178,7 +178,6 @@ const Chat = () => {
   const [notifMuted, setNotifMuted] = useState<boolean>(
     () => localStorage.getItem("chat:notif-muted") === "1",
   );
-  const [muteTargetId, setMuteTargetId] = useState<string | null>(null);
   const [muteBusy, setMuteBusy] = useState(false);
   const [targetMute, setTargetMute] = useState<{ muted_until: string | null; reason: string | null; strikes: number } | null>(null);
 
@@ -868,9 +867,26 @@ const Chat = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/70 shrink-0">
-              <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
-              <span className="text-xs font-semibold text-foreground">{onlineCount} online</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={toggleNotifMute}
+                className="h-9 w-9 rounded-full"
+                aria-label={notifMuted ? "Aktifkan notifikasi chat" : "Bisukan notifikasi chat"}
+                title={notifMuted ? "Notifikasi chat dibisukan" : "Bisukan notifikasi chat"}
+              >
+                {notifMuted ? (
+                  <BellOff className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <Bell className="w-4 h-4" />
+                )}
+              </Button>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/70">
+                <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
+                <span className="text-xs font-semibold text-foreground">{onlineCount} online</span>
+              </div>
             </div>
           </GlassCard>
 
