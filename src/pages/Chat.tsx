@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check, CheckCheck } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check, CheckCheck, Bell, BellOff, MicOff, Mic, ShieldAlert } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
+import { useChatMute } from "@/hooks/useChatMute";
+import { findProfanity } from "@/lib/profanity";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -107,6 +109,13 @@ const Chat = () => {
   const [readTick, setReadTick] = useState(0);
   const [cooldownLeft, setCooldownLeft] = useState(0);
   const [totalMembers, setTotalMembers] = useState(0);
+  const { status: muteStatus, refetch: refetchMute } = useChatMute();
+  const [notifMuted, setNotifMuted] = useState<boolean>(
+    () => localStorage.getItem("chat:notif-muted") === "1",
+  );
+  const [muteTargetId, setMuteTargetId] = useState<string | null>(null);
+  const [muteBusy, setMuteBusy] = useState(false);
+  const [targetMute, setTargetMute] = useState<{ muted_until: string | null; reason: string | null; strikes: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
