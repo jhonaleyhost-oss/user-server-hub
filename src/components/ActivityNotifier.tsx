@@ -115,6 +115,7 @@ const ActivityNotifier = () => {
           if (row.user_id === user.id) return;
           // Don't double-notify when user is actively on chat page
           if (locationRef.current.startsWith("/chat")) return;
+          if (localStorage.getItem("chat:notif-muted") === "1") return;
           const name = await nameOf(row.user_id);
           const preview = row.image_url
             ? "📷 Mengirim foto"
