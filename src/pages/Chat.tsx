@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check, CheckCheck } from "lucide-react";
+import { Send, Trash2, MessageCircle, Circle, CornerUpLeft, X, ImagePlus, Loader2, ArrowDown, Pencil, Check, CheckCheck, Bell, BellOff, MicOff, Mic, ShieldAlert } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
+import { useChatMute } from "@/hooks/useChatMute";
+import { findProfanity } from "@/lib/profanity";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import VerifiedBadge from "@/components/VerifiedBadge";
@@ -79,6 +81,56 @@ const formatDayLabel = (iso: string) => {
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
 };
 
+const formatMuteUntil = (iso: string | null) => {
+  if (!iso) return "waktu yang belum ditentukan";
+  return new Date(iso).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+/** Maps database moderation errors into friendly Indonesian toasts. */
+const mapModerationError = (
+  msg: string,
+): { title: string; description?: string } | null => {
+  if (msg.includes("MUTED_PERMANENT")) {
+    return {
+      title: "Kamu dibisukan permanen",
+      description: "Hubungi admin lewat Live Chat jika ingin mengajukan banding.",
+    };
+  }
+  const until = msg.match(/MUTED_UNTIL:([^\s"]+ ?[\d:]*)/);
+  if (until) {
+    return {
+      title: "Kamu sedang dibisukan",
+      description: `Bisa mengirim pesan lagi pada ${until[1].trim()} WIB.`,
+    };
+  }
+  const muted = msg.match(/PROFANITY_MUTED:(\d+)\|(\d+)/);
+  if (muted) {
+    const mins = parseInt(muted[2], 10);
+    const dur = mins >= 1440 ? `${Math.round(mins / 1440)} hari` : mins >= 60 ? `${mins / 60} jam` : `${mins} menit`;
+    return {
+      title: `Pesan diblokir & kamu dibisukan ${dur}`,
+      description: `Pelanggaran ke-${muted[1]}: pesan mengandung kata kasar.`,
+    };
+  }
+  const warn = msg.match(/PROFANITY_WARN:(\d+)/);
+  if (warn) {
+    return {
+      title: "Peringatan: kata kasar terdeteksi",
+      description: "Pesan tidak dikirim. Pelanggaran berikutnya akan otomatis dibisukan.",
+    };
+  }
+  if (msg.includes("PROFANITY_EDIT")) {
+    return { title: "Pesan mengandung kata kasar", description: "Perubahan tidak disimpan." };
+  }
+  return null;
+};
+
+
 const Chat = () => {
   const { user, loading: authLoading } = useAuth();
   const { role } = useUserRole();
@@ -107,6 +159,12 @@ const Chat = () => {
   const [readTick, setReadTick] = useState(0);
   const [cooldownLeft, setCooldownLeft] = useState(0);
   const [totalMembers, setTotalMembers] = useState(0);
+  const { status: muteStatus, refetch: refetchMute } = useChatMute();
+  const [notifMuted, setNotifMuted] = useState<boolean>(
+    () => localStorage.getItem("chat:notif-muted") === "1",
+  );
+  const [muteBusy, setMuteBusy] = useState(false);
+  const [targetMute, setTargetMute] = useState<{ muted_until: string | null; reason: string | null; strikes: number } | null>(null);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
@@ -507,6 +565,26 @@ const Chat = () => {
     const text = input.trim();
     if (!text && pending.length === 0) return;
     if (text.length > 2000) return;
+    if (muteStatus.muted) {
+      toast.error(
+        muteStatus.permanent
+          ? "Kamu dibisukan permanen dari Chat Global."
+          : `Kamu dibisukan sampai ${formatMuteUntil(muteStatus.muted_until)}.`,
+        { id: "chat-muted" },
+      );
+      return;
+    }
+    if (text && role !== "admin") {
+      const bad = findProfanity(text);
+      if (bad) {
+        toast.error("Pesan mengandung kata kasar", {
+          id: "chat-profanity",
+          description:
+            "Tolong gunakan bahasa yang sopan. Pelanggaran berulang akan otomatis dibisukan.",
+        });
+        return;
+      }
+    }
     if (role !== "admin") {
       const now = Date.now();
       const elapsed = now - lastSentAtRef.current;
@@ -568,6 +646,13 @@ const Chat = () => {
       setReplyTo(null);
     } catch (err: any) {
       const msg = String(err?.message || "");
+      const moderation = mapModerationError(msg);
+      if (moderation) {
+        toast.error(moderation.title, { id: "chat-moderation", description: moderation.description });
+        refetchMute();
+        setSending(false);
+        return;
+      }
       const friendly = /failed to fetch|networkerror|load failed/i.test(msg)
         ? "Tidak ada koneksi internet. Coba lagi setelah online."
         : msg || "Gagal mengirim pesan";
@@ -626,6 +711,13 @@ const Chat = () => {
       toast.error("Pesan terlalu panjang");
       return;
     }
+    if (role !== "admin" && findProfanity(text)) {
+      toast.error("Pesan mengandung kata kasar", {
+        id: "chat-profanity",
+        description: "Gunakan bahasa yang sopan.",
+      });
+      return;
+    }
     const target = messagesRef.current.find((m) => m.id === editingId);
     if (target && target.content === text) {
       cancelEdit();
@@ -648,6 +740,12 @@ const Chat = () => {
       cancelEdit();
     } catch (err: any) {
       const msg = String(err?.message || "");
+      const moderation = mapModerationError(msg);
+      if (moderation) {
+        toast.error(moderation.title, { id: "chat-moderation", description: moderation.description });
+        setSavingEdit(false);
+        return;
+      }
       const friendly = /failed to fetch|networkerror|load failed/i.test(msg)
         ? "Tidak ada koneksi internet. Coba lagi setelah online."
         : msg || "Gagal mengedit pesan";
@@ -681,6 +779,63 @@ const Chat = () => {
     setTimeout(() => setHighlightId((curr) => (curr === id ? null : curr)), 1500);
   };
 
+  const toggleNotifMute = () => {
+    setNotifMuted((prev) => {
+      const next = !prev;
+      localStorage.setItem("chat:notif-muted", next ? "1" : "0");
+      window.dispatchEvent(new Event("chat:notif-mute-changed"));
+      toast.success(next ? "Notifikasi chat dibisukan" : "Notifikasi chat diaktifkan", {
+        id: "chat-notif-mute",
+      });
+      return next;
+    });
+  };
+
+  // Load mute info of the profile an admin is viewing
+  useEffect(() => {
+    if (!selectedProfile || role !== "admin") {
+      setTargetMute(null);
+      return;
+    }
+    supabase
+      .from("chat_mutes" as any)
+      .select("muted_until, reason, strikes")
+      .eq("user_id", selectedProfile.user_id)
+      .maybeSingle()
+      .then(({ data }) => setTargetMute((data as any) ?? null));
+  }, [selectedProfile, role]);
+
+  const applyMute = async (minutes: number) => {
+    if (!selectedProfile) return;
+    setMuteBusy(true);
+    const { data, error } = await supabase.rpc("admin_set_chat_mute" as any, {
+      _user_id: selectedProfile.user_id,
+      _minutes: minutes,
+      _reason: null,
+    });
+    setMuteBusy(false);
+    if (error || (data as any)?.ok === false) {
+      toast.error("Gagal mengubah status bisu");
+      return;
+    }
+    toast.success(
+      minutes <= 0
+        ? `${selectedProfile.full_name ?? "Pengguna"} sudah tidak dibisukan`
+        : `${selectedProfile.full_name ?? "Pengguna"} dibisukan`,
+    );
+    const { data: row } = await supabase
+      .from("chat_mutes" as any)
+      .select("muted_until, reason, strikes")
+      .eq("user_id", selectedProfile.user_id)
+      .maybeSingle();
+    setTargetMute((row as any) ?? null);
+  };
+
+  const targetIsMuted =
+    !!targetMute &&
+    ((targetMute.muted_until === null && targetMute.reason === "__permanent__") ||
+      (!!targetMute.muted_until && new Date(targetMute.muted_until).getTime() > Date.now()));
+
   return (
     <AppShell>
       <PageTransition>
@@ -697,9 +852,26 @@ const Chat = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/70 shrink-0">
-              <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
-              <span className="text-xs font-semibold text-foreground">{onlineCount} online</span>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={toggleNotifMute}
+                className="h-9 w-9 rounded-full"
+                aria-label={notifMuted ? "Aktifkan notifikasi chat" : "Bisukan notifikasi chat"}
+                title={notifMuted ? "Notifikasi chat dibisukan" : "Bisukan notifikasi chat"}
+              >
+                {notifMuted ? (
+                  <BellOff className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <Bell className="w-4 h-4" />
+                )}
+              </Button>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/70">
+                <Circle className="w-2 h-2 fill-emerald-500 text-emerald-500" />
+                <span className="text-xs font-semibold text-foreground">{onlineCount} online</span>
+              </div>
             </div>
           </GlassCard>
 
@@ -1077,6 +1249,24 @@ const Chat = () => {
                   ))}
                 </div>
               )}
+              {muteStatus.muted && (
+                <div className="mx-2.5 mt-2.5 flex items-start gap-2 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-3 py-2.5">
+                  <ShieldAlert className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-foreground">
+                      {muteStatus.permanent
+                        ? "Kamu dibisukan permanen dari Chat Global"
+                        : `Kamu dibisukan sampai ${formatMuteUntil(muteStatus.muted_until)}`}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {muteStatus.reason && muteStatus.reason !== "__permanent__"
+                        ? `Alasan: ${muteStatus.reason}. `
+                        : ""}
+                      Gunakan bahasa yang sopan agar bisa mengobrol kembali.
+                    </p>
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleSend} className="p-2.5 flex items-center gap-2">
                 <input
                   ref={fileInputRef}
@@ -1091,7 +1281,7 @@ const Chat = () => {
                   size="icon"
                   variant="outline"
                   onClick={handleImagePick}
-                  disabled={sending || !user || pending.length >= MAX_FILES}
+                  disabled={sending || !user || muteStatus.muted || pending.length >= MAX_FILES}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label="Kirim foto"
                 >
@@ -1105,7 +1295,9 @@ const Chat = () => {
                     sendTyping();
                   }}
                   placeholder={
-                    replyTo
+                    muteStatus.muted
+                      ? "Kamu sedang dibisukan..."
+                      : replyTo
                       ? "Tulis balasan..."
                       : pending.length > 0
                       ? "Tambah caption (opsional)..."
@@ -1113,12 +1305,12 @@ const Chat = () => {
                   }
                   maxLength={2000}
                   className="flex-1 rounded-full h-11 bg-secondary/60 border-border/70"
-                  disabled={sending || !user}
+                  disabled={sending || !user || muteStatus.muted}
                 />
                 <Button
                   type="submit"
                   size="icon"
-                  disabled={sending || cooldownLeft > 0 || (!input.trim() && pending.length === 0)}
+                  disabled={sending || muteStatus.muted || cooldownLeft > 0 || (!input.trim() && pending.length === 0)}
                   className="h-11 w-11 rounded-full shrink-0"
                   aria-label={cooldownLeft > 0 ? `Tunggu ${cooldownLeft}d` : "Kirim"}
                 >
@@ -1323,6 +1515,61 @@ const Chat = () => {
                           : "-"}
                       </span>
                     </div>
+                    {role === "admin" && selectedProfile.role !== "admin" && (
+                      <div className="p-3 rounded-2xl border border-border/70 bg-secondary/30 space-y-2.5">
+                        <div className="flex items-center gap-2">
+                          <MicOff className="w-4 h-4 text-rose-500" />
+                          <span className="text-sm font-semibold text-foreground">Moderasi Chat</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {targetIsMuted
+                            ? targetMute?.muted_until
+                              ? `Dibisukan sampai ${formatMuteUntil(targetMute.muted_until)}`
+                              : "Dibisukan permanen"
+                            : "Tidak dibisukan"}
+                          {typeof targetMute?.strikes === "number" && targetMute.strikes > 0
+                            ? ` • ${targetMute.strikes}x pelanggaran kata kasar`
+                            : ""}
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "10 menit", mins: 10 },
+                            { label: "1 jam", mins: 60 },
+                            { label: "24 jam", mins: 1440 },
+                            { label: "Permanen", mins: 525600 },
+                          ].map((opt) => (
+                            <Button
+                              key={opt.mins}
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={muteBusy}
+                              onClick={() => applyMute(opt.mins)}
+                              className="rounded-full h-9 text-xs"
+                            >
+                              <MicOff className="w-3.5 h-3.5 mr-1" />
+                              {opt.label}
+                            </Button>
+                          ))}
+                        </div>
+                        {targetIsMuted && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            disabled={muteBusy}
+                            onClick={() => applyMute(0)}
+                            className="w-full rounded-full h-9 text-xs"
+                          >
+                            {muteBusy ? (
+                              <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                            ) : (
+                              <Mic className="w-3.5 h-3.5 mr-1" />
+                            )}
+                            Buka bisu
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

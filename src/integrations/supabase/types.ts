@@ -355,6 +355,39 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_mutes: {
+        Row: {
+          created_at: string
+          last_strike_at: string | null
+          muted_by: string | null
+          muted_until: string | null
+          reason: string | null
+          strikes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          last_strike_at?: string | null
+          muted_by?: string | null
+          muted_until?: string | null
+          reason?: string | null
+          strikes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          last_strike_at?: string | null
+          muted_by?: string | null
+          muted_until?: string | null
+          reason?: string | null
+          strikes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       contact_submissions: {
         Row: {
           category: string
@@ -1373,6 +1406,10 @@ export type Database = {
       activate_ad_rental: { Args: { _order_id: string }; Returns: Json }
       activate_adp_server: { Args: { _order_id: string }; Returns: Json }
       activate_reseller: { Args: { _order_id: string }; Returns: Json }
+      admin_set_chat_mute: {
+        Args: { _minutes: number; _reason?: string; _user_id: string }
+        Returns: Json
+      }
       approve_warranty_claim: {
         Args: { _admin_note?: string; _claim_id: string }
         Returns: Json
@@ -1383,6 +1420,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      contains_profanity: { Args: { _text: string }; Returns: boolean }
       create_admin_ad: {
         Args: {
           _buttons: Json
@@ -1426,6 +1464,16 @@ export type Database = {
           month_start: string
           total: number
           used: number
+        }[]
+      }
+      get_my_chat_mute: {
+        Args: never
+        Returns: {
+          muted: boolean
+          muted_until: string
+          permanent: boolean
+          reason: string
+          strikes: number
         }[]
       }
       get_my_notifications: {
@@ -1612,6 +1660,7 @@ export type Database = {
       has_transacted: { Args: { _user_id: string }; Returns: boolean }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_adp_server_active: { Args: { _user_id: string }; Returns: boolean }
+      is_chat_muted: { Args: { _user_id: string }; Returns: boolean }
       is_name_taken: { Args: { _name: string }; Returns: boolean }
       mark_all_notifications_read: { Args: never; Returns: number }
       move_to_dlq: {
@@ -1623,6 +1672,7 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_for_profanity: { Args: { _text: string }; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {

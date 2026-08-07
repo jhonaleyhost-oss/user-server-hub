@@ -156,6 +156,8 @@ const ChatNotifier = () => {
           const onChat = locationRef.current.startsWith("/chat");
           const focused = document.visibilityState === "visible" && document.hasFocus();
           if (onChat && focused) return;
+          // Respect the per-device "mute chat notifications" toggle in /chat
+          if (localStorage.getItem("chat:notif-muted") === "1") return;
 
           const p = await senderProfile(m.user_id);
           await showIfNoPush(p.name || "Pesan baru", {
