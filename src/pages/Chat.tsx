@@ -795,6 +795,63 @@ const Chat = () => {
     setTimeout(() => setHighlightId((curr) => (curr === id ? null : curr)), 1500);
   };
 
+  const toggleNotifMute = () => {
+    setNotifMuted((prev) => {
+      const next = !prev;
+      localStorage.setItem("chat:notif-muted", next ? "1" : "0");
+      window.dispatchEvent(new Event("chat:notif-mute-changed"));
+      toast.success(next ? "Notifikasi chat dibisukan" : "Notifikasi chat diaktifkan", {
+        id: "chat-notif-mute",
+      });
+      return next;
+    });
+  };
+
+  // Load mute info of the profile an admin is viewing
+  useEffect(() => {
+    if (!selectedProfile || role !== "admin") {
+      setTargetMute(null);
+      return;
+    }
+    supabase
+      .from("chat_mutes" as any)
+      .select("muted_until, reason, strikes")
+      .eq("user_id", selectedProfile.user_id)
+      .maybeSingle()
+      .then(({ data }) => setTargetMute((data as any) ?? null));
+  }, [selectedProfile, role]);
+
+  const applyMute = async (minutes: number) => {
+    if (!selectedProfile) return;
+    setMuteBusy(true);
+    const { data, error } = await supabase.rpc("admin_set_chat_mute" as any, {
+      _user_id: selectedProfile.user_id,
+      _minutes: minutes,
+      _reason: null,
+    });
+    setMuteBusy(false);
+    if (error || (data as any)?.ok === false) {
+      toast.error("Gagal mengubah status bisu");
+      return;
+    }
+    toast.success(
+      minutes <= 0
+        ? `${selectedProfile.full_name ?? "Pengguna"} sudah tidak dibisukan`
+        : `${selectedProfile.full_name ?? "Pengguna"} dibisukan`,
+    );
+    const { data: row } = await supabase
+      .from("chat_mutes" as any)
+      .select("muted_until, reason, strikes")
+      .eq("user_id", selectedProfile.user_id)
+      .maybeSingle();
+    setTargetMute((row as any) ?? null);
+  };
+
+  const targetIsMuted =
+    !!targetMute &&
+    ((targetMute.muted_until === null && targetMute.reason === "__permanent__") ||
+      (!!targetMute.muted_until && new Date(targetMute.muted_until).getTime() > Date.now()));
+
   return (
     <AppShell>
       <PageTransition>
