@@ -130,21 +130,6 @@ const mapModerationError = (
   return null;
 };
 
-const legacyFormatDayLabel = (iso: string) => {
-  const d = new Date(iso);
-  const today = new Date();
-  const yest = new Date();
-  yest.setDate(today.getDate() - 1);
-  const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-  if (sameDay(d, today)) return "Hari Ini";
-  if (sameDay(d, yest)) return "Kemarin";
-  const diffDays = Math.floor((today.getTime() - d.getTime()) / 86400000);
-  if (diffDays < 7) return d.toLocaleDateString("id-ID", { weekday: "long" });
-  return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-};
 
 const Chat = () => {
   const { user, loading: authLoading } = useAuth();
