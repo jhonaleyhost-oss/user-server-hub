@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, ImagePlus, Loader2, X, MessageCircle, Pencil, Check } from "lucide-react";
+import { Send, ImagePlus, Loader2, X, MessageCircle, Pencil, Check, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ interface SupportMessage {
   image_url: string | null;
   created_at: string;
   edited_at?: string | null;
+  is_ai?: boolean | null;
 }
 
 const formatTime = (iso: string) =>
@@ -281,6 +282,11 @@ export default function SupportChatPopup({ open, onClose }: Props) {
                     }`}
                   >
                     {m.image_url && <SupportImage value={m.image_url} />}
+                    {m.is_ai && (
+                      <span className="inline-flex items-center gap-1 mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5">
+                        <Sparkles className="w-3 h-3" /> Asisten AI
+                      </span>
+                    )}
                     {isEditing ? (
                       <div className="flex flex-col gap-2 min-w-[180px]">
                         <textarea

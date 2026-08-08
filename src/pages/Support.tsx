@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, ImagePlus, Loader2, ArrowLeft, MessageCircle, LifeBuoy, X, Pencil, Check } from "lucide-react";
+import { Send, ImagePlus, Loader2, ArrowLeft, MessageCircle, LifeBuoy, X, Pencil, Check, Sparkles } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
@@ -21,6 +21,7 @@ interface SupportMessage {
   created_at: string;
   edited_at?: string | null;
   sender_user_id?: string | null;
+  is_ai?: boolean | null;
 }
 
 interface Thread {
@@ -507,6 +508,11 @@ const Support = () => {
                             }`}
                           >
                             {m.image_url && <SupportImage value={m.image_url} />}
+                            {m.is_ai && (
+                              <span className="inline-flex items-center gap-1 mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5">
+                                <Sparkles className="w-3 h-3" /> Asisten AI
+                              </span>
+                            )}
                             {isEditing ? (
                               <div className="flex flex-col gap-2 min-w-[200px]">
                                 <textarea

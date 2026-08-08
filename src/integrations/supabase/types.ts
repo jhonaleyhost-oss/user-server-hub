@@ -1131,6 +1131,7 @@ export type Database = {
           edited_at: string | null
           id: string
           image_url: string | null
+          is_ai: boolean
           read_by_admin: boolean
           read_by_user: boolean
           sender_role: string
@@ -1144,6 +1145,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           image_url?: string | null
+          is_ai?: boolean
           read_by_admin?: boolean
           read_by_user?: boolean
           sender_role: string
@@ -1157,6 +1159,7 @@ export type Database = {
           edited_at?: string | null
           id?: string
           image_url?: string | null
+          is_ai?: boolean
           read_by_admin?: boolean
           read_by_user?: boolean
           sender_role?: string
