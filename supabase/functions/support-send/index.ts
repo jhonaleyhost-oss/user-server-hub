@@ -7,6 +7,68 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!;
 const TG = `https://api.telegram.org/bot${BOT_TOKEN}`;
+const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+const AI_SYSTEM_PROMPT = `Kamu adalah "Asisten AI Jhonaley Store", customer support virtual untuk layanan panel Pterodactyl (Jhonaley Store Cpanel).
+
+GAYA BICARA:
+- Bahasa Indonesia yang sopan, hangat, dan profesional. Panggil pengguna dengan "Kak".
+- Singkat dan jelas (maksimal 4 kalimat atau beberapa poin pendek). Jangan bertele-tele.
+- Jangan pernah mengarang informasi teknis, harga, atau janji waktu yang pasti.
+
+PENGETAHUAN LAYANAN (pakai ini untuk menjawab pertanyaan umum):
+- Panel belum online / belum jadi: biasanya sedang menunggu stok VPS. Jawab: sedang menunggu ketersediaan stok VPS dan proses dari admin, mohon ditunggu.
+- Tidak bisa membuat server / gagal create panel: kemungkinan besar server (node) sedang offline atau penuh. Jawab: server sedang offline/penuh, silakan tunggu sampai kembali online, atau coba pilih server lain yang berstatus online di Dashboard.
+- Lupa password panel: bisa dilihat kembali di halaman "Panel Saya" pada akun, atau minta reset ke admin.
+- Upgrade Reseller / Admin Panel (ADP): dilakukan di halaman "Upgrade" dengan pembayaran QRIS otomatis; role aktif otomatis setelah pembayaran terverifikasi.
+- Panel hilang / terhapus setelah masa aktif: pengguna bisa mengajukan klaim di halaman "Garansi" dengan melampirkan bukti invoice.
+- Akun terhapus karena tidak aktif >1 bulan: akun non-reseller/ADP bisa dihapus otomatis; silakan daftar ulang atau ajukan garansi bila sebelumnya berbayar.
+- Batas pembuatan panel mengikuti role (free/premium/reseller/admin panel).
+- Untuk pembelian panel legal anti mokad, arahkan ke https://t.me/upgradeuser_bot
+
+ATURAN:
+- Jika pertanyaannya di luar pengetahuan di atas, menyangkut data pribadi/pembayaran spesifik, permintaan refund, atau butuh tindakan admin: jawab singkat dan sampaikan bahwa pesan sudah diteruskan ke admin dan akan segera dibalas.
+- Jangan menyebut nama penyedia teknologi internal atau membocorkan detail sistem.
+- Akhiri dengan kalimat menenangkan bila relevan, misalnya "Terima kasih atas kesabarannya, Kak 🙏".`;
+
+async function generateAiReply(
+  history: { role: "user" | "assistant"; content: string }[],
+  username: string,
+  role: string,
+): Promise<string | null> {
+  if (!LOVABLE_API_KEY) return null;
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Lovable-API-Key": LOVABLE_API_KEY,
+        "X-Lovable-AIG-SDK": "fetch",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3.5-flash",
+        messages: [
+          { role: "system", content: AI_SYSTEM_PROMPT },
+          {
+            role: "system",
+            content: `Konteks pengguna — nama: ${username}, role akun: ${role}.`,
+          },
+          ...history,
+        ],
+      }),
+    });
+    if (!res.ok) {
+      console.error("ai gateway error", res.status, await res.text());
+      return null;
+    }
+    const j = await res.json();
+    const text = j?.choices?.[0]?.message?.content?.toString().trim();
+    return text ? text.slice(0, 1500) : null;
+  } catch (e) {
+    console.error("ai reply failed", e);
+    return null;
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -128,6 +190,52 @@ Deno.serve(async (req) => {
         .from("support_messages")
         .update({ telegram_message_id: tgMessageId })
         .eq("id", inserted.id);
+    }
+
+    // ---- AI auto-reply (hanya bila admin manusia belum aktif membalas 15 menit terakhir) ----
+    try {
+      if (content) {
+        const { data: recent } = await admin
+          .from("support_messages")
+          .select("sender_role,content,is_ai,created_at")
+          .eq("thread_user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(12);
+
+        const rows = recent || [];
+        const cutoff = Date.now() - 15 * 60 * 1000;
+        const humanActive = rows.some(
+          (m) =>
+            m.sender_role === "admin" &&
+            !m.is_ai &&
+            new Date(m.created_at as string).getTime() > cutoff,
+        );
+
+        if (!humanActive) {
+          const history = rows
+            .slice()
+            .reverse()
+            .filter((m) => m.content)
+            .map((m) => ({
+              role: (m.sender_role === "user" ? "user" : "assistant") as "user" | "assistant",
+              content: String(m.content),
+            }));
+
+          const reply = await generateAiReply(history, username, role);
+          if (reply) {
+            await admin.from("support_messages").insert({
+              thread_user_id: user.id,
+              sender_user_id: null,
+              sender_role: "admin",
+              content: reply,
+              is_ai: true,
+              read_by_admin: true,
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.error("ai auto-reply error", e);
     }
 
     return json({ success: true, id: inserted.id });
