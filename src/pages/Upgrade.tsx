@@ -21,6 +21,7 @@ import {
   Server,
   KeyRound,
   Layers,
+  Users,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
@@ -743,68 +744,125 @@ const Upgrade = () => {
             <GlassCard className={`p-6 mb-6 ${isAdpTier ? 'border-purple-500/30' : ''}`}>
               <h3 className="font-bold text-foreground mb-4 text-center flex items-center justify-center gap-2">
                 <Sparkles className={`w-4 h-4 ${isAdpTier ? 'text-purple-400' : 'text-amber'}`} />
-                {isAdpTier ? 'Yang Kamu Dapatkan (Admin Panel)' : 'Yang Kamu Dapatkan (Reseller)'}
+                {isAdpTier ? 'Benefit Admin Panel Server' : 'Benefit Reseller'}
               </h3>
+              <p className="text-xs text-muted-foreground text-center mb-4">
+                {isAdpTier
+                  ? 'ADP Server adalah role tertinggi setelah Admin. Semua benefit Reseller sudah termasuk — kamu tidak perlu beli Reseller terpisah.'
+                  : 'Reseller memberikan akses penuh ke semua fitur premium Jhonaley Store untuk menjalankan bot WhatsApp tanpa batas.'}
+              </p>
               {isAdpTier ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                   <div className="flex items-start gap-2 text-muted-foreground">
-                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Jadi <b className="text-foreground">root-admin</b> Pterodactyl (root_admin=1)</span>
+                    <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Termasuk semua fitur Reseller</b> — panel unlimited, server private, support prioritas
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Crown className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      Jadi <b className="text-foreground">root-admin Pterodactyl</b> dengan kontrol penuh atas panel
+                    </span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Dapat <b className="text-foreground">URL panel, username, password, PLTA &amp; PLTC</b></span>
+                    <span className="flex-1 leading-snug">
+                      Dapatkan <b className="text-foreground">URL login, username, password, PLTA &amp; PLTC</b> sendiri
+                    </span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
-                    <KeyRound className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Buat <b className="text-foreground">user baru</b> di panel Pterodactyl kamu</span>
+                    <Users className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      Buat dan kelola <b className="text-foreground">sub-user / klien</b> di bawah panel kamu
+                    </span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <Server className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Buat <b className="text-foreground">server/panel</b> untuk user bikinan kamu</span>
+                    <span className="flex-1 leading-snug">
+                      Buatkan <b className="text-foreground">server/panel</b> untuk setiap user yang kamu kelola
+                    </span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <Layers className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Setiap sub-user dapat <b className="text-foreground">PLTA &amp; PLTC</b> sendiri</span>
+                    <span className="flex-1 leading-snug">
+                      Setiap sub-user dapat <b className="text-foreground">PLTA &amp; PLTC</b> masing-masing
+                    </span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground">
-                    <Crown className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Badge <b className="text-foreground">ungu eksklusif</b> di samping nama kamu</span>
+                    <ShieldCheck className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      Badge <b className="text-foreground">ungu eksklusif ADP Server</b> di samping nama profil
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Zap className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      Cocok untuk <b className="text-foreground">reseller besar / bisnis</b> yang ingin jual panel sendiri
+                    </span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
                     <CheckCircle2 className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Kompatibel dengan role <b className="text-foreground">Reseller</b> — bisa dimiliki bersamaan</span>
-                  </div>
-                  <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
-                    <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                    <span className="flex-1 leading-snug">Batas: <b className="text-foreground">1 Admin Panel per server</b> (private &amp; publik dihitung terpisah)</span>
+                    <span className="flex-1 leading-snug">
+                      Batas: <b className="text-foreground">1 Admin Panel per server</b> (server publik &amp; private dihitung terpisah)
+                    </span>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Check className="w-4 h-4 text-emerald shrink-0" /> Unlimited RAM &amp; CPU
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <InfinityIcon className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Unlimited RAM &amp; CPU</b> — tidak ada batasan resource untuk panel kamu
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Check className="w-4 h-4 text-emerald shrink-0" /> Buat Panel Tanpa Batas
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Layers className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Buat Panel Tanpa Batas</b> — bikin banyak panel bot sesuai kebutuhan
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Check className="w-4 h-4 text-emerald shrink-0" /> Akses 2 Type Panel NodeJs dan Python
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Code className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      Akses <b className="text-foreground">2 tipe panel: Node.js dan Python</b> dalam satu akun
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Check className="w-4 h-4 text-emerald shrink-0" /> Bisa Hapus Panel Sendiri
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Server className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Akses Server Private</b> — server semi-private dengan resource lebih stabil
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Anti-Intip &amp; Aman 100%
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Hapus &amp; kelola panel sendiri</b> — fleksibel tanpa harus hubungi admin
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Zap className="w-4 h-4 text-emerald shrink-0" /> Server Semi Private Ram 8 GB / 4 Core
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Zap className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Server Semi Private 8 GB RAM / 4 Core</b> — performa lebih tinggi
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
-                    <Code className="w-4 h-4 text-emerald shrink-0" /> Support Python &amp; Node.js
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Aman &amp; Anti-Intip</b> — isolasi panel dan proteksi standar industri
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald shrink-0" /> Tidak ada biaya tambahan lain / Anti PTPT
+                  <div className="flex items-start gap-2 text-muted-foreground">
+                    <Crown className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Badge Reseller eksklusif</b> — tanda verifikasi di profil kamu
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                    <span className="flex-1 leading-snug">
+                      <b className="text-foreground">Tidak ada biaya tambahan</b> — sekali bayar, pakai sesuai masa aktif yang dipilih
+                    </span>
                   </div>
                 </div>
               )}
