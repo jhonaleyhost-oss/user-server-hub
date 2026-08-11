@@ -356,6 +356,68 @@ const Landing = () => {
           </div>
         </section>
 
+        {/* Role comparison */}
+        <section id="role-comparison" className="py-20 border-t border-border/50">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold">Hierarki Role</h2>
+              <p className="text-muted-foreground mt-3 max-w-2xl mx-auto">
+                Setiap role di atasnya otomatis menyertakan semua benefit role di bawahnya. Upgrade sekali, nikmati semua.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[
+                {
+                  role: 'Free',
+                  icon: Zap,
+                  color: 'text-emerald',
+                  items: ['1 Panel Bot WhatsApp', 'Server Publik', 'Support Komunitas'],
+                },
+                {
+                  role: 'Reseller',
+                  icon: Crown,
+                  color: 'text-primary',
+                  items: ['Semua Fitur Free', 'Panel Unlimited', 'Server Private', 'Support Prioritas', 'Aktif 1 / 2 Bulan atau Permanen'],
+                },
+                {
+                  role: 'ADP Server',
+                  icon: Shield,
+                  color: 'text-accent',
+                  items: ['Semua Fitur Reseller', 'Admin Panel Pribadi', 'Kelola Sub-user & Klien', 'Akses Dedicated Server', 'Bisa Jual Panel ke Orang Lain'],
+                },
+              ].map((r, i) => (
+                <motion.div
+                  key={r.role}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className="glass-card rounded-2xl p-6"
+                >
+                  <div className="flex items-center gap-2 mb-4">
+                    <r.icon className={cn('w-5 h-5', r.color)} />
+                    <h3 className="text-lg font-bold">{r.role}</h3>
+                  </div>
+                  <ul className="space-y-2.5">
+                    {r.items.map((item) => (
+                      <li key={item} className="flex items-start gap-2 text-sm">
+                        <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                        <span className="text-muted-foreground">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-8 text-center text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent/10 border border-accent/20">
+                <Sparkles className="w-3.5 h-3.5 text-accent" />
+                ADP Server = Reseller + Kemampuan Membuat Panel Sendiri
+              </span>
+            </div>
+          </div>
+        </section>
+
         {/* How it works */}
         <section id="how-it-works" className="py-20 border-t border-border/50">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
