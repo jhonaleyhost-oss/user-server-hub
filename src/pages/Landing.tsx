@@ -384,7 +384,14 @@ const Landing = () => {
                   role: 'ADP Server',
                   icon: Shield,
                   color: 'text-accent',
-                  items: ['Semua Fitur Reseller', 'Admin Panel Pribadi', 'Kelola Sub-user & Klien', 'Akses Dedicated Server', 'Bisa Jual Panel ke Orang Lain'],
+                  items: [
+                    'Semua Fitur Reseller',
+                    'Admin Panel Pribadi',
+                    'Kelola Sub-user & Klien',
+                    'Akses Dedicated Server',
+                    'Buka Jual Reseller Sendiri',
+                    'Buka Jual Panel Sendiri',
+                  ],
                 },
               ].map((r, i) => (
                 <motion.div
