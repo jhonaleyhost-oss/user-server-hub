@@ -798,7 +798,7 @@ const Upgrade = () => {
                   <div className="flex items-start gap-2 text-muted-foreground">
                     <Zap className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
                     <span className="flex-1 leading-snug">
-                      Cocok untuk <b className="text-foreground">reseller besar / bisnis</b> yang ingin jual panel sendiri
+                      Bisa <b className="text-foreground">buka jualan Reseller & Panel</b> sendiri — kamu jadi owner panel pribadi
                     </span>
                   </div>
                   <div className="flex items-start gap-2 text-muted-foreground sm:col-span-2">
