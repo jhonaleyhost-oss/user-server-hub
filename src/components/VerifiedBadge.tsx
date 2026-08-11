@@ -92,7 +92,7 @@ const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: str
   adp_server: {
     title: "Admin Panel Server",
     description:
-      "Badge super eksklusif berwarna ungu khusus untuk pemilik Admin Panel Server — role tertinggi setelah Admin. Kamu bisa membuat panel Pterodactyl root-admin lengkap dengan PLTA/PLTC di setiap server yang tersedia.",
+      "Badge super eksklusif berwarna ungu khusus untuk pemilik Admin Panel Server — role tertinggi setelah Admin. Seluruh benefit Reseller (panel unlimited, server private, support prioritas) sudah termasuk, ditambah Anda bisa membuat panel Pterodactyl root-admin lengkap dengan PLTA/PLTC di setiap server yang tersedia untuk dijual ke klien Anda.",
     cta: "Kelola Admin Panel",
   },
   perm: {

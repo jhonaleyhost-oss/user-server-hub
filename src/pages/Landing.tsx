@@ -42,7 +42,13 @@ const plans = [
     name: 'ADP Server',
     price: 'Mulai Rp 10.000 / Bulan',
     highlight: false,
-    features: ['Buat Admin Panel Sendiri', 'Kelola Sub-user', 'Server Dedicated', 'Cocok untuk Reseller Besar'],
+    features: [
+      'Termasuk Semua Fitur Reseller',
+      'Buat Admin Panel Sendiri',
+      'Kelola Sub-user & Klien',
+      'Akses Server Private & Dedicated',
+      'Cocok untuk Reseller Besar / Bisnis',
+    ],
     cta: 'Upgrade ADP',
   },
 ];
@@ -56,8 +62,9 @@ const stats = [
 
 const faqs = [
   { q: 'Apakah benar-benar gratis?', a: 'Ya. Setiap akun baru mendapat 1 panel gratis di server publik tanpa biaya, tanpa kartu kredit.' },
-  { q: 'Bagaimana cara upgrade ke Reseller?', a: 'Login, buka menu Upgrade, pilih durasi (1 bulan / permanen) dan lakukan pembayaran via QRIS otomatis.' },
-  { q: 'Apa itu ADP Server?', a: 'ADP (Admin Panel) memungkinkan Anda punya panel Pterodactyl sendiri untuk dijual ulang ke klien Anda.' },
+  { q: 'Bagaimana cara upgrade ke Reseller?', a: 'Login, buka menu Upgrade, pilih durasi (1 bulan / 2 bulan / permanen) dan lakukan pembayaran via QRIS otomatis.' },
+  { q: 'Apa itu ADP Server?', a: 'ADP (Admin Panel) Server adalah role tertinggi setelah Admin. Anda mendapatkan SEMUA fitur Reseller (panel unlimited, server private, support prioritas) ditambah kemampuan untuk membuat panel Pterodactyl root-admin sendiri beserta sub-user untuk dijual ke klien Anda.' },
+  { q: 'Apakah ADP Server sudah termasuk Reseller?', a: 'Ya. ADP Server mencakup seluruh benefit Reseller. Jika Anda upgrade ke ADP, Anda otomatis juga memiliki akses Reseller tanpa perlu membeli terpisah.' },
   { q: 'Apakah ada garansi?', a: 'Ada. Jika role hilang karena error sistem, ajukan klaim di halaman Garansi dengan bukti invoice.' },
 ];
 
