@@ -12,6 +12,7 @@ import AccentColorPicker from '@/components/AccentColorPicker';
 import ContactSection from '@/components/ContactSection';
 import { Button } from '@/components/ui/button';
 import { PageTransition } from '@/components/PageTransition';
+import { cn } from '@/lib/utils';
 
 const features = [
   { icon: Rocket, title: 'Deploy Instan', desc: 'Buat panel Pterodactyl hanya dalam hitungan detik, tanpa konfigurasi ribet.' },
