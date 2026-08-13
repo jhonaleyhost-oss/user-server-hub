@@ -46,6 +46,15 @@ const emptyForm = {
   expires_at: "",
 };
 
+// Konversi ISO (UTC) -> nilai input datetime-local dalam waktu lokal user
+const toLocalInput = (iso: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export default function AdminPromos() {
   const { user } = useAuth();
   const [items, setItems] = useState<Promo[]>([]);
