@@ -129,12 +129,29 @@ Deno.serve(async (req) => {
     // Generate signed URL so Telegram (and admin UI) can fetch the private image.
     let imageUrl: string | null = null;
     let telegramPhotoUrl: string | null = null;
+    let imageBlob: Blob | null = null;
+    let imageDataUrl: string | null = null;
     if (imagePath) {
       const { data: signed } = await admin.storage
         .from("support-media")
         .createSignedUrl(imagePath, 60 * 60 * 24 * 7); // 7 days
       imageUrl = signed?.signedUrl ?? null;
       telegramPhotoUrl = imageUrl;
+      try {
+        const { data: blob } = await admin.storage.from("support-media").download(imagePath);
+        if (blob) {
+          imageBlob = blob;
+          const buf = new Uint8Array(await blob.arrayBuffer());
+          let bin = "";
+          for (let i = 0; i < buf.length; i += 8192) {
+            bin += String.fromCharCode(...buf.subarray(i, i + 8192));
+          }
+          const mime = blob.type || "image/jpeg";
+          imageDataUrl = `data:${mime};base64,${btoa(bin)}`;
+        }
+      } catch (e) {
+        console.error("image download failed", e);
+      }
     }
 
     // Get profile + role
@@ -171,11 +188,9 @@ Deno.serve(async (req) => {
     let tgMessageId: number | null = null;
     try {
       if (imagePath) {
-        // Download bytes and send as multipart so Telegram doesn't need to fetch a signed URL.
-        const { data: fileBlob, error: dlErr } = await admin.storage
-          .from("support-media")
-          .download(imagePath);
-        if (dlErr || !fileBlob) throw new Error(dlErr?.message || "download failed");
+        // Send as multipart so Telegram doesn't need to fetch a signed URL.
+        const fileBlob = imageBlob;
+        if (!fileBlob) throw new Error("download failed");
         const form = new FormData();
         form.append("chat_id", OWNER_ID);
         form.append("caption", header + "\n\n<i>↩️ Reply pesan ini untuk membalas user.</i>");
