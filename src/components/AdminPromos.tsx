@@ -81,8 +81,8 @@ export default function AdminPromos() {
       scope: p.scope,
       quota: p.quota || 0,
       active: p.active,
-      starts_at: p.starts_at ? p.starts_at.slice(0, 16) : "",
-      expires_at: p.expires_at ? p.expires_at.slice(0, 16) : "",
+      starts_at: toLocalInput(p.starts_at),
+      expires_at: toLocalInput(p.expires_at),
     });
     setOpen(true);
   };
