@@ -35,9 +35,35 @@ async function generateAiReply(
   history: { role: "user" | "assistant"; content: string }[],
   username: string,
   role: string,
+  imageDataUrl?: string | null,
 ): Promise<string | null> {
   if (!LOVABLE_API_KEY) return null;
   try {
+    const msgs: unknown[] = [
+      { role: "system", content: AI_SYSTEM_PROMPT },
+      {
+        role: "system",
+        content: `Konteks pengguna — nama: ${username}, role akun: ${role}.`,
+      },
+      ...history.slice(0, -1),
+    ];
+    const last = history[history.length - 1];
+    if (imageDataUrl) {
+      msgs.push({
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text:
+              (last?.content || "Tolong lihat gambar ini.") +
+              "\n\n(Pengguna mengirim sebuah gambar/screenshot. Analisa isinya dan bantu jawab sesuai konteks layanan panel.)",
+          },
+          { type: "image_url", image_url: { url: imageDataUrl } },
+        ],
+      });
+    } else if (last) {
+      msgs.push(last);
+    }
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -47,14 +73,7 @@ async function generateAiReply(
       },
       body: JSON.stringify({
         model: "google/gemini-3.5-flash",
-        messages: [
-          { role: "system", content: AI_SYSTEM_PROMPT },
-          {
-            role: "system",
-            content: `Konteks pengguna — nama: ${username}, role akun: ${role}.`,
-          },
-          ...history,
-        ],
+        messages: msgs,
       }),
     });
     if (!res.ok) {
