@@ -228,7 +228,7 @@ Deno.serve(async (req) => {
 
     // ---- AI auto-reply (hanya bila admin manusia belum aktif membalas 15 menit terakhir) ----
     try {
-      if (content) {
+      if (content || imageDataUrl) {
         const { data: recent } = await admin
           .from("support_messages")
           .select("sender_role,content,is_ai,created_at")
@@ -254,8 +254,11 @@ Deno.serve(async (req) => {
               role: (m.sender_role === "user" ? "user" : "assistant") as "user" | "assistant",
               content: String(m.content),
             }));
+          if (imageDataUrl && (!content || history[history.length - 1]?.role !== "user")) {
+            history.push({ role: "user", content: content || "Tolong lihat gambar ini." });
+          }
 
-          const reply = await generateAiReply(history, username, role);
+          const reply = await generateAiReply(history, username, role, imageDataUrl);
           if (reply) {
             await admin.from("support_messages").insert({
               thread_user_id: user.id,
