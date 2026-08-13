@@ -23,6 +23,7 @@ interface Promo {
   scope: "reseller" | "ads" | "adp" | "both" | "reseller_adp";
   quota: number | null;
   used_count: number;
+  starts_at: string | null;
   expires_at: string | null;
 }
 
@@ -44,10 +45,13 @@ const LandingPromos = () => {
     (async () => {
       const { data } = await supabase
         .from("promo_codes")
-        .select("id, code, description, banner_url, discount_type, discount_value, min_amount, max_discount, scope, quota, used_count, expires_at")
+        .select("id, code, description, banner_url, discount_type, discount_value, min_amount, max_discount, scope, quota, used_count, starts_at, expires_at")
         .eq("active", true)
         .order("created_at", { ascending: false });
-      setItems((data as any) || []);
+      const now = Date.now();
+      setItems(((data as any[]) || []).filter(
+        (p) => !p.expires_at || new Date(p.expires_at).getTime() > now
+      ) as any);
       setLoading(false);
     })();
   }, []);
@@ -155,6 +159,7 @@ const LandingPromos = () => {
                   const Icon = meta.icon;
                   const remaining = p.quota ? Math.max(0, p.quota - p.used_count) : null;
                   const expired = p.expires_at && new Date(p.expires_at) <= new Date();
+                  const notStarted = !!p.starts_at && new Date(p.starts_at) > new Date();
                   return (
                     <motion.div
                       key={p.id}
@@ -193,13 +198,18 @@ const LandingPromos = () => {
                             <span className="font-mono text-base font-bold text-primary tracking-wider flex-1 truncate">{p.code}</span>
                             <button
                               onClick={() => copy(p.code)}
-                              disabled={!!expired}
+                              disabled={!!expired || notStarted}
                               className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold rounded-md bg-secondary hover:bg-secondary/80 disabled:opacity-50"
                             >
                               <Copy className="w-3 h-3" /> Salin
                             </button>
                           </div>
                           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                            {notStarted && (
+                              <span className="flex items-center gap-1 text-amber">
+                                <Clock className="w-3 h-3" /> Mulai {new Date(p.starts_at!).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            )}
                             {p.min_amount > 0 && <span>Min belanja: <b className="text-foreground">{fmt(p.min_amount)}</b></span>}
                             {p.max_discount && p.discount_type === "percent" && (
                               <span>Maks diskon: <b className="text-foreground">{fmt(p.max_discount)}</b></span>

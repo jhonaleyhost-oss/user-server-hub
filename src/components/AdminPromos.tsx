@@ -46,6 +46,15 @@ const emptyForm = {
   expires_at: "",
 };
 
+// Konversi ISO (UTC) -> nilai input datetime-local dalam waktu lokal user
+const toLocalInput = (iso: string | null) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export default function AdminPromos() {
   const { user } = useAuth();
   const [items, setItems] = useState<Promo[]>([]);
@@ -81,8 +90,8 @@ export default function AdminPromos() {
       scope: p.scope,
       quota: p.quota || 0,
       active: p.active,
-      starts_at: p.starts_at ? p.starts_at.slice(0, 16) : "",
-      expires_at: p.expires_at ? p.expires_at.slice(0, 16) : "",
+      starts_at: toLocalInput(p.starts_at),
+      expires_at: toLocalInput(p.expires_at),
     });
     setOpen(true);
   };
