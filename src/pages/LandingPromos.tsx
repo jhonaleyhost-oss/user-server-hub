@@ -23,6 +23,7 @@ interface Promo {
   scope: "reseller" | "ads" | "adp" | "both" | "reseller_adp";
   quota: number | null;
   used_count: number;
+  starts_at: string | null;
   expires_at: string | null;
 }
 
@@ -44,10 +45,13 @@ const LandingPromos = () => {
     (async () => {
       const { data } = await supabase
         .from("promo_codes")
-        .select("id, code, description, banner_url, discount_type, discount_value, min_amount, max_discount, scope, quota, used_count, expires_at")
+        .select("id, code, description, banner_url, discount_type, discount_value, min_amount, max_discount, scope, quota, used_count, starts_at, expires_at")
         .eq("active", true)
         .order("created_at", { ascending: false });
-      setItems((data as any) || []);
+      const now = Date.now();
+      setItems(((data as any[]) || []).filter(
+        (p) => !p.expires_at || new Date(p.expires_at).getTime() > now
+      ) as any);
       setLoading(false);
     })();
   }, []);
