@@ -1522,6 +1522,8 @@ export type Database = {
       get_public_users: {
         Args: never
         Returns: {
+          adp_expires_at: string
+          adp_permanent: boolean
           avatar_url: string
           created_at: string
           full_name: string
@@ -1536,6 +1538,8 @@ export type Database = {
       get_public_users_by_ids: {
         Args: { _user_ids: string[] }
         Returns: {
+          adp_expires_at: string
+          adp_permanent: boolean
           avatar_url: string
           created_at: string
           full_name: string
