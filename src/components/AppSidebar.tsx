@@ -18,6 +18,7 @@ import AccentColorPicker from "@/components/AccentColorPicker";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useResellerStatus, formatResellerRemaining } from "@/hooks/useResellerStatus";
+import { useMembershipStatus } from "@/hooks/useMembershipStatus";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Clock, Infinity as InfinityIcon, Send } from "lucide-react";
@@ -52,6 +53,7 @@ export function AppSidebar() {
   const { isAdmin } = useUserRole();
   const { role } = useUserRole();
   const { status: resellerStatus } = useResellerStatus();
+  const { status: membership } = useMembershipStatus();
   const unread = useUnreadCounts();
   const { unread: unreadNotif } = useNotifications();
   const navigate = useNavigate();
@@ -277,8 +279,15 @@ export function AppSidebar() {
                   <span className="truncate">{username}</span>
                   <VerifiedBadge
                     role={role}
-                    plan={resellerStatus?.permanent ? "perm" : (resellerStatus as any)?.plan}
+                    plan={
+                      role === "adp_server"
+                        ? membership?.last_plan ?? undefined
+                        : resellerStatus?.permanent
+                        ? "perm"
+                        : (resellerStatus as any)?.plan
+                    }
                     permanent={resellerStatus?.permanent}
+                    adpPermanent={membership?.adp_server_permanent}
                     size={14}
                     showFallbackLabel={false}
                   />

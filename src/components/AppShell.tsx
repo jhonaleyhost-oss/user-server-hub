@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useResellerStatus } from "@/hooks/useResellerStatus";
+import { useMembershipStatus } from "@/hooks/useMembershipStatus";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import NotificationBell from "@/components/NotificationBell";
 import SupportChatButton from "@/components/SupportChatButton";
@@ -32,6 +33,7 @@ const HeaderProfile = () => {
   const { user } = useAuth();
   const { role } = useUserRole();
   const { status: resellerStatus } = useResellerStatus();
+  const { status: membership } = useMembershipStatus();
   const { openMobile, open, isMobile } = useSidebar();
   const sidebarOpen = isMobile ? openMobile : open;
   const [fullName, setFullName] = useState<string | null>(null);
@@ -82,8 +84,11 @@ const HeaderProfile = () => {
           <VerifiedBadge
             role={role}
             permanent={resellerStatus?.permanent}
+            adpPermanent={membership?.adp_server_permanent}
             plan={
-              resellerStatus?.permanent
+              role === "adp_server"
+                ? membership?.last_plan ?? undefined
+                : resellerStatus?.permanent
                 ? "perm"
                 : undefined
             }

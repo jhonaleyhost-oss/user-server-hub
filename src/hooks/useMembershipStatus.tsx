@@ -7,6 +7,8 @@ export interface MembershipStatus {
   reseller_permanent: boolean;
   adp_server_expires_at: string | null;
   adp_server_permanent: boolean;
+  /** Latest completed order plan, e.g. "1bln" | "perm" | "adp_1bln" | "adp_perm" */
+  last_plan?: string | null;
 }
 
 export function useMembershipStatus() {
@@ -20,12 +22,22 @@ export function useMembershipStatus() {
       setLoading(false);
       return;
     }
-    const { data } = await supabase
-      .from("profiles")
-      .select("reseller_expires_at,reseller_permanent,adp_server_expires_at,adp_server_permanent")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (data) setStatus(data as MembershipStatus);
+    const [{ data }, { data: order }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("reseller_expires_at,reseller_permanent,adp_server_expires_at,adp_server_permanent")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("reseller_orders")
+        .select("plan,paid_at,created_at")
+        .eq("user_id", user.id)
+        .eq("status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (data) setStatus({ ...(data as MembershipStatus), last_plan: order?.plan ?? null });
     setLoading(false);
   };
 
