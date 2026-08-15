@@ -1042,9 +1042,16 @@ const Upgrade = () => {
                         <div className="mt-2 pt-2 border-t border-border/40 flex items-center gap-1.5">
                           {isAdpTier ? (
                             <>
-                              <VerifiedBadge role="adp_server" size={14} />
+                              <VerifiedBadge role="adp_server" plan={p.key} size={14} />
                               <span className="text-[10px] text-muted-foreground leading-tight">
-                                Unlock Badge <span className="font-semibold text-foreground">Ungu Eksklusif</span>
+                                Unlock Badge{' '}
+                                <span className="font-semibold text-foreground">
+                                  {p.key === 'adp_1bln'
+                                    ? 'Centang Cyan'
+                                    : p.key === 'adp_2bln'
+                                    ? 'Centang Pink'
+                                    : 'Ungu Eksklusif'}
+                                </span>
                               </span>
                             </>
                           ) : (
