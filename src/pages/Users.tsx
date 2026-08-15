@@ -401,6 +401,51 @@ export default function Users() {
                       {roleLabel(selected.role)}
                     </span>
                   </div>
+                  {(() => {
+                    const isAdp = selected.role === "adp_server";
+                    const isReseller = selected.role === "reseller";
+                    if (!isAdp && !isReseller) return null;
+                    const permanent = isAdp ? !!selected.adp_permanent : !!selected.reseller_permanent;
+                    const expires = isAdp ? selected.adp_expires_at : selected.reseller_expires_at;
+                    return (
+                      <>
+                        <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="w-4 h-4 text-emerald-400" />
+                            Sisa Masa Aktif
+                          </div>
+                          <span className="text-sm">
+                            {permanent ? (
+                              <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
+                                <Infinity className="w-4 h-4" /> Permanen
+                              </span>
+                            ) : expires ? (
+                              <LiveCountdown iso={expires} />
+                            ) : (
+                              <span className="font-semibold text-muted-foreground">—</span>
+                            )}
+                          </span>
+                        </div>
+                        {!permanent && expires && (
+                          <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Calendar className="w-4 h-4 text-primary" />
+                              Berakhir Pada
+                            </div>
+                            <span className="text-sm font-semibold text-foreground">
+                              {new Date(expires).toLocaleString("id-ID", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                   <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-secondary/60 to-secondary/20 border border-white/5 shadow-inner">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="w-4 h-4 text-amber" />
