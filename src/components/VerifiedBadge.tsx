@@ -29,6 +29,8 @@ export interface VerifiedBadgeProps {
   role: BadgeRole;
   plan?: BadgePlan;
   permanent?: boolean | null;
+  /** ADP-specific permanent flag (profiles.adp_server_permanent). */
+  adpPermanent?: boolean | null;
   size?: number;
   /** When true (default) also renders a tiny pill for premium/free roles. */
   showFallbackLabel?: boolean;
@@ -51,12 +53,26 @@ const TIERS: Record<string, Tier> = {
     check: "#ffffff",
     glow: "rgba(245, 158, 11, 0.55)",
   },
-  adp_server: {
-    label: "Admin Panel Server",
+  adp_perm: {
+    label: "Admin Panel Permanen",
     fill: "#a855f7",
     stroke: "#6b21a8",
     check: "#ffffff",
     glow: "rgba(168, 85, 247, 0.7)",
+  },
+  adp_2bln: {
+    label: "Admin Panel 2 Bulan",
+    fill: "#ec4899",
+    stroke: "#9d174d",
+    check: "#ffffff",
+    glow: "rgba(236, 72, 153, 0.6)",
+  },
+  adp_1bln: {
+    label: "Admin Panel 1 Bulan",
+    fill: "#06b6d4",
+    stroke: "#0e7490",
+    check: "#ffffff",
+    glow: "rgba(6, 182, 212, 0.6)",
   },
   perm: {
     label: "Reseller Permanen",
@@ -81,7 +97,7 @@ const TIERS: Record<string, Tier> = {
   },
 };
 
-type TierKey = "admin" | "adp_server" | "perm" | "2bln" | "1bln";
+type TierKey = "admin" | "adp_perm" | "adp_2bln" | "adp_1bln" | "perm" | "2bln" | "1bln";
 
 const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: string }> = {
   admin: {
@@ -89,10 +105,22 @@ const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: str
     description:
       "Badge eksklusif berwarna oranye khusus untuk Admin & Staff resmi Jhonaley Store. Badge ini menandakan akun terverifikasi dan dipercaya untuk mengelola sistem.",
   },
-  adp_server: {
-    title: "Admin Panel Server",
+  adp_perm: {
+    title: "Admin Panel Permanen",
     description:
-      "Badge super eksklusif berwarna ungu khusus untuk pemilik Admin Panel Server — role tertinggi setelah Admin. Seluruh benefit Reseller (panel unlimited, server private, support prioritas) sudah termasuk, ditambah Anda bisa membuat panel Pterodactyl root-admin lengkap dengan PLTA/PLTC di setiap server yang tersedia untuk dijual ke klien Anda.",
+      "Badge super eksklusif berwarna ungu khusus pemilik Admin Panel Server Permanen — tier tertinggi setelah Admin, berlaku selamanya. Seluruh benefit Reseller (panel unlimited, server private, support prioritas) sudah termasuk, ditambah panel Pterodactyl root-admin lengkap dengan PLTA/PLTC untuk dijual ke klien Anda.",
+    cta: "Kelola Admin Panel",
+  },
+  adp_2bln: {
+    title: "Admin Panel 2 Bulan",
+    description:
+      "Badge eksklusif berwarna pink khusus pemilik Admin Panel Server paket 2 bulan. Seluruh benefit Reseller sudah termasuk, ditambah akses root-admin panel Pterodactyl (PLTA/PLTC) selama masa aktif.",
+    cta: "Kelola Admin Panel",
+  },
+  adp_1bln: {
+    title: "Admin Panel 1 Bulan",
+    description:
+      "Badge eksklusif berwarna cyan khusus pemilik Admin Panel Server paket 1 bulan. Seluruh benefit Reseller sudah termasuk, ditambah akses root-admin panel Pterodactyl (PLTA/PLTC) selama masa aktif.",
     cta: "Kelola Admin Panel",
   },
   perm: {
@@ -115,9 +143,20 @@ const TIER_INFO: Record<TierKey, { title: string; description: string; cta?: str
   },
 };
 
-function pickTierKey(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null): TierKey | null {
+function pickTierKey(
+  role: BadgeRole,
+  plan: BadgePlan,
+  permanent?: boolean | null,
+  adpPermanent?: boolean | null,
+): TierKey | null {
   if (role === "admin") return "admin";
-  if (role === "adp_server") return "adp_server";
+  if (role === "adp_server") {
+    if (adpPermanent || plan === "adp_perm") return "adp_perm";
+    if (plan === "adp_2bln") return "adp_2bln";
+    if (plan === "adp_1bln") return "adp_1bln";
+    // Unknown plan info — default to the base (1 bulan) tier
+    return "adp_1bln";
+  }
   if (role === "reseller") {
     if (permanent || plan === "perm") return "perm";
     if (plan === "2bln") return "2bln";
@@ -127,8 +166,8 @@ function pickTierKey(role: BadgeRole, plan: BadgePlan, permanent?: boolean | nul
 }
 
 /** Pick the tier for a given (role, plan, permanent) combo. */
-function pickTier(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null) {
-  const key = pickTierKey(role, plan, permanent);
+function pickTier(role: BadgeRole, plan: BadgePlan, permanent?: boolean | null, adpPermanent?: boolean | null) {
+  const key = pickTierKey(role, plan, permanent, adpPermanent);
   return key ? TIERS[key] : null;
 }
 
@@ -197,12 +236,13 @@ const VerifiedBadge = ({
   role,
   plan,
   permanent,
+  adpPermanent,
   size = 16,
   showFallbackLabel = true,
   className,
 }: VerifiedBadgeProps) => {
-  const tier = pickTier(role, plan, permanent);
-  const tierKey = pickTierKey(role, plan, permanent);
+  const tier = pickTier(role, plan, permanent, adpPermanent);
+  const tierKey = pickTierKey(role, plan, permanent, adpPermanent);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const info = tierKey ? TIER_INFO[tierKey] : null;
@@ -252,7 +292,7 @@ const VerifiedBadge = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     setOpen(false);
-                    navigate(tierKey === "adp_server" ? "/admin-panels" : "/upgrade");
+                    navigate(tierKey.startsWith("adp_") ? "/admin-panels" : "/upgrade");
                   }}
                   className="w-full h-11 rounded-full bg-amber hover:bg-amber/90 text-background font-bold gap-2"
                 >
