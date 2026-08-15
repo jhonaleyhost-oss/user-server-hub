@@ -34,6 +34,33 @@ interface UserRow {
   created_at: string | null;
   reseller_plan?: string | null;
   reseller_permanent?: boolean | null;
+  reseller_expires_at?: string | null;
+  adp_permanent?: boolean | null;
+  adp_expires_at?: string | null;
+}
+
+/** Live countdown: "12 hari 03:21:44" — updates setiap detik. */
+function LiveCountdown({ iso }: { iso: string }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const ms = new Date(iso).getTime() - now;
+  if (ms <= 0) return <span className="text-destructive font-semibold">Expired</span>;
+  const total = Math.floor(ms / 1000);
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const danger = d < 3;
+  return (
+    <span className={`font-mono font-semibold tabular-nums ${danger ? "text-destructive" : "text-foreground"}`}>
+      {d > 0 && <>{d} hari </>}
+      {pad(h)}:{pad(m)}:{pad(s)}
+    </span>
+  );
 }
 
 const roleLabel = (role: Role) =>
