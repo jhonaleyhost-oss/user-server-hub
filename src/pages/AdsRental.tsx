@@ -310,6 +310,32 @@ const AdsRental = () => {
     fetchAll();
   };
 
+  const confirmCancelQris = async () => {
+    if (!user || !orderId) return;
+    setCancelling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-qris', {
+        body: { order_id: orderId },
+      });
+      if (error || data?.error) {
+        toast.error('Gagal batalkan: ' + (data?.error || error?.message));
+        return;
+      }
+      toast.success('Pembayaran dibatalkan');
+      setShowQris(false);
+      setPolling(null);
+      try {
+        localStorage.removeItem(QRIS_KEY(user.id));
+      } catch {
+        // ignore
+      }
+      await fetchAll();
+    } finally {
+      setCancelling(false);
+      setCancelOpen(false);
+    }
+  };
+
   const deleteRental = async (r: MyRental) => {
     if (!isAdmin && r.status === 'active') {
       return toast.error('Iklan aktif tidak bisa dihapus. Nonaktifkan dulu.');
