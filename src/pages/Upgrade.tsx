@@ -1433,6 +1433,31 @@ const Upgrade = () => {
           </div>
         </div>
       </AppShell>
+
+      <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <AlertDialogContent className="bg-background border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan pembayaran?</AlertDialogTitle>
+            <AlertDialogDescription>
+              QRIS ini akan dibatalkan dan tidak bisa dibayar lagi. Kamu tetap bisa membuat
+              pembayaran baru kapan saja.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Lanjut Bayar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelling}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmCancelQris();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling ? 'Membatalkan...' : 'Ya, Batalkan'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageTransition>
   );
 };
