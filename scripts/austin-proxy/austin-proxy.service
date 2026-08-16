@@ -1,0 +1,17 @@
+[Unit]
+Description=Austin Pay Relay
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/austin-proxy
+Environment=PORT=8787
+Environment=PROXY_TOKEN=GANTI_DENGAN_TOKEN_RAHASIA
+ExecStart=/usr/bin/node /opt/austin-proxy/server.js
+Restart=always
+RestartSec=3
+User=root
+# Hanya dengarkan localhost lewat Nginx; jangan buka 8787 ke publik.
+
+[Install]
+WantedBy=multi-user.target
