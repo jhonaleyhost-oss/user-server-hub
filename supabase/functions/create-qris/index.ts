@@ -58,8 +58,8 @@ Deno.serve(async (req) => {
         hint = `IP server (${ip}) belum terdaftar di whitelist Austin Pay.`;
       }
       return new Response(
-        JSON.stringify({ error: data?.message || "create failed", hint, raw: data }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: [data?.message || "create failed", hint].filter(Boolean).join(" — "), raw: data }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
