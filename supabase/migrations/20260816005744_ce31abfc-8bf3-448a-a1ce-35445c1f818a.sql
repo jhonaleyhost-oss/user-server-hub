@@ -1,0 +1,1 @@
+DELETE FROM public.austin_payments WHERE order_id = 'relaytest_001';
