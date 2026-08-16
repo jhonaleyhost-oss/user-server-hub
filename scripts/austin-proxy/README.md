@@ -43,3 +43,27 @@ Cukup sekali — IP VPS statis.
 - `AUSTIN_PROXY_TOKEN` = token yang sama dengan PROXY_TOKEN
 
 Kalau `AUSTIN_PROXY_URL` kosong, sistem otomatis kembali memanggil Austin langsung.
+
+## Pemasangan cepat (pay.jhonaleystore.id)
+
+1. DNS: A record `pay` -> IP VPS.
+2. Upload file:
+   ```bash
+   mkdir -p /opt/austin-proxy
+   # upload server.js ke /opt/austin-proxy/server.js
+   cp austin-proxy.service /etc/systemd/system/
+   nano /etc/systemd/system/austin-proxy.service   # isi PROXY_TOKEN
+   systemctl daemon-reload && systemctl enable --now austin-proxy
+   ```
+3. Nginx + SSL:
+   ```bash
+   cp nginx-pay.jhonaleystore.id.conf /etc/nginx/sites-available/pay.conf
+   ln -s /etc/nginx/sites-available/pay.conf /etc/nginx/sites-enabled/
+   nginx -t && systemctl reload nginx
+   certbot --nginx -d pay.jhonaleystore.id
+   ```
+4. Tes: `curl -X POST https://pay.jhonaleystore.id/relay -H "x-proxy-token: TOKEN" -d '{"method":"GET","path":"/api/deposit/check/1"}'`
+5. Jangan buka port 8787 ke publik (`ufw deny 8787`).
+6. Whitelist IP VPS di panel Austin.
+
+URL relay untuk backend: `https://pay.jhonaleystore.id/relay`
