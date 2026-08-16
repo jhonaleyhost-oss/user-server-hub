@@ -247,9 +247,35 @@ const Upgrade = () => {
     }
   };
 
+  const confirmCancelQris = async () => {
+    if (!user || !orderId) return;
+    setCancelling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-qris', {
+        body: { order_id: orderId },
+      });
+      if (error || data?.error) {
+        toast.error('Gagal batalkan: ' + (data?.error || error?.message));
+        return;
+      }
+      toast.success('Pembayaran dibatalkan');
+      setShowQris(false);
+      setQrisPayload('');
+      setPollingOid(null);
+      setPaid(false);
+      try {
+        localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
+      } catch {
+        // ignore
+      }
+      await loadPendingOrders();
+    } finally {
+      setCancelling(false);
+      setCancelOpen(false);
+    }
+  };
+
   const handlePayPending = async (o: PendingOrder) => {
-    if (!user) return;
-    setManualChecking(o.order_id);
     if (!user) return;
     setManualChecking(o.order_id);
     try {
