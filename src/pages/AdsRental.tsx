@@ -25,6 +25,16 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import GlassCard from '@/components/GlassCard';
 import AppShell from '@/components/AppShell';
 import { PageTransition } from '@/components/PageTransition';
@@ -119,6 +129,8 @@ const AdsRental = () => {
   const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
   const [polling, setPolling] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [paid, setPaid] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
@@ -608,11 +620,7 @@ const AdsRental = () => {
           {showQris && qrisPayload && (
             <GlassCard className="p-6 relative">
               <button
-                onClick={() => {
-                  setShowQris(false);
-                  setPolling(null);
-                  if (user) localStorage.removeItem(QRIS_KEY(user.id));
-                }}
+                onClick={() => setCancelOpen(true)}
                 className="absolute top-3 right-3 p-1.5 rounded-full bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
               >
                 <X className="w-4 h-4" />
