@@ -226,13 +226,11 @@ const Upgrade = () => {
     if (!confirm('Batalkan pembayaran ini?')) return;
     setManualChecking(oid);
     try {
-      const { error } = await supabase
-        .from('reseller_orders')
-        .update({ status: 'cancelled' })
-        .eq('order_id', oid)
-        .eq('user_id', user.id);
-      if (error) {
-        toast.error('Gagal batalkan: ' + error.message);
+      const { data, error } = await supabase.functions.invoke('cancel-qris', {
+        body: { order_id: oid },
+      });
+      if (error || data?.error) {
+        toast.error('Gagal batalkan: ' + (data?.error || error?.message));
         return;
       }
       toast.success('Pembayaran dibatalkan');
