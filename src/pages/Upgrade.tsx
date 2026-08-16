@@ -250,6 +250,8 @@ const Upgrade = () => {
   const handlePayPending = async (o: PendingOrder) => {
     if (!user) return;
     setManualChecking(o.order_id);
+    if (!user) return;
+    setManualChecking(o.order_id);
     try {
       const { data, error } = await supabase.functions.invoke('create-qris', {
         body: { amount: o.amount, order_id: o.order_id },
