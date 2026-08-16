@@ -6,6 +6,7 @@ After=network.target
 Type=simple
 WorkingDirectory=/opt/austin-proxy
 Environment=PORT=8787
+Environment=HOST=127.0.0.1
 Environment=PROXY_TOKEN=GANTI_DENGAN_TOKEN_RAHASIA
 ExecStart=/usr/bin/node /opt/austin-proxy/server.js
 Restart=always

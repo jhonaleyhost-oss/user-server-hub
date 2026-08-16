@@ -5,6 +5,7 @@ const https = require("https");
 
 const TOKEN = process.env.PROXY_TOKEN || "";
 const PORT = Number(process.env.PORT || 8787);
+const LISTEN_HOST = process.env.HOST || "127.0.0.1";
 const HOST = "austinstore.id";
 
 const server = http.createServer((req, res) => {
@@ -65,4 +66,6 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => console.log(`austin-proxy listening on :${PORT}`));
+server.listen(PORT, LISTEN_HOST, () =>
+  console.log(`austin-proxy listening on ${LISTEN_HOST}:${PORT}`)
+);
