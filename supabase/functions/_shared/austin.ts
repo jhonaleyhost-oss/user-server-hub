@@ -173,11 +173,37 @@ export async function austinRequest<T = any>(
     headers["X-Signature"] = await sign(`${method}\n${path}\n${body}\n${timestamp}`, apiSecret);
   }
 
-  const res = await ipv4Fetch(`${AUSTIN_BASE}${path}`, {
-    method,
-    headers,
-    body: body || undefined,
-  });
+  // Prefer a static-IP relay (user VPS) when configured, so Austin Pay's IP
+  // whitelist can be satisfied. Falls back to direct IPv4 egress otherwise.
+  const proxyUrl = Deno.env.get("AUSTIN_PROXY_URL");
+  const proxyToken = Deno.env.get("AUSTIN_PROXY_TOKEN");
+  let res: { status: number; text: string };
+  if (proxyUrl) {
+    const r = await fetch(proxyUrl.replace(/\/$/, ""), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(proxyToken ? { "X-Proxy-Token": proxyToken } : {}),
+      },
+      body: JSON.stringify({ method, path, headers, body }),
+    });
+    const relayed = await r.json().catch(() => null);
+    if (!r.ok || !relayed || typeof relayed.status !== "number") {
+      console.error(`[austin] proxy error ${r.status}`);
+      return {
+        ok: false,
+        status: r.status || 502,
+        data: { success: false, message: `Proxy error (${r.status})` },
+      };
+    }
+    res = { status: relayed.status, text: String(relayed.body ?? "") };
+  } else {
+    res = await ipv4Fetch(`${AUSTIN_BASE}${path}`, {
+      method,
+      headers,
+      body: body || undefined,
+    });
+  }
   const text = res.text;
   const okStatus = res.status >= 200 && res.status < 300;
   let data: any;
