@@ -26,6 +26,16 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import GlassCard from '@/components/GlassCard';
 import AppShell from '@/components/AppShell';
 import { PageTransition } from '@/components/PageTransition';
@@ -133,6 +143,8 @@ const Upgrade = () => {
   const [orderId, setOrderId] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
   const [showQris, setShowQris] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [qrisLoading, setQrisLoading] = useState(false);
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
@@ -214,13 +226,11 @@ const Upgrade = () => {
     if (!confirm('Batalkan pembayaran ini?')) return;
     setManualChecking(oid);
     try {
-      const { error } = await supabase
-        .from('reseller_orders')
-        .update({ status: 'cancelled' })
-        .eq('order_id', oid)
-        .eq('user_id', user.id);
-      if (error) {
-        toast.error('Gagal batalkan: ' + error.message);
+      const { data, error } = await supabase.functions.invoke('cancel-qris', {
+        body: { order_id: oid },
+      });
+      if (error || data?.error) {
+        toast.error('Gagal batalkan: ' + (data?.error || error?.message));
         return;
       }
       toast.success('Pembayaran dibatalkan');
@@ -234,6 +244,34 @@ const Upgrade = () => {
       await loadPendingOrders();
     } finally {
       setManualChecking(null);
+    }
+  };
+
+  const confirmCancelQris = async () => {
+    if (!user || !orderId) return;
+    setCancelling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-qris', {
+        body: { order_id: orderId },
+      });
+      if (error || data?.error) {
+        toast.error('Gagal batalkan: ' + (data?.error || error?.message));
+        return;
+      }
+      toast.success('Pembayaran dibatalkan');
+      setShowQris(false);
+      setQrisPayload('');
+      setPollingOid(null);
+      setPaid(false);
+      try {
+        localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
+      } catch {
+        // ignore
+      }
+      await loadPendingOrders();
+    } finally {
+      setCancelling(false);
+      setCancelOpen(false);
     }
   };
 
@@ -1129,10 +1167,14 @@ const Upgrade = () => {
                       size="icon"
                       variant="ghost"
                       onClick={() => {
-                        setShowQris(false);
-                        setPollingOid(null);
-                        setQrisPayload('');
-                        setPaid(false);
+                        if (paid) {
+                          setShowQris(false);
+                          setPollingOid(null);
+                          setQrisPayload('');
+                          setPaid(false);
+                          return;
+                        }
+                        setCancelOpen(true);
                       }}
                       className="h-7 w-7 -mr-1 -mt-1 text-muted-foreground hover:text-destructive"
                       aria-label="Tutup"
@@ -1391,6 +1433,31 @@ const Upgrade = () => {
           </div>
         </div>
       </AppShell>
+
+      <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <AlertDialogContent className="bg-background border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan pembayaran?</AlertDialogTitle>
+            <AlertDialogDescription>
+              QRIS ini akan dibatalkan dan tidak bisa dibayar lagi. Kamu tetap bisa membuat
+              pembayaran baru kapan saja.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Lanjut Bayar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelling}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmCancelQris();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling ? 'Membatalkan...' : 'Ya, Batalkan'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageTransition>
   );
 };

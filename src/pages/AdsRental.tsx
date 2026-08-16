@@ -25,6 +25,16 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import GlassCard from '@/components/GlassCard';
 import AppShell from '@/components/AppShell';
 import { PageTransition } from '@/components/PageTransition';
@@ -119,6 +129,8 @@ const AdsRental = () => {
   const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
   const [polling, setPolling] = useState<string | null>(null);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [paid, setPaid] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
@@ -296,6 +308,32 @@ const AdsRental = () => {
     if (error) return toast.error('Gagal: ' + error.message);
     toast.success(newStatus === 'active' ? 'Iklan diaktifkan' : 'Iklan dinonaktifkan sementara');
     fetchAll();
+  };
+
+  const confirmCancelQris = async () => {
+    if (!user || !orderId) return;
+    setCancelling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-qris', {
+        body: { order_id: orderId },
+      });
+      if (error || data?.error) {
+        toast.error('Gagal batalkan: ' + (data?.error || error?.message));
+        return;
+      }
+      toast.success('Pembayaran dibatalkan');
+      setShowQris(false);
+      setPolling(null);
+      try {
+        localStorage.removeItem(QRIS_KEY(user.id));
+      } catch {
+        // ignore
+      }
+      await fetchAll();
+    } finally {
+      setCancelling(false);
+      setCancelOpen(false);
+    }
   };
 
   const deleteRental = async (r: MyRental) => {
@@ -608,11 +646,7 @@ const AdsRental = () => {
           {showQris && qrisPayload && (
             <GlassCard className="p-6 relative">
               <button
-                onClick={() => {
-                  setShowQris(false);
-                  setPolling(null);
-                  if (user) localStorage.removeItem(QRIS_KEY(user.id));
-                }}
+                onClick={() => setCancelOpen(true)}
                 className="absolute top-3 right-3 p-1.5 rounded-full bg-secondary hover:bg-destructive/20 text-muted-foreground hover:text-destructive"
               >
                 <X className="w-4 h-4" />
@@ -654,6 +688,31 @@ const AdsRental = () => {
           )}
         </div>
       </PageTransition>
+
+      <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <AlertDialogContent className="bg-background border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan pembayaran?</AlertDialogTitle>
+            <AlertDialogDescription>
+              QRIS ini akan dibatalkan dan tidak bisa dibayar lagi. Kamu tetap bisa memesan slot
+              iklan lagi kapan saja.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Lanjut Bayar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={cancelling}
+              onClick={(e) => {
+                e.preventDefault();
+                confirmCancelQris();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling ? 'Membatalkan...' : 'Ya, Batalkan'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 };
