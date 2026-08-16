@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown, Circle, Crown, ShieldCheck } from "lucide-react";
+import { Users as UsersIcon, Search, Loader2, Calendar, Server, Shield, ArrowUpDown, Circle, Crown, ShieldCheck, Clock, Infinity as InfinityIcon } from "lucide-react";
 import { useOnlinePresence } from "@/hooks/useOnlinePresence";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -417,7 +417,7 @@ export default function Users() {
                           <span className="text-sm">
                             {permanent ? (
                               <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
-                                <Infinity className="w-4 h-4" /> Permanen
+                                <InfinityIcon className="w-4 h-4" /> Permanen
                               </span>
                             ) : expires ? (
                               <LiveCountdown iso={expires} />
