@@ -192,27 +192,38 @@ export async function austinRequest<T = any>(
   return { ok: okStatus && data?.success !== false, status: res.status, data };
 }
 
-/** Create a dynamic QRIS deposit. Returns final amount (incl. unique fee) + QR payload. */
-export async function austinCreateDeposit(amount: number) {
-  const v = await getAustinVersion();
-  return await austinRequest("POST", `/api/${v}/deposit/create`, { amount });
-}
+// ---------------------------------------------------------------------------
+// Austin Pay now exposes UNVERSIONED deposit endpoints (/api/deposit/*), with
+// the QRIS gateway (Casaku vs QRIS Statis/Mutasiku) chosen server-side by the
+// Austin admin panel. We call the unversioned path first and only fall back to
+// the legacy /api/v1|v2/* routes if it is unavailable (404/405/501).
+// ---------------------------------------------------------------------------
 
-/** Poll payment status: paid | pending | expired | cancel (selected version first, then the other) */
-export async function austinCheckDeposit(transactionId: string) {
-  const id = encodeURIComponent(transactionId);
+async function austinTry(
+  method: "GET" | "POST",
+  suffix: string,
+  bodyObj?: unknown,
+) {
+  const modern = await austinRequest(method, `/api${suffix}`, bodyObj);
+  if (modern.ok || ![404, 405, 501].includes(modern.status)) return modern;
+
   const v = await getAustinVersion();
   const other = v === "v2" ? "v1" : "v2";
-  const first = await austinRequest("GET", `/api/${v}/deposit/check/${id}`);
+  const first = await austinRequest(method, `/api/${v}${suffix}`, bodyObj);
   if (first.ok) return first;
-  return await austinRequest("GET", `/api/${other}/deposit/check/${id}`);
+  return await austinRequest(method, `/api/${other}${suffix}`, bodyObj);
+}
+
+/** Create a dynamic QRIS deposit. Returns final amount (incl. fee/unique code) + QR payload. */
+export async function austinCreateDeposit(amount: number) {
+  return await austinTry("POST", `/deposit/create`, { amount });
+}
+
+/** Poll payment status: paid | pending | expired | cancel */
+export async function austinCheckDeposit(transactionId: string) {
+  return await austinTry("GET", `/deposit/check/${encodeURIComponent(transactionId)}`);
 }
 
 export async function austinCancelDeposit(transactionId: string) {
-  const id = encodeURIComponent(transactionId);
-  const v = await getAustinVersion();
-  const other = v === "v2" ? "v1" : "v2";
-  const first = await austinRequest("POST", `/api/${v}/deposit/cancel/${id}`);
-  if (first.ok) return first;
-  return await austinRequest("POST", `/api/${other}/deposit/cancel/${id}`);
+  return await austinTry("POST", `/deposit/cancel/${encodeURIComponent(transactionId)}`);
 }
