@@ -26,6 +26,16 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import GlassCard from '@/components/GlassCard';
 import AppShell from '@/components/AppShell';
 import { PageTransition } from '@/components/PageTransition';
@@ -133,6 +143,8 @@ const Upgrade = () => {
   const [orderId, setOrderId] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
   const [showQris, setShowQris] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [qrisLoading, setQrisLoading] = useState(false);
   const [pollingOid, setPollingOid] = useState<string | null>(null);
   const [paid, setPaid] = useState(false);
