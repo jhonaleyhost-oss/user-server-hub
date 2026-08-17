@@ -12,6 +12,7 @@ interface ServerPayload {
   name?: string;
   domain?: string;
   plta_key?: string;
+  plta_share_key?: string;
   pltc_key?: string;
   server_type?: 'public' | 'private';
   location_id?: number;
@@ -62,6 +63,7 @@ serve(async (req) => {
     }
     // Only set keys when provided (non-empty), so admin can edit without re-typing keys
     if (body.plta_key && body.plta_key.trim().length > 0) payload.plta_key = body.plta_key.trim();
+    if (body.plta_share_key && body.plta_share_key.trim().length > 0) payload.plta_share_key = body.plta_share_key.trim();
     if (body.pltc_key && body.pltc_key.trim().length > 0) payload.pltc_key = body.pltc_key.trim();
 
     if (action === 'create') {
