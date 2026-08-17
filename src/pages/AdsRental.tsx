@@ -8,7 +8,6 @@ import {
   Clock,
   QrCode,
   Loader2,
-  Copy,
   X,
   CheckCircle2,
   Infinity as InfinityIcon,
