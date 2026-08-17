@@ -327,6 +327,7 @@ const AdsRental = () => {
       }
       toast.success('Pembayaran dibatalkan');
       setShowQris(false);
+      setAustinRef('');
       setPolling(null);
       try {
         localStorage.removeItem(QRIS_KEY(user.id));
