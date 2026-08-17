@@ -5,6 +5,7 @@ import {
   Server, Shield, Zap, Crown, Users, Terminal, Globe, Check,
   ArrowRight, Sparkles, Rocket, Lock, Clock, HeartHandshake,
   MessageCircle, Star, LogIn, Menu, X, Mail, Tag, Megaphone, Send,
+  Activity,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -13,6 +14,7 @@ import ContactSection from '@/components/ContactSection';
 import { Button } from '@/components/ui/button';
 import { PageTransition } from '@/components/PageTransition';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const features = [
   { icon: Rocket, title: 'Deploy Instan', desc: 'Buat panel Pterodactyl hanya dalam hitungan detik, tanpa konfigurasi ribet.' },
