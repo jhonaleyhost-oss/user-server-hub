@@ -46,7 +46,7 @@ serve(async (req) => {
 
     const { data: serverData, error: serverError } = await supabase
       .from('pterodactyl_servers')
-      .select('id, domain, plta_key, pltc_key, egg_id, python_egg_id, nest_id, server_type, is_active')
+      .select('id, domain, plta_key, plta_share_key, pltc_key, egg_id, python_egg_id, nest_id, server_type, is_active')
       .eq('id', serverId)
       .single();
     if (serverError || !serverData) throw new Error('Server Pterodactyl tidak ditemukan');
@@ -95,13 +95,16 @@ serve(async (req) => {
     const created = await createRes.json();
     const pteroUserId = created.attributes.id;
 
+    // Key yang dibagikan ke pengguna (fallback ke key create bila belum diisi admin)
+    const shareKey = serverData.plta_share_key || serverData.plta_key;
+
     const { data: apRow, error: insErr } = await supabase
       .from('admin_panels')
       .insert({
         user_id: user.id, server_id: serverId,
         ptero_user_id: pteroUserId, username, email, password,
         login_url: serverData.domain,
-        plta_key: serverData.plta_key, pltc_key: serverData.pltc_key,
+        plta_key: shareKey, pltc_key: serverData.pltc_key,
       })
       .select().single();
     if (insErr) throw new Error(`Gagal simpan admin panel: ${insErr.message}`);
