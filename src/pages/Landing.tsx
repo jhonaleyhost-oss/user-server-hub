@@ -316,20 +316,30 @@ const Landing = () => {
 
             {/* Stats */}
             <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
-              {stats.map((s, i) => (
-                <motion.div
-                  key={s.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.05 }}
-                  className="glass-card rounded-xl p-4"
-                >
-                  <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    {s.value}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
-                </motion.div>
-              ))}
+              {stats.map((s, i) => {
+                const Icon = s.icon;
+                return (
+                  <motion.div
+                    key={s.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 + i * 0.05 }}
+                    className="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-2">
+                      <Icon className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent min-h-[2rem]">
+                      {s.loading ? (
+                        <span className="inline-block w-12 h-6 rounded-md bg-muted animate-pulse" />
+                      ) : (
+                        s.value
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>
