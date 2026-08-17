@@ -559,116 +559,80 @@ const Upgrade = () => {
       const svg64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
       const img = new Image();
       img.crossOrigin = 'anonymous';
+      const total = qrisAmount || payAmount;
+      const title = isAdpTier ? 'ADMIN PANEL SERVER' : 'UPGRADE RESELLER';
       img.onload = () => {
-        // Canvas wrapper mirroring on-screen card
         const W = 720;
-        const PAD = 32;
-        const qrSize = 480;
-        const headerH = 88;
-        const totalH = 96;
-        const qrBoxH = qrSize + 56;
-        const footerH = 120;
-        const GAP = 18;
-        const H = PAD + headerH + GAP + totalH + GAP + qrBoxH + GAP + footerH + PAD;
+        const PAD = 40;
+        const qrSize = 460;
+        const qrBox = qrSize + 56;
+        const H = 1000;
 
         const canvas = document.createElement('canvas');
         canvas.width = W;
         canvas.height = H;
         const ctx = canvas.getContext('2d')!;
 
-        // Background gradient (indigo → purple → fuchsia)
-        const bg = ctx.createLinearGradient(0, 0, W, H);
-        bg.addColorStop(0, '#312e81');
-        bg.addColorStop(0.5, '#6b21a8');
-        bg.addColorStop(1, '#a21caf');
-        ctx.fillStyle = bg;
-        roundRect(ctx, 0, 0, W, H, 24);
+        // Clean light card
+        ctx.fillStyle = '#f4f5f7';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, 24, 24, W - 48, H - 48, 28);
         ctx.fill();
 
-        let y = PAD;
-
-        // Header pill
-        ctx.fillStyle = 'rgba(0,0,0,0.45)';
-        roundRect(ctx, PAD, y, W - PAD * 2, headerH, 16);
-        ctx.fill();
-        ctx.fillStyle = '#fde68a';
-        ctx.font = 'bold 28px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('👑 UPGRADE RESELLER 👑', W / 2, y + 38);
-        ctx.fillStyle = '#d1d5db';
+        let y = 96;
+
+        // Brand
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText('Jhonaley Store', W / 2, y);
+        y += 30;
+        ctx.fillStyle = '#64748b';
         ctx.font = '15px sans-serif';
-        ctx.fillText(`Paket ${plan.label} • ${plan.duration}`, W / 2, y + 66);
-        y += headerH + GAP;
+        ctx.fillText(`${title} • ${plan.label} (${plan.duration})`, W / 2, y);
+        y += 40;
 
-        // Total pill
-        const totalGrad = ctx.createLinearGradient(0, y, W, y + totalH);
-        totalGrad.addColorStop(0, '#f43f5e');
-        totalGrad.addColorStop(1, '#d946ef');
-        ctx.fillStyle = totalGrad;
-        roundRect(ctx, PAD, y, W - PAD * 2, totalH, 16);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
+        // Divider
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(PAD + 8, y);
+        ctx.lineTo(W - PAD - 8, y);
+        ctx.stroke();
+        y += 46;
+
+        // Total
+        ctx.fillStyle = '#64748b';
         ctx.font = '600 14px sans-serif';
-        ctx.fillText('🧾 TOTAL PEMBAYARAN', W / 2, y + 32);
-        ctx.font = 'bold 38px sans-serif';
-        ctx.fillText(`Rp ${plan.amount.toLocaleString('id-ID')}`, W / 2, y + 76);
-        y += totalH + GAP;
-
-        // QR box (white) with fuchsia corner markers
-        const qrX = (W - qrSize) / 2;
-        const qrY = y + 28;
-        ctx.fillStyle = '#ffffff';
-        roundRect(ctx, PAD, y, W - PAD * 2, qrBoxH, 20);
-        ctx.fill();
-        // corner markers
-        ctx.strokeStyle = '#e879f9';
-        ctx.lineWidth = 4;
-        const cm = 22;
-        const cx1 = PAD + 14,
-          cy1 = y + 14;
-        const cx2 = W - PAD - 14,
-          cy2 = y + qrBoxH - 14;
-        // top-left
-        ctx.beginPath();
-        ctx.moveTo(cx1, cy1 + cm);
-        ctx.lineTo(cx1, cy1);
-        ctx.lineTo(cx1 + cm, cy1);
-        ctx.stroke();
-        // top-right
-        ctx.beginPath();
-        ctx.moveTo(cx2 - cm, cy1);
-        ctx.lineTo(cx2, cy1);
-        ctx.lineTo(cx2, cy1 + cm);
-        ctx.stroke();
-        // bottom-left
-        ctx.beginPath();
-        ctx.moveTo(cx1, cy2 - cm);
-        ctx.lineTo(cx1, cy2);
-        ctx.lineTo(cx1 + cm, cy2);
-        ctx.stroke();
-        // bottom-right
-        ctx.beginPath();
-        ctx.moveTo(cx2 - cm, cy2);
-        ctx.lineTo(cx2, cy2);
-        ctx.lineTo(cx2, cy2 - cm);
-        ctx.stroke();
-
-        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
-        y += qrBoxH + GAP;
-
-        // Footer block
-        ctx.fillStyle = 'rgba(0,0,0,0.45)';
-        roundRect(ctx, PAD, y, W - PAD * 2, footerH, 16);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('🔒 SECURE PAYMENT • QRIS', W / 2, y + 34);
-        ctx.fillStyle = '#d1d5db';
+        ctx.fillText('TOTAL PEMBAYARAN', W / 2, y);
+        y += 46;
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 44px sans-serif';
+        ctx.fillText(`Rp ${total.toLocaleString('id-ID')}`, W / 2, y);
+        y += 22;
+        ctx.fillStyle = '#94a3b8';
         ctx.font = '13px sans-serif';
-        ctx.fillText('Jhonaley Store • Protected by QRIS', W / 2, y + 56);
-        ctx.fillStyle = '#fde68a';
-        ctx.font = 'bold 14px "Courier New", monospace';
-        ctx.fillText(`REF: ${orderId || '-'}`, W / 2, y + 92);
+        ctx.fillText('Bayar sesuai nominal persis (termasuk kode unik)', W / 2, y);
+        y += 34;
+
+        // QR frame
+        const qx = (W - qrBox) / 2;
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 2;
+        roundRect(ctx, qx, y, qrBox, qrBox, 24);
+        ctx.stroke();
+        ctx.drawImage(img, qx + 28, y + 28, qrSize, qrSize);
+        y += qrBox + 44;
+
+        // Footer
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '600 15px sans-serif';
+        ctx.fillText('Scan dengan aplikasi e-wallet / mobile banking (QRIS)', W / 2, y);
+        y += 26;
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '13px "Courier New", monospace';
+        ctx.fillText(`REF: ${orderId || '-'}`, W / 2, y);
 
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
