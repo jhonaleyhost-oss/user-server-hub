@@ -1129,7 +1129,7 @@ const Upgrade = () => {
             {/* QRIS canvas */}
             {showQris && qrisPayload && (
               <GlassCard className="p-3 sm:p-4 mb-6" animate={false}>
-                <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500/30 via-purple-500/30 to-fuchsia-500/30 border border-white/10 p-3 space-y-3">
+                <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-3">
                   <div className="flex justify-end">
                     <Button
                       size="icon"
@@ -1151,33 +1151,34 @@ const Upgrade = () => {
                     </Button>
                   </div>
 
-                  <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-3 text-center border border-white/10">
-                    <div
-                      className={`text-base font-extrabold tracking-wide bg-clip-text text-transparent ${
-                        isAdpTier
-                          ? 'bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500'
-                          : 'bg-gradient-to-r from-primary via-accent to-amber'
-                      }`}
-                    >
-                      {isAdpTier ? '🛡️ ADMIN PANEL SERVER 🛡️' : '👑 UPGRADE RESELLER 👑'}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-foreground">
+                      {isAdpTier ? 'Admin Panel Server' : 'Upgrade Reseller'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
                       Paket {plan.label} • {plan.duration}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border/60 bg-secondary/30 px-4 py-3 text-center">
+                    <div className="text-[10px] font-semibold tracking-wider text-muted-foreground">
+                      TOTAL PEMBAYARAN
+                    </div>
+                    <div className="text-3xl font-extrabold text-foreground tabular-nums">
+                      Rp {(qrisAmount || payAmount).toLocaleString('id-ID')}
+                    </div>
+                    {qrisAmount > payAmount && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        Harga Rp {payAmount.toLocaleString('id-ID')} + kode unik Rp{' '}
+                        {(qrisAmount - payAmount).toLocaleString('id-ID')}
+                      </div>
+                    )}
+                    <div className="text-[10px] text-amber mt-1">
+                      Bayar sesuai nominal persis agar terverifikasi otomatis
                     </div>
                   </div>
 
-                  <div className="rounded-xl px-4 py-3 text-center bg-gradient-to-r from-rose-500 to-fuchsia-500 text-white shadow-lg">
-                    <div className="text-[11px] font-semibold opacity-90">🧾 TOTAL PEMBAYARAN</div>
-                    <div className="text-2xl font-extrabold">
-                      Rp {plan.amount.toLocaleString('id-ID')}
-                    </div>
-                  </div>
-
-                  <div className="relative mx-auto bg-white rounded-2xl p-5 w-full max-w-[280px]">
-                    <span className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-fuchsia-400 rounded-tl-md" />
-                    <span className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-fuchsia-400 rounded-tr-md" />
-                    <span className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-fuchsia-400 rounded-bl-md" />
-                    <span className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-fuchsia-400 rounded-br-md" />
+                  <div className="mx-auto bg-white rounded-2xl p-4 w-full max-w-[272px] border border-border/60">
                     <div className="relative flex items-center justify-center">
                       <QRCodeSVG
                         value={qrisPayload}
@@ -1188,39 +1189,17 @@ const Upgrade = () => {
                         marginSize={0}
                         id="qris-svg"
                       />
-                      <div className="absolute w-12 h-12 rounded-full bg-white border-2 border-fuchsia-400 flex items-center justify-center shadow overflow-hidden">
-                        <img src={qrisLogo} alt="Logo" className="w-full h-full object-cover" />
+                      <div className="absolute w-11 h-11 rounded-full bg-white border border-border flex items-center justify-center shadow overflow-hidden">
+                        <img src={qrisLogo} alt="QRIS" className="w-full h-full object-cover" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-center text-[10px] font-semibold text-muted-foreground">
-                    ▦ SUPPORTED PAYMENT METHODS ▦
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { label: 'DANA', color: 'from-sky-500 to-blue-600' },
-                      { label: 'OVO', color: 'from-purple-500 to-indigo-600' },
-                      { label: 'GOPAY', color: 'from-emerald-500 to-green-600' },
-                      { label: 'BANK', color: 'from-rose-500 to-red-600' },
-                    ].map((m) => (
-                      <div
-                        key={m.label}
-                        className={`text-center text-[11px] font-bold text-white py-1.5 rounded-lg bg-gradient-to-br ${m.color} shadow`}
-                      >
-                        {m.label}
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Scan lewat DANA, OVO, GoPay, ShopeePay, atau mobile banking apa pun.
+                  </p>
 
-                  <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-2 text-center border border-white/10">
-                    <div className="text-[11px] font-bold text-foreground">🔒 SECURE PAYMENT</div>
-                    <div className="text-[10px] text-muted-foreground">
-                      Protected by QRIS • Jhonaley Store
-                    </div>
-                  </div>
-
-                  <div className="text-center text-[10px] text-muted-foreground tracking-widest font-mono">
+                  <div className="text-center text-[10px] text-muted-foreground font-mono">
                     REF: {orderId}
                   </div>
 
@@ -1249,7 +1228,7 @@ const Upgrade = () => {
 
                   {!paid && (
                     <Button
-                      onClick={() => handleManualCheck(orderId, plan.amount)}
+                      onClick={() => handleManualCheck(orderId, payAmount)}
                       disabled={manualChecking === orderId}
                       variant="outline"
                       className="w-full h-10 gap-2 border-emerald-500/40 hover:bg-emerald-500/10"
