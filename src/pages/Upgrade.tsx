@@ -141,6 +141,7 @@ const Upgrade = () => {
 
   const [selected, setSelected] = useState<PlanKey>('perm');
   const [orderId, setOrderId] = useState('');
+  const [austinRef, setAustinRef] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
   const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
