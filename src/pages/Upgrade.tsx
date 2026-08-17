@@ -142,6 +142,7 @@ const Upgrade = () => {
   const [selected, setSelected] = useState<PlanKey>('perm');
   const [orderId, setOrderId] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
+  const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -291,6 +292,7 @@ const Upgrade = () => {
       setSelected(o.plan);
       setOrderId(o.order_id);
       setQrisPayload(data.qris as string);
+      setQrisAmount(Number(data.amount ?? o.amount));
       setShowQris(true);
       setPaid(false);
       setPollingOid(o.order_id);
@@ -301,7 +303,7 @@ const Upgrade = () => {
             orderId: o.order_id,
             qrisPayload: data.qris,
             plan: o.plan,
-            amount: o.amount,
+            amount: Number(data.amount ?? o.amount),
             savedAt: Date.now(),
           }),
         );
@@ -337,6 +339,7 @@ const Upgrade = () => {
         setSelected(saved.plan);
         setOrderId(saved.orderId);
         setQrisPayload(saved.qrisPayload);
+        setQrisAmount(Number(saved.amount) || 0);
         setShowQris(true);
         setPollingOid(saved.orderId);
       }
@@ -464,6 +467,7 @@ const Upgrade = () => {
         return;
       }
       setQrisPayload(data.qris as string);
+      setQrisAmount(Number(data.amount ?? payAmount));
       const { error: insErr } = await supabase.from('reseller_orders').insert({
         user_id: user.id,
         username: fullName,
@@ -486,7 +490,7 @@ const Upgrade = () => {
             orderId: oid,
             qrisPayload: data.qris,
             plan: plan.key,
-            amount: plan.amount,
+            amount: Number(data.amount ?? payAmount),
             savedAt: Date.now(),
           }),
         );
