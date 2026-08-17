@@ -12,7 +12,6 @@ import {
   Infinity as InfinityIcon,
   QrCode,
   Loader2,
-  Copy,
   X,
   CheckCircle2,
   CalendarClock,
@@ -83,9 +82,6 @@ const ADP_PLANS: Plan[] = [
   { key: 'adp_2bln', label: '2 Bulan', duration: '60 hari', durationDays: 60, amount: 20000, badge: 'Hemat' },
   { key: 'adp_perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 35000, badge: 'Terbaik', highlight: true },
 ];
-
-const PAKASIR_SLUG = 'jhonaley-store';
-const PAKASIR_BASE = 'https://app.pakasir.com';
 
 const QRIS_STORAGE_KEY = (uid: string) => `upgrade_qris_${uid}`;
 
@@ -546,20 +542,6 @@ const Upgrade = () => {
     } finally {
       setManualChecking(null);
     }
-  };
-
-  const pakasirUrl = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${plan.amount}?qris_only=1&order_id=${encodeURIComponent(
-    orderId || 'PREVIEW',
-  )}`;
-
-  const handleCopyUrl = async () => {
-    if (qrisPayload) {
-      await navigator.clipboard.writeText(qrisPayload);
-      toast.success('Kode QRIS disalin');
-      return;
-    }
-    await navigator.clipboard.writeText(pakasirUrl);
-    toast.success('Link pembayaran disalin');
   };
 
   const handleDownloadQris = async () => {
@@ -1215,16 +1197,10 @@ const Upgrade = () => {
                     REF: {austinRef || orderId}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button onClick={handleCopyUrl} variant="outline" className="h-10 gap-2">
-                      <Copy className="w-4 h-4" />
-                      Salin Link
-                    </Button>
-                    <Button onClick={handleDownloadQris} variant="outline" className="h-10 gap-2">
-                      <Download className="w-4 h-4" />
-                      Download QRIS
-                    </Button>
-                  </div>
+                  <Button onClick={handleDownloadQris} variant="outline" className="h-10 gap-2 w-full sm:w-auto">
+                    <Download className="w-4 h-4" />
+                    Download QRIS
+                  </Button>
 
                   {paid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 pt-1 font-semibold">

@@ -8,7 +8,6 @@ import {
   Clock,
   QrCode,
   Loader2,
-  Copy,
   X,
   CheckCircle2,
   Infinity as InfinityIcon,
@@ -352,14 +351,6 @@ const AdsRental = () => {
     fetchAll();
   };
 
-  const handleCopy = async () => {
-    const value =
-      qrisPayload ||
-      `https://app.pakasir.com/pay/jhonaley-store/${qrisAmount}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
-    await navigator.clipboard.writeText(value);
-    toast.success(qrisPayload ? 'Kode QRIS disalin' : 'Link pembayaran disalin');
-  };
-
   if (loading) {
     return (
       <AppShell>
@@ -670,11 +661,6 @@ const AdsRental = () => {
                 <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Menunggu pembayaran… aktivasi otomatis begitu lunas.
-                </div>
-                <div className="flex gap-2 justify-center flex-wrap">
-                  <Button variant="outline" size="sm" onClick={handleCopy} className="gap-2">
-                    <Copy className="w-3.5 h-3.5" /> Salin Link Bayar
-                  </Button>
                 </div>
               </div>
             </GlassCard>
