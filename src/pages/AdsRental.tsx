@@ -351,14 +351,6 @@ const AdsRental = () => {
     fetchAll();
   };
 
-  const handleCopy = async () => {
-    const value =
-      qrisPayload ||
-      `https://app.pakasir.com/pay/jhonaley-store/${qrisAmount}?qris_only=1&order_id=${encodeURIComponent(orderId)}`;
-    await navigator.clipboard.writeText(value);
-    toast.success(qrisPayload ? 'Kode QRIS disalin' : 'Link pembayaran disalin');
-  };
-
   if (loading) {
     return (
       <AppShell>
