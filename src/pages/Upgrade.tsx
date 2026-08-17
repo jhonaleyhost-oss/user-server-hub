@@ -342,6 +342,7 @@ const Upgrade = () => {
       if (saved.orderId && saved.qrisPayload && saved.plan) {
         setSelected(saved.plan);
         setOrderId(saved.orderId);
+        setAustinRef(saved.austinRef || saved.orderId);
         setQrisPayload(saved.qrisPayload);
         setQrisAmount(Number(saved.amount) || 0);
         setShowQris(true);
