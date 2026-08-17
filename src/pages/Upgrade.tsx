@@ -240,6 +240,7 @@ const Upgrade = () => {
       if (orderId === oid) {
         setShowQris(false);
         setQrisPayload('');
+        setAustinRef('');
         setPollingOid(null);
         localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
       }
