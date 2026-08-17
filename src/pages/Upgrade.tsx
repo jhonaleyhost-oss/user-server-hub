@@ -264,6 +264,7 @@ const Upgrade = () => {
       toast.success('Pembayaran dibatalkan');
       setShowQris(false);
       setQrisPayload('');
+      setAustinRef('');
       setPollingOid(null);
       setPaid(false);
       try {
