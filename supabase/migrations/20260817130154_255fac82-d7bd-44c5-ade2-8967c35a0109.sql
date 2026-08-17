@@ -1,0 +1,1 @@
+ALTER TABLE public.pterodactyl_servers ADD COLUMN IF NOT EXISTS plta_share_key text;
