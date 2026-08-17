@@ -544,20 +544,6 @@ const Upgrade = () => {
     }
   };
 
-  const pakasirUrl = `${PAKASIR_BASE}/pay/${PAKASIR_SLUG}/${plan.amount}?qris_only=1&order_id=${encodeURIComponent(
-    orderId || 'PREVIEW',
-  )}`;
-
-  const handleCopyUrl = async () => {
-    if (qrisPayload) {
-      await navigator.clipboard.writeText(qrisPayload);
-      toast.success('Kode QRIS disalin');
-      return;
-    }
-    await navigator.clipboard.writeText(pakasirUrl);
-    toast.success('Link pembayaran disalin');
-  };
-
   const handleDownloadQris = async () => {
     try {
       const svg = document.getElementById('qris-svg') as unknown as SVGSVGElement | null;
