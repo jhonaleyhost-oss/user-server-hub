@@ -56,11 +56,22 @@ const plans = [
   },
 ];
 
-const stats = [
-  { value: '5K+', label: 'Pengguna Aktif' },
-  { value: '10K+', label: 'Panel Dibuat' },
-  { value: '99.9%', label: 'Uptime Server' },
-  { value: '24/7', label: 'Support Online' },
+interface LiveStats {
+  total_users: number;
+  total_reseller: number;
+  total_adp: number;
+}
+
+const formatCount = (n: number) => new Intl.NumberFormat('id-ID').format(n);
+
+const STATIC_STATS = [
+  { value: '99.9%', label: 'Uptime Server', icon: Activity },
+];
+
+const STATS_CONFIG = [
+  { key: 'total_users' as const, label: 'Pengguna Terdaftar', icon: Users },
+  { key: 'total_reseller' as const, label: 'Reseller Aktif', icon: Crown },
+  { key: 'total_adp' as const, label: 'Admin Panel Aktif', icon: Shield },
 ];
 
 const faqs = [
