@@ -125,6 +125,7 @@ const AdsRental = () => {
 
   // QRIS state
   const [orderId, setOrderId] = useState('');
+  const [austinRef, setAustinRef] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
   const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
@@ -182,6 +183,7 @@ const AdsRental = () => {
         const s = JSON.parse(raw);
         if (s.savedAt && Date.now() - s.savedAt < 30 * 60 * 1000) {
           setOrderId(s.orderId);
+          setAustinRef(s.austinRef || s.orderId);
           setQrisPayload(s.qrisPayload);
           setQrisAmount(s.amount || 0);
           setShowQris(true);
@@ -264,6 +266,7 @@ const AdsRental = () => {
         await supabase.from('ad_rentals').delete().eq('order_id', oid);
         return;
       }
+      const austinId = String(data.transaction_id || data.order_id || oid);
       // Save promo redemption (insert when payment completes — fire-and-forget on creation is safer to record only on success)
       if (appliedPromo) {
         await supabase.from('promo_redemptions').insert({
@@ -275,13 +278,14 @@ const AdsRental = () => {
         });
       }
       setOrderId(oid);
+      setAustinRef(austinId);
       setQrisPayload(data.qris as string);
       setQrisAmount(payAmount);
       setShowQris(true);
       setPolling(oid);
       setPaid(false);
       try {
-        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, amount: payAmount, savedAt: Date.now() }));
+        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, austinRef: austinId, qrisPayload: data.qris, amount: payAmount, savedAt: Date.now() }));
       } catch {}
       setAppliedPromo(null);
     } finally {
@@ -323,6 +327,7 @@ const AdsRental = () => {
       }
       toast.success('Pembayaran dibatalkan');
       setShowQris(false);
+      setAustinRef('');
       setPolling(null);
       try {
         localStorage.removeItem(QRIS_KEY(user.id));
@@ -657,7 +662,7 @@ const AdsRental = () => {
                   <p className="text-sm text-muted-foreground">
                     Total: <span className="font-bold text-primary">Rp {qrisAmount.toLocaleString('id-ID')}</span>
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-1">Order: {orderId}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">REF: {austinRef || orderId}</p>
                 </div>
                 <div className="inline-block p-4 bg-white rounded-xl">
                   <QRCodeSVG id="ad-qris-svg" value={qrisPayload} size={260} level="M" includeMargin={false} />

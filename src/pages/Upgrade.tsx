@@ -141,6 +141,7 @@ const Upgrade = () => {
 
   const [selected, setSelected] = useState<PlanKey>('perm');
   const [orderId, setOrderId] = useState('');
+  const [austinRef, setAustinRef] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
   const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
@@ -239,6 +240,7 @@ const Upgrade = () => {
       if (orderId === oid) {
         setShowQris(false);
         setQrisPayload('');
+        setAustinRef('');
         setPollingOid(null);
         localStorage.removeItem(QRIS_STORAGE_KEY(user.id));
       }
@@ -262,6 +264,7 @@ const Upgrade = () => {
       toast.success('Pembayaran dibatalkan');
       setShowQris(false);
       setQrisPayload('');
+      setAustinRef('');
       setPollingOid(null);
       setPaid(false);
       try {
@@ -287,10 +290,12 @@ const Upgrade = () => {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
         return;
       }
+      const austinId = String(data.transaction_id || data.order_id || o.order_id);
       const targetTier: Tier = String(o.plan).startsWith('adp_') ? 'adp' : 'reseller';
       setTier(targetTier);
       setSelected(o.plan);
       setOrderId(o.order_id);
+      setAustinRef(austinId);
       setQrisPayload(data.qris as string);
       setQrisAmount(Number(data.amount ?? o.amount));
       setShowQris(true);
@@ -301,6 +306,7 @@ const Upgrade = () => {
           QRIS_STORAGE_KEY(user.id),
           JSON.stringify({
             orderId: o.order_id,
+            austinRef: austinId,
             qrisPayload: data.qris,
             plan: o.plan,
             amount: Number(data.amount ?? o.amount),
@@ -338,6 +344,7 @@ const Upgrade = () => {
       if (saved.orderId && saved.qrisPayload && saved.plan) {
         setSelected(saved.plan);
         setOrderId(saved.orderId);
+        setAustinRef(saved.austinRef || saved.orderId);
         setQrisPayload(saved.qrisPayload);
         setQrisAmount(Number(saved.amount) || 0);
         setShowQris(true);
@@ -455,6 +462,7 @@ const Upgrade = () => {
     }
     const oid = generateRef();
     setOrderId(oid);
+    setAustinRef('');
     setQrisPayload('');
     setQrisLoading(true);
     setPaid(false);
@@ -466,8 +474,10 @@ const Upgrade = () => {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
         return;
       }
+      const austinId = String(data.transaction_id || data.order_id || oid);
       setQrisPayload(data.qris as string);
       setQrisAmount(Number(data.amount ?? payAmount));
+      setAustinRef(austinId);
       const { error: insErr } = await supabase.from('reseller_orders').insert({
         user_id: user.id,
         username: fullName,
@@ -488,6 +498,7 @@ const Upgrade = () => {
           QRIS_STORAGE_KEY(user.id),
           JSON.stringify({
             orderId: oid,
+            austinRef: austinId,
             qrisPayload: data.qris,
             plan: plan.key,
             amount: Number(data.amount ?? payAmount),
@@ -632,12 +643,13 @@ const Upgrade = () => {
         y += 26;
         ctx.fillStyle = '#94a3b8';
         ctx.font = '13px "Courier New", monospace';
-        ctx.fillText(`REF: ${orderId || '-'}`, W / 2, y);
+        const refText = austinRef || orderId || '-';
+        ctx.fillText(`REF: ${refText}`, W / 2, y);
 
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = url;
-        a.download = `QRIS-${orderId || 'upgrade'}.png`;
+        a.download = `QRIS-${refText}.png`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -1200,7 +1212,7 @@ const Upgrade = () => {
                   </p>
 
                   <div className="text-center text-[10px] text-muted-foreground font-mono">
-                    REF: {orderId}
+                    REF: {austinRef || orderId}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
