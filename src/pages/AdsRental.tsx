@@ -266,6 +266,7 @@ const AdsRental = () => {
         await supabase.from('ad_rentals').delete().eq('order_id', oid);
         return;
       }
+      const austinId = String(data.transaction_id || data.order_id || oid);
       // Save promo redemption (insert when payment completes — fire-and-forget on creation is safer to record only on success)
       if (appliedPromo) {
         await supabase.from('promo_redemptions').insert({
@@ -277,13 +278,14 @@ const AdsRental = () => {
         });
       }
       setOrderId(oid);
+      setAustinRef(austinId);
       setQrisPayload(data.qris as string);
       setQrisAmount(payAmount);
       setShowQris(true);
       setPolling(oid);
       setPaid(false);
       try {
-        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, qrisPayload: data.qris, amount: payAmount, savedAt: Date.now() }));
+        localStorage.setItem(QRIS_KEY(user.id), JSON.stringify({ orderId: oid, austinRef: austinId, qrisPayload: data.qris, amount: payAmount, savedAt: Date.now() }));
       } catch {}
       setAppliedPromo(null);
     } finally {
