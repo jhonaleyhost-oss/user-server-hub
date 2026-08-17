@@ -456,6 +456,7 @@ const Upgrade = () => {
     }
     const oid = generateRef();
     setOrderId(oid);
+    setAustinRef('');
     setQrisPayload('');
     setQrisLoading(true);
     setPaid(false);
@@ -467,8 +468,10 @@ const Upgrade = () => {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
         return;
       }
+      const austinId = String(data.transaction_id || data.order_id || oid);
       setQrisPayload(data.qris as string);
       setQrisAmount(Number(data.amount ?? payAmount));
+      setAustinRef(austinId);
       const { error: insErr } = await supabase.from('reseller_orders').insert({
         user_id: user.id,
         username: fullName,
@@ -489,6 +492,7 @@ const Upgrade = () => {
           QRIS_STORAGE_KEY(user.id),
           JSON.stringify({
             orderId: oid,
+            austinRef: austinId,
             qrisPayload: data.qris,
             plan: plan.key,
             amount: Number(data.amount ?? payAmount),
