@@ -142,6 +142,7 @@ const Upgrade = () => {
   const [selected, setSelected] = useState<PlanKey>('perm');
   const [orderId, setOrderId] = useState('');
   const [qrisPayload, setQrisPayload] = useState('');
+  const [qrisAmount, setQrisAmount] = useState<number>(0);
   const [showQris, setShowQris] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -291,6 +292,7 @@ const Upgrade = () => {
       setSelected(o.plan);
       setOrderId(o.order_id);
       setQrisPayload(data.qris as string);
+      setQrisAmount(Number(data.amount ?? o.amount));
       setShowQris(true);
       setPaid(false);
       setPollingOid(o.order_id);
@@ -301,7 +303,7 @@ const Upgrade = () => {
             orderId: o.order_id,
             qrisPayload: data.qris,
             plan: o.plan,
-            amount: o.amount,
+            amount: Number(data.amount ?? o.amount),
             savedAt: Date.now(),
           }),
         );
@@ -337,6 +339,7 @@ const Upgrade = () => {
         setSelected(saved.plan);
         setOrderId(saved.orderId);
         setQrisPayload(saved.qrisPayload);
+        setQrisAmount(Number(saved.amount) || 0);
         setShowQris(true);
         setPollingOid(saved.orderId);
       }
@@ -464,6 +467,7 @@ const Upgrade = () => {
         return;
       }
       setQrisPayload(data.qris as string);
+      setQrisAmount(Number(data.amount ?? payAmount));
       const { error: insErr } = await supabase.from('reseller_orders').insert({
         user_id: user.id,
         username: fullName,
@@ -486,7 +490,7 @@ const Upgrade = () => {
             orderId: oid,
             qrisPayload: data.qris,
             plan: plan.key,
-            amount: plan.amount,
+            amount: Number(data.amount ?? payAmount),
             savedAt: Date.now(),
           }),
         );
@@ -555,116 +559,80 @@ const Upgrade = () => {
       const svg64 = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
       const img = new Image();
       img.crossOrigin = 'anonymous';
+      const total = qrisAmount || payAmount;
+      const title = isAdpTier ? 'ADMIN PANEL SERVER' : 'UPGRADE RESELLER';
       img.onload = () => {
-        // Canvas wrapper mirroring on-screen card
         const W = 720;
-        const PAD = 32;
-        const qrSize = 480;
-        const headerH = 88;
-        const totalH = 96;
-        const qrBoxH = qrSize + 56;
-        const footerH = 120;
-        const GAP = 18;
-        const H = PAD + headerH + GAP + totalH + GAP + qrBoxH + GAP + footerH + PAD;
+        const PAD = 40;
+        const qrSize = 460;
+        const qrBox = qrSize + 56;
+        const H = 1000;
 
         const canvas = document.createElement('canvas');
         canvas.width = W;
         canvas.height = H;
         const ctx = canvas.getContext('2d')!;
 
-        // Background gradient (indigo → purple → fuchsia)
-        const bg = ctx.createLinearGradient(0, 0, W, H);
-        bg.addColorStop(0, '#312e81');
-        bg.addColorStop(0.5, '#6b21a8');
-        bg.addColorStop(1, '#a21caf');
-        ctx.fillStyle = bg;
-        roundRect(ctx, 0, 0, W, H, 24);
+        // Clean light card
+        ctx.fillStyle = '#f4f5f7';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, 24, 24, W - 48, H - 48, 28);
         ctx.fill();
 
-        let y = PAD;
-
-        // Header pill
-        ctx.fillStyle = 'rgba(0,0,0,0.45)';
-        roundRect(ctx, PAD, y, W - PAD * 2, headerH, 16);
-        ctx.fill();
-        ctx.fillStyle = '#fde68a';
-        ctx.font = 'bold 28px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('👑 UPGRADE RESELLER 👑', W / 2, y + 38);
-        ctx.fillStyle = '#d1d5db';
+        let y = 96;
+
+        // Brand
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText('Jhonaley Store', W / 2, y);
+        y += 30;
+        ctx.fillStyle = '#64748b';
         ctx.font = '15px sans-serif';
-        ctx.fillText(`Paket ${plan.label} • ${plan.duration}`, W / 2, y + 66);
-        y += headerH + GAP;
+        ctx.fillText(`${title} • ${plan.label} (${plan.duration})`, W / 2, y);
+        y += 40;
 
-        // Total pill
-        const totalGrad = ctx.createLinearGradient(0, y, W, y + totalH);
-        totalGrad.addColorStop(0, '#f43f5e');
-        totalGrad.addColorStop(1, '#d946ef');
-        ctx.fillStyle = totalGrad;
-        roundRect(ctx, PAD, y, W - PAD * 2, totalH, 16);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
+        // Divider
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(PAD + 8, y);
+        ctx.lineTo(W - PAD - 8, y);
+        ctx.stroke();
+        y += 46;
+
+        // Total
+        ctx.fillStyle = '#64748b';
         ctx.font = '600 14px sans-serif';
-        ctx.fillText('🧾 TOTAL PEMBAYARAN', W / 2, y + 32);
-        ctx.font = 'bold 38px sans-serif';
-        ctx.fillText(`Rp ${plan.amount.toLocaleString('id-ID')}`, W / 2, y + 76);
-        y += totalH + GAP;
-
-        // QR box (white) with fuchsia corner markers
-        const qrX = (W - qrSize) / 2;
-        const qrY = y + 28;
-        ctx.fillStyle = '#ffffff';
-        roundRect(ctx, PAD, y, W - PAD * 2, qrBoxH, 20);
-        ctx.fill();
-        // corner markers
-        ctx.strokeStyle = '#e879f9';
-        ctx.lineWidth = 4;
-        const cm = 22;
-        const cx1 = PAD + 14,
-          cy1 = y + 14;
-        const cx2 = W - PAD - 14,
-          cy2 = y + qrBoxH - 14;
-        // top-left
-        ctx.beginPath();
-        ctx.moveTo(cx1, cy1 + cm);
-        ctx.lineTo(cx1, cy1);
-        ctx.lineTo(cx1 + cm, cy1);
-        ctx.stroke();
-        // top-right
-        ctx.beginPath();
-        ctx.moveTo(cx2 - cm, cy1);
-        ctx.lineTo(cx2, cy1);
-        ctx.lineTo(cx2, cy1 + cm);
-        ctx.stroke();
-        // bottom-left
-        ctx.beginPath();
-        ctx.moveTo(cx1, cy2 - cm);
-        ctx.lineTo(cx1, cy2);
-        ctx.lineTo(cx1 + cm, cy2);
-        ctx.stroke();
-        // bottom-right
-        ctx.beginPath();
-        ctx.moveTo(cx2 - cm, cy2);
-        ctx.lineTo(cx2, cy2);
-        ctx.lineTo(cx2, cy2 - cm);
-        ctx.stroke();
-
-        ctx.drawImage(img, qrX, qrY, qrSize, qrSize);
-        y += qrBoxH + GAP;
-
-        // Footer block
-        ctx.fillStyle = 'rgba(0,0,0,0.45)';
-        roundRect(ctx, PAD, y, W - PAD * 2, footerH, 16);
-        ctx.fill();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('🔒 SECURE PAYMENT • QRIS', W / 2, y + 34);
-        ctx.fillStyle = '#d1d5db';
+        ctx.fillText('TOTAL PEMBAYARAN', W / 2, y);
+        y += 46;
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 44px sans-serif';
+        ctx.fillText(`Rp ${total.toLocaleString('id-ID')}`, W / 2, y);
+        y += 22;
+        ctx.fillStyle = '#94a3b8';
         ctx.font = '13px sans-serif';
-        ctx.fillText('Jhonaley Store • Protected by QRIS', W / 2, y + 56);
-        ctx.fillStyle = '#fde68a';
-        ctx.font = 'bold 14px "Courier New", monospace';
-        ctx.fillText(`REF: ${orderId || '-'}`, W / 2, y + 92);
+        ctx.fillText('Bayar sesuai nominal persis (termasuk kode unik)', W / 2, y);
+        y += 34;
+
+        // QR frame
+        const qx = (W - qrBox) / 2;
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 2;
+        roundRect(ctx, qx, y, qrBox, qrBox, 24);
+        ctx.stroke();
+        ctx.drawImage(img, qx + 28, y + 28, qrSize, qrSize);
+        y += qrBox + 44;
+
+        // Footer
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '600 15px sans-serif';
+        ctx.fillText('Scan dengan aplikasi e-wallet / mobile banking (QRIS)', W / 2, y);
+        y += 26;
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '13px "Courier New", monospace';
+        ctx.fillText(`REF: ${orderId || '-'}`, W / 2, y);
 
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
@@ -1161,7 +1129,7 @@ const Upgrade = () => {
             {/* QRIS canvas */}
             {showQris && qrisPayload && (
               <GlassCard className="p-3 sm:p-4 mb-6" animate={false}>
-                <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500/30 via-purple-500/30 to-fuchsia-500/30 border border-white/10 p-3 space-y-3">
+                <div className="rounded-2xl border border-border/60 bg-secondary/20 p-4 space-y-3">
                   <div className="flex justify-end">
                     <Button
                       size="icon"
@@ -1183,33 +1151,34 @@ const Upgrade = () => {
                     </Button>
                   </div>
 
-                  <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-3 text-center border border-white/10">
-                    <div
-                      className={`text-base font-extrabold tracking-wide bg-clip-text text-transparent ${
-                        isAdpTier
-                          ? 'bg-gradient-to-r from-purple-400 via-fuchsia-400 to-purple-500'
-                          : 'bg-gradient-to-r from-primary via-accent to-amber'
-                      }`}
-                    >
-                      {isAdpTier ? '🛡️ ADMIN PANEL SERVER 🛡️' : '👑 UPGRADE RESELLER 👑'}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-foreground">
+                      {isAdpTier ? 'Admin Panel Server' : 'Upgrade Reseller'}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
                       Paket {plan.label} • {plan.duration}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border/60 bg-secondary/30 px-4 py-3 text-center">
+                    <div className="text-[10px] font-semibold tracking-wider text-muted-foreground">
+                      TOTAL PEMBAYARAN
+                    </div>
+                    <div className="text-3xl font-extrabold text-foreground tabular-nums">
+                      Rp {(qrisAmount || payAmount).toLocaleString('id-ID')}
+                    </div>
+                    {qrisAmount > payAmount && (
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        Harga Rp {payAmount.toLocaleString('id-ID')} + kode unik Rp{' '}
+                        {(qrisAmount - payAmount).toLocaleString('id-ID')}
+                      </div>
+                    )}
+                    <div className="text-[10px] text-amber mt-1">
+                      Bayar sesuai nominal persis agar terverifikasi otomatis
                     </div>
                   </div>
 
-                  <div className="rounded-xl px-4 py-3 text-center bg-gradient-to-r from-rose-500 to-fuchsia-500 text-white shadow-lg">
-                    <div className="text-[11px] font-semibold opacity-90">🧾 TOTAL PEMBAYARAN</div>
-                    <div className="text-2xl font-extrabold">
-                      Rp {plan.amount.toLocaleString('id-ID')}
-                    </div>
-                  </div>
-
-                  <div className="relative mx-auto bg-white rounded-2xl p-5 w-full max-w-[280px]">
-                    <span className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-fuchsia-400 rounded-tl-md" />
-                    <span className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-fuchsia-400 rounded-tr-md" />
-                    <span className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-fuchsia-400 rounded-bl-md" />
-                    <span className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-fuchsia-400 rounded-br-md" />
+                  <div className="mx-auto bg-white rounded-2xl p-4 w-full max-w-[272px] border border-border/60">
                     <div className="relative flex items-center justify-center">
                       <QRCodeSVG
                         value={qrisPayload}
@@ -1220,39 +1189,17 @@ const Upgrade = () => {
                         marginSize={0}
                         id="qris-svg"
                       />
-                      <div className="absolute w-12 h-12 rounded-full bg-white border-2 border-fuchsia-400 flex items-center justify-center shadow overflow-hidden">
-                        <img src={qrisLogo} alt="Logo" className="w-full h-full object-cover" />
+                      <div className="absolute w-11 h-11 rounded-full bg-white border border-border flex items-center justify-center shadow overflow-hidden">
+                        <img src={qrisLogo} alt="QRIS" className="w-full h-full object-cover" />
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-center text-[10px] font-semibold text-muted-foreground">
-                    ▦ SUPPORTED PAYMENT METHODS ▦
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {[
-                      { label: 'DANA', color: 'from-sky-500 to-blue-600' },
-                      { label: 'OVO', color: 'from-purple-500 to-indigo-600' },
-                      { label: 'GOPAY', color: 'from-emerald-500 to-green-600' },
-                      { label: 'BANK', color: 'from-rose-500 to-red-600' },
-                    ].map((m) => (
-                      <div
-                        key={m.label}
-                        className={`text-center text-[11px] font-bold text-white py-1.5 rounded-lg bg-gradient-to-br ${m.color} shadow`}
-                      >
-                        {m.label}
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Scan lewat DANA, OVO, GoPay, ShopeePay, atau mobile banking apa pun.
+                  </p>
 
-                  <div className="rounded-xl bg-background/70 backdrop-blur px-4 py-2 text-center border border-white/10">
-                    <div className="text-[11px] font-bold text-foreground">🔒 SECURE PAYMENT</div>
-                    <div className="text-[10px] text-muted-foreground">
-                      Protected by QRIS • Jhonaley Store
-                    </div>
-                  </div>
-
-                  <div className="text-center text-[10px] text-muted-foreground tracking-widest font-mono">
+                  <div className="text-center text-[10px] text-muted-foreground font-mono">
                     REF: {orderId}
                   </div>
 
@@ -1281,7 +1228,7 @@ const Upgrade = () => {
 
                   {!paid && (
                     <Button
-                      onClick={() => handleManualCheck(orderId, plan.amount)}
+                      onClick={() => handleManualCheck(orderId, payAmount)}
                       disabled={manualChecking === orderId}
                       variant="outline"
                       className="w-full h-10 gap-2 border-emerald-500/40 hover:bg-emerald-500/10"
