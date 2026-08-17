@@ -83,9 +83,6 @@ const ADP_PLANS: Plan[] = [
   { key: 'adp_perm', label: 'Permanen', duration: 'Selamanya', durationDays: null, amount: 35000, badge: 'Terbaik', highlight: true },
 ];
 
-const PAKASIR_SLUG = 'jhonaley-store';
-const PAKASIR_BASE = 'https://app.pakasir.com';
-
 const QRIS_STORAGE_KEY = (uid: string) => `upgrade_qris_${uid}`;
 
 interface PendingOrder {
