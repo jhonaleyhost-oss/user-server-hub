@@ -1197,16 +1197,10 @@ const Upgrade = () => {
                     REF: {austinRef || orderId}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button onClick={handleCopyUrl} variant="outline" className="h-10 gap-2">
-                      <Copy className="w-4 h-4" />
-                      Salin Link
-                    </Button>
-                    <Button onClick={handleDownloadQris} variant="outline" className="h-10 gap-2">
-                      <Download className="w-4 h-4" />
-                      Download QRIS
-                    </Button>
-                  </div>
+                  <Button onClick={handleDownloadQris} variant="outline" className="h-10 gap-2 w-full sm:w-auto">
+                    <Download className="w-4 h-4" />
+                    Download QRIS
+                  </Button>
 
                   {paid ? (
                     <div className="flex items-center justify-center gap-2 text-xs text-emerald-400 pt-1 font-semibold">
