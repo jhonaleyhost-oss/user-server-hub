@@ -12,7 +12,6 @@ import {
   Infinity as InfinityIcon,
   QrCode,
   Loader2,
-  Copy,
   X,
   CheckCircle2,
   CalendarClock,
