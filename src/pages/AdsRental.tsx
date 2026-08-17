@@ -662,11 +662,6 @@ const AdsRental = () => {
                   <Loader2 className="w-3 h-3 animate-spin" />
                   Menunggu pembayaran… aktivasi otomatis begitu lunas.
                 </div>
-                <div className="flex gap-2 justify-center flex-wrap">
-                  <Button variant="outline" size="sm" onClick={handleCopy} className="gap-2">
-                    <Copy className="w-3.5 h-3.5" /> Salin Link Bayar
-                  </Button>
-                </div>
               </div>
             </GlassCard>
           )}
