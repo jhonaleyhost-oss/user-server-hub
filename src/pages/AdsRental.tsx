@@ -662,7 +662,7 @@ const AdsRental = () => {
                   <p className="text-sm text-muted-foreground">
                     Total: <span className="font-bold text-primary">Rp {qrisAmount.toLocaleString('id-ID')}</span>
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-1">Order: {orderId}</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">REF: {austinRef || orderId}</p>
                 </div>
                 <div className="inline-block p-4 bg-white rounded-xl">
                   <QRCodeSVG id="ad-qris-svg" value={qrisPayload} size={260} level="M" includeMargin={false} />
