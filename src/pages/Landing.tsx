@@ -5,6 +5,7 @@ import {
   Server, Shield, Zap, Crown, Users, Terminal, Globe, Check,
   ArrowRight, Sparkles, Rocket, Lock, Clock, HeartHandshake,
   MessageCircle, Star, LogIn, Menu, X, Mail, Tag, Megaphone, Send,
+  Activity,
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -13,6 +14,7 @@ import ContactSection from '@/components/ContactSection';
 import { Button } from '@/components/ui/button';
 import { PageTransition } from '@/components/PageTransition';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 const features = [
   { icon: Rocket, title: 'Deploy Instan', desc: 'Buat panel Pterodactyl hanya dalam hitungan detik, tanpa konfigurasi ribet.' },
@@ -54,11 +56,22 @@ const plans = [
   },
 ];
 
-const stats = [
-  { value: '5K+', label: 'Pengguna Aktif' },
-  { value: '10K+', label: 'Panel Dibuat' },
-  { value: '99.9%', label: 'Uptime Server' },
-  { value: '24/7', label: 'Support Online' },
+interface LiveStats {
+  total_users: number;
+  total_reseller: number;
+  total_adp: number;
+}
+
+const formatCount = (n: number) => new Intl.NumberFormat('id-ID').format(n);
+
+const STATIC_STATS = [
+  { value: '99.9%', label: 'Uptime Server', icon: Activity },
+];
+
+const STATS_CONFIG = [
+  { key: 'total_users' as const, label: 'Pengguna Terdaftar', icon: Users },
+  { key: 'total_reseller' as const, label: 'Reseller Aktif', icon: Crown },
+  { key: 'total_adp' as const, label: 'Admin Panel Aktif', icon: Shield },
 ];
 
 const faqs = [
@@ -74,6 +87,8 @@ const OFFICIAL_CHANNEL = 'https://t.me/jhonaleytesti3';
 const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [liveStats, setLiveStats] = useState<LiveStats>({ total_users: 0, total_reseller: 0, total_adp: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -81,6 +96,51 @@ const Landing = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchStats = async () => {
+      try {
+        const cached = localStorage.getItem('landing_stats');
+        const cachedAt = localStorage.getItem('landing_stats_at');
+        const fiveMin = 5 * 60 * 1000;
+        if (cached && cachedAt && Date.now() - Number(cachedAt) < fiveMin) {
+          setLiveStats(JSON.parse(cached));
+          setStatsLoading(false);
+          return;
+        }
+
+        const { data, error } = await (supabase.rpc as any)('get_public_stats');
+        if (cancelled) return;
+        if (error) throw error;
+
+        const stats = (data as LiveStats) || { total_users: 0, total_reseller: 0, total_adp: 0 };
+        setLiveStats(stats);
+        localStorage.setItem('landing_stats', JSON.stringify(stats));
+        localStorage.setItem('landing_stats_at', String(Date.now()));
+      } catch (err) {
+        console.error('Failed to load landing stats:', err);
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = [
+    ...STATS_CONFIG.map((s) => ({
+      icon: s.icon,
+      label: s.label,
+      value: formatCount(liveStats[s.key]),
+      loading: statsLoading,
+    })),
+    ...STATIC_STATS.map((s) => ({ ...s, loading: false })),
+  ];
 
   const navItems = [
     { label: 'Keunggulan', href: '#features' },
@@ -256,20 +316,30 @@ const Landing = () => {
 
             {/* Stats */}
             <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto">
-              {stats.map((s, i) => (
-                <motion.div
-                  key={s.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 + i * 0.05 }}
-                  className="glass-card rounded-xl p-4"
-                >
-                  <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    {s.value}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
-                </motion.div>
-              ))}
+              {stats.map((s, i) => {
+                const Icon = s.icon;
+                return (
+                  <motion.div
+                    key={s.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 + i * 0.05 }}
+                    className="glass-card rounded-xl p-4 flex flex-col items-center justify-center text-center"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-2">
+                      <Icon className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent min-h-[2rem]">
+                      {s.loading ? (
+                        <span className="inline-block w-12 h-6 rounded-md bg-muted animate-pulse" />
+                      ) : (
+                        s.value
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">{s.label}</div>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
         </section>

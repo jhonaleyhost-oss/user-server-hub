@@ -1519,6 +1519,7 @@ export type Database = {
           username: string
         }[]
       }
+      get_public_stats: { Args: never; Returns: Json }
       get_public_users: {
         Args: never
         Returns: {
