@@ -87,6 +87,8 @@ const OFFICIAL_CHANNEL = 'https://t.me/jhonaleytesti3';
 const Landing = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [liveStats, setLiveStats] = useState<LiveStats>({ total_users: 0, total_reseller: 0, total_adp: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -94,6 +96,51 @@ const Landing = () => {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchStats = async () => {
+      try {
+        const cached = localStorage.getItem('landing_stats');
+        const cachedAt = localStorage.getItem('landing_stats_at');
+        const fiveMin = 5 * 60 * 1000;
+        if (cached && cachedAt && Date.now() - Number(cachedAt) < fiveMin) {
+          setLiveStats(JSON.parse(cached));
+          setStatsLoading(false);
+          return;
+        }
+
+        const { data, error } = await (supabase.rpc as any)('get_public_stats');
+        if (cancelled) return;
+        if (error) throw error;
+
+        const stats = (data as LiveStats) || { total_users: 0, total_reseller: 0, total_adp: 0 };
+        setLiveStats(stats);
+        localStorage.setItem('landing_stats', JSON.stringify(stats));
+        localStorage.setItem('landing_stats_at', String(Date.now()));
+      } catch (err) {
+        console.error('Failed to load landing stats:', err);
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    };
+
+    fetchStats();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats = [
+    ...STATS_CONFIG.map((s) => ({
+      icon: s.icon,
+      label: s.label,
+      value: formatCount(liveStats[s.key]),
+      loading: statsLoading,
+    })),
+    ...STATIC_STATS.map((s) => ({ ...s, loading: false })),
+  ];
 
   const navItems = [
     { label: 'Keunggulan', href: '#features' },
