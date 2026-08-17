@@ -641,12 +641,13 @@ const Upgrade = () => {
         y += 26;
         ctx.fillStyle = '#94a3b8';
         ctx.font = '13px "Courier New", monospace';
-        ctx.fillText(`REF: ${orderId || '-'}`, W / 2, y);
+        const refText = austinRef || orderId || '-';
+        ctx.fillText(`REF: ${refText}`, W / 2, y);
 
         const url = canvas.toDataURL('image/png');
         const a = document.createElement('a');
         a.href = url;
-        a.download = `QRIS-${orderId || 'upgrade'}.png`;
+        a.download = `QRIS-${refText}.png`;
         document.body.appendChild(a);
         a.click();
         a.remove();
