@@ -183,6 +183,7 @@ const AdsRental = () => {
         const s = JSON.parse(raw);
         if (s.savedAt && Date.now() - s.savedAt < 30 * 60 * 1000) {
           setOrderId(s.orderId);
+          setAustinRef(s.austinRef || s.orderId);
           setQrisPayload(s.qrisPayload);
           setQrisAmount(s.amount || 0);
           setShowQris(true);
