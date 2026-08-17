@@ -943,6 +943,7 @@ export type Database = {
           name: string
           nest_id: number
           plta_key: string
+          plta_share_key: string | null
           plta_vault_id: string | null
           pltc_key: string
           pltc_vault_id: string | null
@@ -960,6 +961,7 @@ export type Database = {
           name: string
           nest_id?: number
           plta_key: string
+          plta_share_key?: string | null
           plta_vault_id?: string | null
           pltc_key: string
           pltc_vault_id?: string | null
@@ -977,6 +979,7 @@ export type Database = {
           name?: string
           nest_id?: number
           plta_key?: string
+          plta_share_key?: string | null
           plta_vault_id?: string | null
           pltc_key?: string
           pltc_vault_id?: string | null
