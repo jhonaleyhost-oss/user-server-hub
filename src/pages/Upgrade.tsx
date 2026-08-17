@@ -288,10 +288,12 @@ const Upgrade = () => {
         toast.error('Gagal generate QRIS: ' + (error?.message || data?.error || 'unknown'));
         return;
       }
+      const austinId = String(data.transaction_id || data.order_id || o.order_id);
       const targetTier: Tier = String(o.plan).startsWith('adp_') ? 'adp' : 'reseller';
       setTier(targetTier);
       setSelected(o.plan);
       setOrderId(o.order_id);
+      setAustinRef(austinId);
       setQrisPayload(data.qris as string);
       setQrisAmount(Number(data.amount ?? o.amount));
       setShowQris(true);
@@ -302,6 +304,7 @@ const Upgrade = () => {
           QRIS_STORAGE_KEY(user.id),
           JSON.stringify({
             orderId: o.order_id,
+            austinRef: austinId,
             qrisPayload: data.qris,
             plan: o.plan,
             amount: Number(data.amount ?? o.amount),
