@@ -1209,7 +1209,7 @@ const Upgrade = () => {
                   </p>
 
                   <div className="text-center text-[10px] text-muted-foreground font-mono">
-                    REF: {orderId}
+                    REF: {austinRef || orderId}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
