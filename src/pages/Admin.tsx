@@ -226,6 +226,7 @@ const Admin = () => {
     name: '',
     domain: '',
     plta_key: '',
+    plta_share_key: '',
     pltc_key: '',
     server_type: 'public',
     location_id: 1,
@@ -961,6 +962,7 @@ const Admin = () => {
       name: '',
       domain: '',
       plta_key: '',
+      plta_share_key: '',
       pltc_key: '',
       server_type: 'public',
       location_id: 1,
@@ -976,6 +978,7 @@ const Admin = () => {
       name: server.name,
       domain: server.domain,
       plta_key: '',
+      plta_share_key: '',
       pltc_key: '',
       server_type: server.server_type,
       location_id: server.location_id,
@@ -1431,7 +1434,7 @@ const Admin = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>PLTA Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
+                        <Label>PLTA Key — Create {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
                         <Input
                           type="password"
                           value={serverForm.plta_key}
@@ -1439,6 +1442,18 @@ const Admin = () => {
                           className="input-glass"
                           placeholder={editingServer ? '•••••••••••• (tidak ditampilkan)' : 'ptla_xxx'}
                         />
+                        <p className="text-xs text-muted-foreground">Dipakai sistem untuk membuat user/panel. Tidak dibagikan ke pengguna.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>PLTA Key — Dibagikan ke Pengguna {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
+                        <Input
+                          type="password"
+                          value={serverForm.plta_share_key}
+                          onChange={(e) => setServerForm({ ...serverForm, plta_share_key: e.target.value })}
+                          className="input-glass"
+                          placeholder={editingServer ? '•••••••••••• (tidak ditampilkan)' : 'ptla_xxx (opsional)'}
+                        />
+                        <p className="text-xs text-muted-foreground">Kunci yang diberikan ke pengguna saat membuat Admin Panel. Jika kosong, memakai PLTA Create.</p>
                       </div>
                       <div className="space-y-2">
                         <Label>PLTC Key {editingServer && <span className="text-xs text-muted-foreground">(kosongkan untuk tetap)</span>}</Label>
