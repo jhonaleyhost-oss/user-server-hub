@@ -4,8 +4,8 @@ import { z } from "npm:zod@3";
 
 const SUPPORT_EMAIL = "danangvalentpratama@gmail.com";
 const SITE_NAME = "jhonaleycpanel";
-const SENDER_DOMAIN = "page.jhonaleystore.id";
-const FROM_DOMAIN = "page.jhonaleystore.id";
+const SENDER_DOMAIN = "log.jhonaleystore.id";
+const FROM_DOMAIN = "log.jhonaleystore.id";
 
 const MAX_DAILY_PER_EMAIL = 3;
 const MAX_HOURLY_PER_IP = 5;
