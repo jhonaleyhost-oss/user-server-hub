@@ -62,7 +62,7 @@ const AdminOfflinePanels = () => {
       i = Math.min(i + 1, stages.length - 1);
       setScanProgress(stages[i].p);
       setScanStage(stages[i].s);
-    }, 1800);
+    }, 1200);
     return () => clearInterval(id);
   }, [scanning]);
 
@@ -71,11 +71,10 @@ const AdminOfflinePanels = () => {
     if (!deleting) { setDeleteProgress(0); setDeleteStage(''); return; }
     const total = selected.size || 1;
     const stages = [
-      { p: 8,  s: 'Memverifikasi izin admin...' },
-      { p: 25, s: `Mengantri ${total} panel untuk dihapus...` },
-      { p: 50, s: 'Menghapus dari Pterodactyl...' },
-      { p: 75, s: 'Membersihkan database lokal...' },
-      { p: 90, s: 'Mencatat aktivitas & notifikasi...' },
+      { p: 15, s: 'Memverifikasi izin admin...' },
+      { p: 40, s: `Menghapus ${total} panel di Pterodactyl (paralel)...` },
+      { p: 65, s: 'Membersihkan database lokal...' },
+      { p: 85, s: 'Menghapus user Pterodactyl kosong...' },
       { p: 95, s: 'Menyelesaikan...' },
     ];
     let i = 0;
@@ -85,7 +84,7 @@ const AdminOfflinePanels = () => {
       i = Math.min(i + 1, stages.length - 1);
       setDeleteProgress(stages[i].p);
       setDeleteStage(stages[i].s);
-    }, 1200);
+    }, 700);
     return () => clearInterval(id);
   }, [deleting, selected.size]);
 
@@ -172,9 +171,11 @@ const AdminOfflinePanels = () => {
     try {
       const sel = panels.filter(p => selected.has(p.id));
       const dbIds = sel.filter(p => !p.untracked).map(p => p.id);
-      const ghostIds = sel.filter(p => p.untracked && p.ptero_server_id).map(p => p.ptero_server_id as number);
+      const ghosts = sel
+        .filter(p => p.untracked && p.ptero_server_id)
+        .map(p => ({ serverId: p.ptero_server_id as number, userId: p.ptero_user_id ?? null }));
       const { data, error } = await supabase.functions.invoke('delete-offline-panels', {
-        body: { panelIds: dbIds, pteroServerIds: ghostIds, serverId: selectedServer },
+        body: { panelIds: dbIds, ghosts, serverId: selectedServer },
       });
       if (error) throw error;
       setDeleteProgress(100);
@@ -184,8 +185,10 @@ const AdminOfflinePanels = () => {
       setLogOpen(true);
       if (!data?.success) throw new Error(data?.error || 'Gagal hapus');
       toast({ title: 'Berhasil', description: data.message });
-      // Re-scan
-      await scan();
+      // Hapus baris terpilih langsung dari tabel — tanpa scan ulang
+      const removed = new Set<string>(selected);
+      setPanels(prev => prev.filter(p => !removed.has(p.id)));
+      setSelected(new Set());
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Gagal', description: e.message });
     } finally {
