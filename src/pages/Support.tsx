@@ -538,11 +538,16 @@ const Support = () => {
                             }`}
                           >
                             {m.image_url && <SupportImage value={m.image_url} />}
-                            {m.is_ai && (
+                            {m.is_ai ? (
                               <span className="inline-flex items-center gap-1 mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5">
-                                <Sparkles className="w-3 h-3" /> Asisten AI
+                                <Sparkles className="w-3 h-3" /> Customer Support AI
                               </span>
-                            )}
+                            ) : m.sender_role === "admin" ? (
+                              <span className="inline-flex items-center gap-1 mb-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5">
+                                <ShieldCheck className="w-3 h-3" /> Admin
+                              </span>
+                            ) : null}
+
                             {isEditing ? (
                               <div className="flex flex-col gap-2 min-w-[200px]">
                                 <textarea
