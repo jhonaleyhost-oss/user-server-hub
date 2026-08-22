@@ -208,18 +208,31 @@ serve(async (req) => {
     let skippedAdminOwned = 0;
     // ===== Deteksi server Pterodactyl yang TIDAK ada di database (untracked/ghost) =====
     if (serverAlive) {
+      // ID panel yang dianggap "dikenal" HANYA yang berada di domain Pterodactyl yang sama.
+      // (Dulu diambil global sehingga ID server hantu bentrok dengan panel milik domain lain.)
+      const { data: sameDomainServers } = await supabase
+        .from('pterodactyl_servers').select('id').eq('domain', server.domain);
+      const domainServerIds = (sameDomainServers || []).map((s: any) => s.id);
+      const scopeIds = domainServerIds.length > 0 ? domainServerIds : [server.id];
+
       const knownIds = new Set<number>();
       for (let from = 0; from < 100000; from += 1000) {
         const { data: chunk } = await supabase
           .from('user_panels').select('ptero_server_id')
+          .in('server_id', scopeIds)
           .not('ptero_server_id', 'is', null)
           .range(from, from + 999);
         for (const p of (chunk || [])) if (p.ptero_server_id) knownIds.add(Number(p.ptero_server_id));
         if (!chunk || chunk.length < 1000) break;
       }
-      const { data: adminSrv } = await supabase
-        .from('admin_panel_servers').select('ptero_server_id');
+      const { data: adminSrvPanels } = await supabase
+        .from('admin_panels').select('id').in('server_id', scopeIds);
+      const adminPanelIds = (adminSrvPanels || []).map((a: any) => a.id);
+      const { data: adminSrv } = adminPanelIds.length > 0
+        ? await supabase.from('admin_panel_servers').select('ptero_server_id').in('admin_panel_id', adminPanelIds)
+        : { data: [] as any[] };
       for (const p of (adminSrv || [])) if (p.ptero_server_id) knownIds.add(Number(p.ptero_server_id));
+
       // Jangan sentuh server milik user Admin Panel (mereka bikin server sendiri)
       const protectedUserIds = new Set<number>();
       const { data: apList } = await supabase.from('admin_panels').select('ptero_user_id');
