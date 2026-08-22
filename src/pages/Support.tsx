@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Send, ImagePlus, Loader2, ArrowLeft, MessageCircle, LifeBuoy, X, Pencil, Check, Sparkles } from "lucide-react";
+import { Send, ImagePlus, Loader2, ArrowLeft, MessageCircle, LifeBuoy, X, Pencil, Check, Sparkles, Headset, ShieldCheck } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import GlassCard from "@/components/GlassCard";
