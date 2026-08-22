@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, ImagePlus, Loader2, X, MessageCircle, Pencil, Check, Sparkles } from "lucide-react";
+import { Send, ImagePlus, Loader2, X, MessageCircle, Pencil, Check, Sparkles, Headset, ShieldCheck } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +71,35 @@ export default function SupportChatPopup({ open, onClose }: Props) {
   const [editingText, setEditingText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const [humanUntil, setHumanUntil] = useState<string | null>(null);
+  const [requesting, setRequesting] = useState(false);
+  const humanMode = !!humanUntil && new Date(humanUntil).getTime() > Date.now();
+
+  useEffect(() => {
+    if (!open || !user) return;
+    supabase
+      .from("support_human_requests")
+      .select("human_until")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setHumanUntil((data?.human_until as string) ?? null));
+  }, [open, user]);
+
+  const requestHuman = async () => {
+    if (!user || requesting) return;
+    setRequesting(true);
+    const until = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
+    const { error } = await supabase
+      .from("support_human_requests")
+      .upsert({ user_id: user.id, human_until: until, updated_at: new Date().toISOString() });
+    if (error) toast.error("Gagal meminta admin");
+    else {
+      setHumanUntil(until);
+      toast.success("Balasan AI dimatikan. Admin akan membalas pesanmu.");
+    }
+    setRequesting(false);
+  };
+
 
   const loadMessages = useCallback(async () => {
     if (!user) return;
@@ -257,7 +287,33 @@ export default function SupportChatPopup({ open, onClose }: Props) {
           </button>
         </div>
 
+        {/* Human handoff bar */}
+        <div className="px-3 py-2 border-b border-border/50 bg-secondary/30 flex items-center justify-between gap-2 shrink-0">
+          <p className="text-[11px] text-muted-foreground leading-tight">
+            {humanMode
+              ? "Mode Admin aktif — dibalas langsung oleh admin."
+              : "Dibalas otomatis oleh Customer Support AI."}
+          </p>
+          {!humanMode && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={requestHuman}
+              disabled={requesting}
+              className="h-7 px-2 text-[11px] shrink-0"
+            >
+              {requesting ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <Headset className="w-3 h-3 mr-1" />
+              )}
+              Ngobrol dengan Admin
+            </Button>
+          )}
+        </div>
+
         {/* Messages */}
+
         <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-background/30">
           {loading ? (
             <div className="flex justify-center py-8">
@@ -282,11 +338,16 @@ export default function SupportChatPopup({ open, onClose }: Props) {
                     }`}
                   >
                     {m.image_url && <SupportImage value={m.image_url} />}
-                    {m.is_ai && (
+                    {m.is_ai ? (
                       <span className="inline-flex items-center gap-1 mb-1 text-[10px] font-semibold uppercase tracking-wide text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5">
-                        <Sparkles className="w-3 h-3" /> Asisten AI
+                        <Sparkles className="w-3 h-3" /> Customer Support AI
                       </span>
-                    )}
+                    ) : m.sender_role === "admin" ? (
+                      <span className="inline-flex items-center gap-1 mb-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-500 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5">
+                        <ShieldCheck className="w-3 h-3" /> Admin
+                      </span>
+                    ) : null}
+
                     {isEditing ? (
                       <div className="flex flex-col gap-2 min-w-[180px]">
                         <textarea
