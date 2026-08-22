@@ -245,7 +245,17 @@ Deno.serve(async (req) => {
             new Date(m.created_at as string).getTime() > cutoff,
         );
 
-        if (!humanActive) {
+        const { data: humanReq } = await admin
+          .from("support_human_requests")
+          .select("human_until")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        const humanRequested =
+          !!humanReq?.human_until &&
+          new Date(humanReq.human_until as string).getTime() > Date.now();
+
+        if (!humanActive && !humanRequested) {
+
           const history = rows
             .slice()
             .reverse()
