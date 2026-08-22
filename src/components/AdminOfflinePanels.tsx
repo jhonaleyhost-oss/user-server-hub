@@ -33,6 +33,7 @@ const AdminOfflinePanels = () => {
   const [deleting, setDeleting] = useState(false);
   const [panels, setPanels] = useState<OfflinePanel[]>([]);
   const [scanned, setScanned] = useState(false);
+  const [diag, setDiag] = useState<{ pteroTotalServers?: number; skippedAdminOwned?: number; dbPanelCount?: number } | null>(null);
   const [serverAlive, setServerAlive] = useState<boolean | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FilterType>('all');
@@ -112,6 +113,11 @@ const AdminOfflinePanels = () => {
       if (!data?.success) throw new Error(data?.error || 'Gagal scan');
       setPanels(data.panels || []);
       setServerAlive(!!data.serverAlive);
+      setDiag({
+        pteroTotalServers: data.pteroTotalServers,
+        skippedAdminOwned: data.skippedAdminOwned,
+        dbPanelCount: data.dbPanelCount,
+      });
       setScanned(true);
       setScanProgress(100);
       setScanStage('Selesai');
@@ -313,6 +319,14 @@ const AdminOfflinePanels = () => {
             <p className="text-lg font-bold text-emerald-400">{panels.filter(p => p.status === 'online').length}</p>
           </div>
         </motion.div>
+      )}
+
+      {scanned && diag?.pteroTotalServers != null && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted-foreground px-1">
+          <span>Server di Pterodactyl: <b className="text-foreground">{diag.pteroTotalServers}</b></span>
+          <span>Panel di database: <b className="text-foreground">{diag.dbPanelCount ?? 0}</b></span>
+          <span>Milik Admin Panel (dilewati): <b className="text-foreground">{diag.skippedAdminOwned ?? 0}</b></span>
+        </div>
       )}
 
       {scanned && serverAlive === false && (
