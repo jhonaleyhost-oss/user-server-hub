@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Send, ImagePlus, Loader2, X, MessageCircle, Pencil, Check, Sparkles } from "lucide-react";
+import { Send, ImagePlus, Loader2, X, MessageCircle, Pencil, Check, Sparkles, Headset, ShieldCheck } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
