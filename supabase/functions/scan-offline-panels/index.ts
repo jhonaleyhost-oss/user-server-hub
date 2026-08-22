@@ -54,7 +54,7 @@ serve(async (req) => {
 
     let serverAlive = false;
     // Bulk fetch ALL servers from Pterodactyl via pagination
-    const pteroServerMap = new Map<number, { suspended: boolean; uuid: string; ownerUserId: number | null }>();
+    const pteroServerMap = new Map<number, { suspended: boolean; uuid: string; ownerUserId: number | null; name: string }>();
     try {
       let page = 1;
       const perPage = 100;
@@ -76,6 +76,7 @@ serve(async (req) => {
             suspended: !!attr.suspended,
             uuid: String(attr.uuid || ''),
             ownerUserId: attr.user != null ? Number(attr.user) : null,
+            name: String(attr.name || ''),
           });
         }
         const totalPages = body?.meta?.pagination?.total_pages ?? 1;
@@ -125,8 +126,9 @@ serve(async (req) => {
     type Result = {
       id: string; username: string; email: string; owner_email: string | null; owner_name: string | null;
       ptero_server_id: number | null;
-      status: 'orphan' | 'suspended' | 'power_off' | 'unreachable' | 'online' | 'unknown';
+      status: 'orphan' | 'suspended' | 'power_off' | 'unreachable' | 'online' | 'unknown' | 'untracked';
       panel_type: string | null; ram: number; cpu: number; disk: number; created_at: string;
+      untracked?: boolean; ptero_user_id?: number | null;
     };
     const results: Result[] = [];
 
@@ -203,6 +205,64 @@ serve(async (req) => {
       }
     }
 
+    // ===== Deteksi server Pterodactyl yang TIDAK ada di database (untracked/ghost) =====
+    if (serverAlive) {
+      const knownIds = new Set<number>();
+      const { data: allPanels } = await supabase
+        .from('user_panels').select('ptero_server_id').not('ptero_server_id', 'is', null);
+      for (const p of (allPanels || [])) if (p.ptero_server_id) knownIds.add(Number(p.ptero_server_id));
+      const { data: adminSrv } = await supabase
+        .from('admin_panel_servers').select('ptero_server_id');
+      for (const p of (adminSrv || [])) if (p.ptero_server_id) knownIds.add(Number(p.ptero_server_id));
+      // Jangan sentuh server milik user Admin Panel (mereka bikin server sendiri)
+      const protectedUserIds = new Set<number>();
+      const { data: apList } = await supabase.from('admin_panels').select('ptero_user_id');
+      for (const a of (apList || [])) if (a.ptero_user_id) protectedUserIds.add(Number(a.ptero_user_id));
+      const { data: apSub } = await supabase.from('admin_panel_subusers').select('ptero_user_id');
+      for (const a of (apSub || [])) if (a.ptero_user_id) protectedUserIds.add(Number(a.ptero_user_id));
+
+      const untrackedProbe: { idx: number; uuid: string }[] = [];
+      for (const [sid, info] of pteroServerMap.entries()) {
+        if (knownIds.has(sid)) continue;
+        if (info.ownerUserId != null && protectedUserIds.has(info.ownerUserId)) continue;
+        const owner = info.ownerUserId != null ? pteroUserMap.get(info.ownerUserId) : null;
+        const idx = results.length;
+        results.push({
+          id: `ptero:${sid}`,
+          username: owner?.username || info.name || `server-${sid}`,
+          email: owner?.email || '',
+          owner_email: null,
+          owner_name: 'Tidak ada di database',
+          ptero_server_id: sid,
+          status: info.suspended ? 'suspended' : 'untracked',
+          panel_type: null, ram: 0, cpu: 0, disk: 0,
+          created_at: new Date().toISOString(),
+          untracked: true,
+          ptero_user_id: info.ownerUserId,
+        });
+        if (!info.suspended && info.uuid && server.pltc_key) untrackedProbe.push({ idx, uuid: info.uuid });
+      }
+
+      const CONC = 60;
+      for (let i = 0; i < untrackedProbe.length; i += CONC) {
+        const batch = untrackedProbe.slice(i, i + CONC);
+        await Promise.all(batch.map(async ({ idx, uuid }) => {
+          try {
+            const cr = await fetchWithTimeout(
+              `${server.domain}/api/client/servers/${uuid}/resources`,
+              { headers: { 'Authorization': `Bearer ${server.pltc_key}`, 'Accept': 'application/json' } },
+              8000,
+            );
+            if (!cr.ok) return;
+            const cb = await cr.json();
+            const state = String(cb?.attributes?.current_state || '').toLowerCase();
+            if (state === 'offline' || state === 'stopped') results[idx].status = 'power_off';
+          } catch { /* keep untracked */ }
+        }));
+      }
+    }
+
+    const untrackedCount = results.filter(r => r.untracked).length;
     const orphanCount = results.filter(r => r.status === 'orphan').length;
     const suspendedCount = results.filter(r => r.status === 'suspended').length;
     const powerOffCount = results.filter(r => r.status === 'power_off').length;
@@ -214,10 +274,11 @@ serve(async (req) => {
       serverName: server.name,
       total: results.length,
       orphanCount,
+      untrackedCount,
       suspendedCount,
       powerOffCount,
       unreachableCount,
-      offlineCount: orphanCount + suspendedCount + powerOffCount + unreachableCount,
+      offlineCount: orphanCount + suspendedCount + powerOffCount + unreachableCount + untrackedCount,
       onlineCount: results.filter(r => r.status === 'online').length,
       panels: results,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
