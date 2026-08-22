@@ -18,11 +18,12 @@ interface OfflinePanel {
   id: string; username: string; email: string;
   owner_email: string | null; owner_name: string | null;
   ptero_server_id: number | null;
-  status: 'orphan' | 'suspended' | 'power_off' | 'unreachable' | 'online' | 'unknown';
+  status: 'orphan' | 'suspended' | 'power_off' | 'unreachable' | 'online' | 'unknown' | 'untracked';
   panel_type: string | null; ram: number; cpu: number; disk: number; created_at: string;
+  untracked?: boolean; ptero_user_id?: number | null;
 }
 
-type FilterType = 'all' | 'orphan' | 'power_off' | 'suspended' | 'unreachable';
+type FilterType = 'all' | 'orphan' | 'power_off' | 'suspended' | 'unreachable' | 'untracked';
 
 const AdminOfflinePanels = () => {
   const { toast } = useToast();
@@ -115,14 +116,14 @@ const AdminOfflinePanels = () => {
       setScanned(true);
       setScanProgress(100);
       setScanStage('Selesai');
-      // Auto-select all panels that are NOT online (orphan + suspended + unreachable + unknown)
+      // Auto-select semua panel database yang TIDAK online (untracked tidak dipilih otomatis)
       const offlineIds = (data.panels || [])
-        .filter((p: OfflinePanel) => p.status !== 'online')
+        .filter((p: OfflinePanel) => p.status !== 'online' && !p.untracked)
         .map((p: OfflinePanel) => p.id);
       setSelected(new Set(offlineIds));
       toast({
         title: 'Scan selesai',
-        description: `${data.orphanCount ?? 0} orphan • ${data.powerOffCount ?? 0} power off • ${data.suspendedCount ?? 0} suspended • ${data.unreachableCount ?? 0} unreachable • ${data.onlineCount ?? 0} online`,
+        description: `${data.orphanCount ?? 0} orphan • ${data.powerOffCount ?? 0} power off • ${data.suspendedCount ?? 0} suspended • ${data.untrackedCount ?? 0} untracked (tidak ada di DB) • ${data.onlineCount ?? 0} online`,
       });
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Gagal scan', description: e.message });
@@ -135,6 +136,7 @@ const AdminOfflinePanels = () => {
   const powerOffPanels = panels.filter(p => p.status === 'power_off');
   const suspendedPanels = panels.filter(p => p.status === 'suspended');
   const unreachablePanels = panels.filter(p => p.status === 'unreachable');
+  const untrackedPanels = panels.filter(p => p.untracked);
   const allOfflinePanels = panels.filter(p => p.status !== 'online');
 
   const visiblePanels =
@@ -142,6 +144,7 @@ const AdminOfflinePanels = () => {
     : filter === 'power_off' ? powerOffPanels
     : filter === 'suspended' ? suspendedPanels
     : filter === 'unreachable' ? unreachablePanels
+    : filter === 'untracked' ? untrackedPanels
     : allOfflinePanels;
 
   const allSelected = visiblePanels.length > 0 && visiblePanels.every(p => selected.has(p.id));
@@ -167,8 +170,11 @@ const AdminOfflinePanels = () => {
     if (selected.size === 0) return;
     setDeleting(true);
     try {
+      const sel = panels.filter(p => selected.has(p.id));
+      const dbIds = sel.filter(p => !p.untracked).map(p => p.id);
+      const ghostIds = sel.filter(p => p.untracked && p.ptero_server_id).map(p => p.ptero_server_id as number);
       const { data, error } = await supabase.functions.invoke('delete-offline-panels', {
-        body: { panelIds: Array.from(selected), serverId: selectedServer },
+        body: { panelIds: dbIds, pteroServerIds: ghostIds, serverId: selectedServer },
       });
       if (error) throw error;
       setDeleteProgress(100);
@@ -209,6 +215,11 @@ const AdminOfflinePanels = () => {
     if (s === 'unreachable') return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-orange-500/10 border-orange-500/30 text-orange-400">
         <CloudOff className="w-3 h-3" />Unreachable
+      </span>
+    );
+    if (s === 'untracked') return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] border font-semibold bg-fuchsia-500/10 border-fuchsia-500/30 text-fuchsia-400">
+        <Ghost className="w-3 h-3" />Tidak di DB
       </span>
     );
     if (s === 'unknown') return (
@@ -269,7 +280,7 @@ const AdminOfflinePanels = () => {
       {/* Status summary */}
       {scanned && (
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+          className="grid grid-cols-2 sm:grid-cols-7 gap-2">
           <div className="rounded-xl p-3 border border-border bg-secondary/30">
             <p className="text-[10px] text-muted-foreground uppercase">Total</p>
             <p className="text-lg font-bold">{panels.length}</p>
@@ -289,6 +300,10 @@ const AdminOfflinePanels = () => {
           <div className="rounded-xl p-3 border border-amber/40 bg-amber/10">
             <p className="text-[10px] text-amber uppercase flex items-center gap-1"><PauseCircle className="w-3 h-3" />Suspended</p>
             <p className="text-lg font-bold text-amber">{suspendedPanels.length}</p>
+          </div>
+          <div className="rounded-xl p-3 border border-fuchsia-500/30 bg-fuchsia-500/10">
+            <p className="text-[10px] text-fuchsia-300 uppercase flex items-center gap-1"><Ghost className="w-3 h-3" />Tidak di DB</p>
+            <p className="text-lg font-bold text-fuchsia-400">{untrackedPanels.length}</p>
           </div>
           <div className="rounded-xl p-3 border border-emerald-500/30 bg-emerald-500/10">
             <p className="text-[10px] text-emerald-300 uppercase flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Online</p>
@@ -316,6 +331,7 @@ const AdminOfflinePanels = () => {
             { key: 'power_off', label: `Power Off (${powerOffPanels.length})`, color: 'bg-red-500 text-white' },
             { key: 'suspended', label: `Suspended (${suspendedPanels.length})`, color: 'bg-amber text-black' },
             { key: 'unreachable', label: `Unreachable (${unreachablePanels.length})`, color: 'bg-orange-500 text-white' },
+            { key: 'untracked', label: `Tidak di DB (${untrackedPanels.length})`, color: 'bg-fuchsia-500 text-white' },
           ] as { key: FilterType; label: string; color: string }[]).map(f => (
             <button
               key={f.key}
@@ -350,7 +366,7 @@ const AdminOfflinePanels = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Hapus {selected.size} panel?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Panel akan dihapus dari database. Aksi ini tidak dapat dibatalkan dan akan tercatat di Aktivitas.
+                  Server Pterodactyl beserta akun user-nya (jika sudah tidak punya server lain) ikut dihapus, lalu data dibersihkan dari database. Aksi ini tidak dapat dibatalkan dan akan tercatat di Aktivitas.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -440,7 +456,7 @@ const AdminOfflinePanels = () => {
                         : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                     }`}>
                       <Code2 className="w-3 h-3" />
-                      {p.panel_type === 'python' ? 'Python' : 'NodeJS'}
+                      {p.panel_type === 'python' ? 'Python' : p.panel_type ? 'NodeJS' : 'Ptero'}
                     </span>
                   </TableCell>
                   <TableCell className="text-[11px] text-muted-foreground">
