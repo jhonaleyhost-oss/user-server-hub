@@ -93,6 +93,36 @@ const Support = () => {
   const [planMap, setPlanMap] = useState<Record<string, { plan: string | null; permanent: boolean }>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const [humanUntil, setHumanUntil] = useState<string | null>(null);
+  const [requesting, setRequesting] = useState(false);
+  const humanMode = !!humanUntil && new Date(humanUntil).getTime() > Date.now();
+
+  useEffect(() => {
+    if (!user || isAdmin) return;
+    supabase
+      .from("support_human_requests")
+      .select("human_until")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => setHumanUntil((data?.human_until as string) ?? null));
+  }, [user, isAdmin]);
+
+  const requestHuman = async () => {
+    if (!user || requesting) return;
+    setRequesting(true);
+    const until = new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString();
+    const { error } = await supabase
+      .from("support_human_requests")
+      .upsert({ user_id: user.id, human_until: until, updated_at: new Date().toISOString() });
+    if (error) toast.error("Gagal meminta admin");
+    else {
+      setHumanUntil(until);
+      toast.success("Balasan AI dimatikan. Admin akan membalas pesanmu.");
+    }
+    setRequesting(false);
+  };
+
+
 
   useEffect(() => {
     if (!isAdmin) return;
