@@ -278,7 +278,7 @@ serve(async (req) => {
       suspendedCount,
       powerOffCount,
       unreachableCount,
-      offlineCount: orphanCount + suspendedCount + powerOffCount + unreachableCount + untrackedCount,
+      offlineCount: results.filter(r => r.status !== 'online').length,
       onlineCount: results.filter(r => r.status === 'online').length,
       panels: results,
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
