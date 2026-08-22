@@ -287,7 +287,33 @@ export default function SupportChatPopup({ open, onClose }: Props) {
           </button>
         </div>
 
+        {/* Human handoff bar */}
+        <div className="px-3 py-2 border-b border-border/50 bg-secondary/30 flex items-center justify-between gap-2 shrink-0">
+          <p className="text-[11px] text-muted-foreground leading-tight">
+            {humanMode
+              ? "Mode Admin aktif — dibalas langsung oleh admin."
+              : "Dibalas otomatis oleh Customer Support AI."}
+          </p>
+          {!humanMode && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={requestHuman}
+              disabled={requesting}
+              className="h-7 px-2 text-[11px] shrink-0"
+            >
+              {requesting ? (
+                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              ) : (
+                <Headset className="w-3 h-3 mr-1" />
+              )}
+              Ngobrol dengan Admin
+            </Button>
+          )}
+        </div>
+
         {/* Messages */}
+
         <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-background/30">
           {loading ? (
             <div className="flex justify-center py-8">
