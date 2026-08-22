@@ -205,12 +205,18 @@ serve(async (req) => {
       }
     }
 
+    let skippedAdminOwned = 0;
     // ===== Deteksi server Pterodactyl yang TIDAK ada di database (untracked/ghost) =====
     if (serverAlive) {
       const knownIds = new Set<number>();
-      const { data: allPanels } = await supabase
-        .from('user_panels').select('ptero_server_id').not('ptero_server_id', 'is', null);
-      for (const p of (allPanels || [])) if (p.ptero_server_id) knownIds.add(Number(p.ptero_server_id));
+      for (let from = 0; from < 100000; from += 1000) {
+        const { data: chunk } = await supabase
+          .from('user_panels').select('ptero_server_id')
+          .not('ptero_server_id', 'is', null)
+          .range(from, from + 999);
+        for (const p of (chunk || [])) if (p.ptero_server_id) knownIds.add(Number(p.ptero_server_id));
+        if (!chunk || chunk.length < 1000) break;
+      }
       const { data: adminSrv } = await supabase
         .from('admin_panel_servers').select('ptero_server_id');
       for (const p of (adminSrv || [])) if (p.ptero_server_id) knownIds.add(Number(p.ptero_server_id));
@@ -221,10 +227,11 @@ serve(async (req) => {
       const { data: apSub } = await supabase.from('admin_panel_subusers').select('ptero_user_id');
       for (const a of (apSub || [])) if (a.ptero_user_id) protectedUserIds.add(Number(a.ptero_user_id));
 
+      skippedAdminOwned = 0;
       const untrackedProbe: { idx: number; uuid: string }[] = [];
       for (const [sid, info] of pteroServerMap.entries()) {
         if (knownIds.has(sid)) continue;
-        if (info.ownerUserId != null && protectedUserIds.has(info.ownerUserId)) continue;
+        if (info.ownerUserId != null && protectedUserIds.has(info.ownerUserId)) { skippedAdminOwned++; continue; }
         const owner = info.ownerUserId != null ? pteroUserMap.get(info.ownerUserId) : null;
         const idx = results.length;
         results.push({
@@ -275,6 +282,9 @@ serve(async (req) => {
       total: results.length,
       orphanCount,
       untrackedCount,
+      pteroTotalServers: pteroServerMap.size,
+      skippedAdminOwned,
+      dbPanelCount: (panels || []).length,
       suspendedCount,
       powerOffCount,
       unreachableCount,
