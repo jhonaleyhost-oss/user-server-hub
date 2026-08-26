@@ -205,6 +205,7 @@ const Admin = () => {
   const [editDuration, setEditDuration] = useState<'30' | '60' | '90' | 'perm'>('perm');
   const [suspendingUser, setSuspendingUser] = useState<UserWithRole | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
+  const [suspendBlockDevice, setSuspendBlockDevice] = useState(true);
   const [suspendLoading, setSuspendLoading] = useState(false);
   const [editingServer, setEditingServer] = useState<PterodactylServer | null>(null);
   const [newServer, setNewServer] = useState(false);

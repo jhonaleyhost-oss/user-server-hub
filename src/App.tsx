@@ -12,6 +12,7 @@ import PromoPopup from "@/components/PromoPopup";
 import ChatNotifier from "@/components/ChatNotifier";
 import PushRegistrar from "@/components/PushRegistrar";
 import EnableNotificationsPrompt from "@/components/EnableNotificationsPrompt";
+import DeviceBlockGate from "@/components/DeviceBlockGate";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const queryClient = new QueryClient();
