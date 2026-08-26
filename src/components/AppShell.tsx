@@ -12,6 +12,7 @@ import { useMembershipStatus } from "@/hooks/useMembershipStatus";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import NotificationBell from "@/components/NotificationBell";
 import SupportChatButton from "@/components/SupportChatButton";
+import SuspendedOverlay from "@/components/SuspendedOverlay";
 
 const HamburgerTrigger = () => {
   const { toggleSidebar } = useSidebar();
@@ -134,6 +135,7 @@ const AppShell = ({ children }: AppShellProps) => {
         </div>
       </div>
       <SupportChatButton />
+      <SuspendedOverlay />
     </SidebarProvider>
   );
 };
