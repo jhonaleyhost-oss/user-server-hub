@@ -338,6 +338,8 @@ export type Database = {
           id: string
           ip_address: string | null
           original_user_id: string | null
+          reason: string | null
+          source: string
         }
         Insert: {
           archived_at?: string
@@ -345,6 +347,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           original_user_id?: string | null
+          reason?: string | null
+          source?: string
         }
         Update: {
           archived_at?: string
@@ -352,6 +356,8 @@ export type Database = {
           id?: string
           ip_address?: string | null
           original_user_id?: string | null
+          reason?: string | null
+          source?: string
         }
         Relationships: []
       }
