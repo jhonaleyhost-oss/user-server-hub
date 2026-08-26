@@ -754,9 +754,13 @@ export type Database = {
           full_name: string | null
           id: string
           ip_address: string | null
+          is_suspended: boolean
           panel_creations_count: number
           reseller_expires_at: string | null
           reseller_permanent: boolean
+          suspended_at: string | null
+          suspended_by: string | null
+          suspension_reason: string | null
           updated_at: string
           user_id: string
         }
@@ -771,9 +775,13 @@ export type Database = {
           full_name?: string | null
           id?: string
           ip_address?: string | null
+          is_suspended?: boolean
           panel_creations_count?: number
           reseller_expires_at?: string | null
           reseller_permanent?: boolean
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           updated_at?: string
           user_id: string
         }
@@ -788,9 +796,13 @@ export type Database = {
           full_name?: string | null
           id?: string
           ip_address?: string | null
+          is_suspended?: boolean
           panel_creations_count?: number
           reseller_expires_at?: string | null
           reseller_permanent?: boolean
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspension_reason?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1694,6 +1706,7 @@ export type Database = {
       is_adp_server_active: { Args: { _user_id: string }; Returns: boolean }
       is_chat_muted: { Args: { _user_id: string }; Returns: boolean }
       is_name_taken: { Args: { _name: string }; Returns: boolean }
+      is_suspended: { Args: { _user_id: string }; Returns: boolean }
       mark_all_notifications_read: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {
