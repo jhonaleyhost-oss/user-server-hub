@@ -1231,9 +1231,16 @@ const Admin = () => {
                           <TableCell className="font-mono text-sm">{u.email}</TableCell>
                           <TableCell>{u.full_name || '-'}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(u.role)}`}>
-                              {u.role}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(u.role)}`}>
+                                {u.role}
+                              </span>
+                              {u.is_suspended && (
+                                <span className="px-2 py-1 rounded-full text-xs font-semibold border border-destructive/50 bg-destructive/10 text-destructive">
+                                  SUSPEND
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {u.role === 'admin' ? (
