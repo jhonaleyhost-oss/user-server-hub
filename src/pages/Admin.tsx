@@ -98,6 +98,8 @@ interface UserWithRole {
   adp_server_permanent?: boolean;
   is_suspended?: boolean;
   suspension_reason?: string | null;
+  ip_address?: string | null;
+  device_fingerprint?: string | null;
 }
 
 interface PterodactylServer {

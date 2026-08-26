@@ -30,6 +30,7 @@ const App = () => (
               <ChatNotifier />
               <PushRegistrar />
               <EnableNotificationsPrompt />
+              <DeviceBlockGate />
               <PromoPopup />
               <ErrorBoundary>
                 <AnimatedRoutes />
