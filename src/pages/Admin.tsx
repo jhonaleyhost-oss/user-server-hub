@@ -435,6 +435,45 @@ const Admin = () => {
         .eq('user_id', target.user_id);
       if (error) throw error;
 
+      // Blokir / buka blokir perangkat agar tidak bisa login dengan akun lain
+      if (suspend && suspendBlockDevice) {
+        const rows: Record<string, unknown>[] = [];
+        if (target.device_fingerprint) {
+          rows.push({
+            device_fingerprint: target.device_fingerprint,
+            original_user_id: target.user_id,
+            source: 'suspend',
+            reason,
+          });
+        }
+        if (target.ip_address) {
+          rows.push({
+            ip_address: target.ip_address,
+            original_user_id: target.user_id,
+            source: 'suspend',
+            reason,
+          });
+        }
+        if (rows.length > 0) {
+          const { error: blockErr } = await supabase
+            .from('blocked_devices')
+            .upsert(rows as any, {
+              onConflict: 'device_fingerprint',
+              ignoreDuplicates: true,
+            });
+          if (blockErr) {
+            // Fallback kalau upsert dengan onConflict parsial tidak didukung
+            await supabase.from('blocked_devices').insert(rows as any);
+          }
+        }
+      } else if (!suspend) {
+        await supabase
+          .from('blocked_devices')
+          .delete()
+          .eq('original_user_id', target.user_id)
+          .eq('source', 'suspend');
+      }
+
       await supabase.from('notifications').insert({
         title: suspend ? 'Akun Kamu Di-suspend' : 'Suspend Akun Dibuka',
         body: suspend
