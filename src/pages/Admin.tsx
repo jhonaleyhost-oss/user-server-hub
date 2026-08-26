@@ -1449,6 +1449,7 @@ const Admin = () => {
                                    if (open) {
                                      setSuspendingUser(u);
                                      setSuspendReason(u.suspension_reason || '');
+                                     setSuspendBlockDevice(true);
                                    } else {
                                      setSuspendingUser(null);
                                      setSuspendReason('');
