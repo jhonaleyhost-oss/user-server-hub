@@ -1481,38 +1481,67 @@ const Admin = () => {
                                          : `Suspend ${u.email}? Pengguna tidak bisa membuat panel, upgrade, chat global, sewa iklan, dan kirim feedback.`}
                                      </DialogDescription>
                                    </DialogHeader>
-                                   <div className="py-4 space-y-4">
-                                     {!u.is_suspended ? (
-                                       <div>
-                                         <Label>
-                                           Alasan Suspend{' '}
-                                           <span className="text-destructive">*</span>
-                                         </Label>
-                                         <Textarea
-                                           value={suspendReason}
-                                           onChange={(e) => setSuspendReason(e.target.value)}
-                                           placeholder="Contoh: Penyalahgunaan resource server (disk 60GB+)"
-                                           className="input-glass mt-2 min-h-[90px]"
-                                           maxLength={500}
-                                         />
-                                         <p className="text-[11px] text-muted-foreground mt-1.5">
-                                           Alasan ini ditampilkan ke pengguna di pop-up banned.
-                                         </p>
-                                       </div>
-                                     ) : (
-
-                                       u.suspension_reason && (
-                                         <div className="rounded-lg border border-border bg-secondary/40 p-3">
-                                           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                                             Alasan saat ini
-                                           </p>
-                                           <p className="text-sm text-foreground whitespace-pre-wrap">
-                                             {u.suspension_reason}
-                                           </p>
-                                         </div>
-                                       )
-                                     )}
-                                     <div className="flex justify-end gap-2 pt-2">
+                                    <div className="py-4 space-y-4">
+                                      {!u.is_suspended ? (
+                                        <>
+                                          <div>
+                                            <Label>
+                                              Alasan Suspend{' '}
+                                              <span className="text-destructive">*</span>
+                                            </Label>
+                                            <Textarea
+                                              value={suspendReason}
+                                              onChange={(e) => setSuspendReason(e.target.value)}
+                                              placeholder="Contoh: Penyalahgunaan resource server (disk 60GB+)"
+                                              className="input-glass mt-2 min-h-[90px]"
+                                              maxLength={500}
+                                            />
+                                            <p className="text-[11px] text-muted-foreground mt-1.5">
+                                              Alasan ini ditampilkan ke pengguna di pop-up banned.
+                                            </p>
+                                          </div>
+                                          <label
+                                            htmlFor={`block-device-${u.user_id}`}
+                                            className="flex items-start gap-3 rounded-lg border border-border bg-secondary/40 p-3 cursor-pointer"
+                                          >
+                                            <Checkbox
+                                              id={`block-device-${u.user_id}`}
+                                              checked={suspendBlockDevice}
+                                              onCheckedChange={(v) =>
+                                                setSuspendBlockDevice(v === true)
+                                              }
+                                              className="mt-0.5"
+                                            />
+                                            <span className="space-y-0.5">
+                                              <span className="block text-sm font-medium text-foreground">
+                                                Blokir perangkat juga
+                                              </span>
+                                              <span className="block text-[11px] text-muted-foreground">
+                                                IP & fingerprint pengguna diblokir — tidak bisa
+                                                login/daftar akun lain dari perangkat ini.
+                                              </span>
+                                            </span>
+                                          </label>
+                                        </>
+                                      ) : (
+                                        u.suspension_reason && (
+                                          <div className="rounded-lg border border-border bg-secondary/40 p-3">
+                                            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                                              Alasan saat ini
+                                            </p>
+                                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                                              {u.suspension_reason}
+                                            </p>
+                                          </div>
+                                        )
+                                      )}
+                                      {u.is_suspended && (
+                                        <p className="text-[11px] text-muted-foreground">
+                                          Membuka suspend juga menghapus blokir perangkat (IP &
+                                          fingerprint) milik pengguna ini.
+                                        </p>
+                                      )}
+                                      <div className="flex justify-end gap-2 pt-2">
                                        <Button
                                          variant="outline"
                                          onClick={() => setSuspendingUser(null)}
