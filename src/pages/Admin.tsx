@@ -32,6 +32,7 @@ import {
   Tag,
   TrendingUp,
   Activity,
+  Ban,
 } from 'lucide-react';
 import { UserX } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
@@ -43,6 +44,7 @@ import GlassCard from '@/components/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -94,6 +96,8 @@ interface UserWithRole {
   reseller_permanent?: boolean;
   adp_server_expires_at?: string | null;
   adp_server_permanent?: boolean;
+  is_suspended?: boolean;
+  suspension_reason?: string | null;
 }
 
 interface PterodactylServer {
@@ -197,6 +201,9 @@ const Admin = () => {
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editRole, setEditRole] = useState<AppRole>('free');
   const [editDuration, setEditDuration] = useState<'30' | '60' | '90' | 'perm'>('perm');
+  const [suspendingUser, setSuspendingUser] = useState<UserWithRole | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
+  const [suspendLoading, setSuspendLoading] = useState(false);
   const [editingServer, setEditingServer] = useState<PterodactylServer | null>(null);
   const [newServer, setNewServer] = useState(false);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
@@ -392,6 +399,62 @@ const Admin = () => {
       console.error('Error fetching users:', err);
     }
   };
+
+  const toggleSuspend = async (target: UserWithRole, suspend: boolean) => {
+    const reason = suspendReason.trim();
+    if (suspend && !reason) {
+      toast({
+        variant: 'destructive',
+        title: 'Alasan wajib diisi',
+        description: 'Alasan ini akan ditampilkan ke pengguna di pop-up banned.',
+      });
+      return;
+    }
+    setSuspendLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(
+          suspend
+            ? {
+                is_suspended: true,
+                suspension_reason: reason,
+                suspended_at: new Date().toISOString(),
+                suspended_by: user?.id ?? null,
+              }
+            : {
+                is_suspended: false,
+                suspension_reason: null,
+                suspended_at: null,
+                suspended_by: null,
+              },
+        )
+        .eq('user_id', target.user_id);
+      if (error) throw error;
+
+      await supabase.from('notifications').insert({
+        title: suspend ? 'Akun Kamu Di-suspend' : 'Suspend Akun Dibuka',
+        body: suspend
+          ? `Akun kamu telah di-suspend oleh admin. Alasan: ${reason}. Kamu bisa mengajukan banding melalui halaman Support.`
+          : 'Suspend akun kamu telah dibuka. Kamu dapat menggunakan seluruh layanan kembali.',
+        audience: 'all',
+        target_user_id: target.user_id,
+      });
+
+      toast({
+        title: suspend ? 'Pengguna di-suspend' : 'Suspend dibuka',
+        description: target.email,
+      });
+      setSuspendingUser(null);
+      setSuspendReason('');
+      fetchUsers();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Gagal', description: err.message });
+    } finally {
+      setSuspendLoading(false);
+    }
+  };
+
 
   const fetchServers = async () => {
     try {
