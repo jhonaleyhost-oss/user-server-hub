@@ -32,6 +32,7 @@ import {
   Tag,
   TrendingUp,
   Activity,
+  Ban,
 } from 'lucide-react';
 import { UserX } from 'lucide-react';
 import AdminPagination from '@/components/AdminPagination';
@@ -43,6 +44,7 @@ import GlassCard from '@/components/GlassCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -94,6 +96,8 @@ interface UserWithRole {
   reseller_permanent?: boolean;
   adp_server_expires_at?: string | null;
   adp_server_permanent?: boolean;
+  is_suspended?: boolean;
+  suspension_reason?: string | null;
 }
 
 interface PterodactylServer {
@@ -197,6 +201,9 @@ const Admin = () => {
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [editRole, setEditRole] = useState<AppRole>('free');
   const [editDuration, setEditDuration] = useState<'30' | '60' | '90' | 'perm'>('perm');
+  const [suspendingUser, setSuspendingUser] = useState<UserWithRole | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
+  const [suspendLoading, setSuspendLoading] = useState(false);
   const [editingServer, setEditingServer] = useState<PterodactylServer | null>(null);
   const [newServer, setNewServer] = useState(false);
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
@@ -392,6 +399,62 @@ const Admin = () => {
       console.error('Error fetching users:', err);
     }
   };
+
+  const toggleSuspend = async (target: UserWithRole, suspend: boolean) => {
+    const reason = suspendReason.trim();
+    if (suspend && !reason) {
+      toast({
+        variant: 'destructive',
+        title: 'Alasan wajib diisi',
+        description: 'Alasan ini akan ditampilkan ke pengguna di pop-up banned.',
+      });
+      return;
+    }
+    setSuspendLoading(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(
+          suspend
+            ? {
+                is_suspended: true,
+                suspension_reason: reason,
+                suspended_at: new Date().toISOString(),
+                suspended_by: user?.id ?? null,
+              }
+            : {
+                is_suspended: false,
+                suspension_reason: null,
+                suspended_at: null,
+                suspended_by: null,
+              },
+        )
+        .eq('user_id', target.user_id);
+      if (error) throw error;
+
+      await supabase.from('notifications').insert({
+        title: suspend ? 'Akun Kamu Di-suspend' : 'Suspend Akun Dibuka',
+        body: suspend
+          ? `Akun kamu telah di-suspend oleh admin. Alasan: ${reason}. Kamu bisa mengajukan banding melalui halaman Support.`
+          : 'Suspend akun kamu telah dibuka. Kamu dapat menggunakan seluruh layanan kembali.',
+        audience: 'all',
+        target_user_id: target.user_id,
+      });
+
+      toast({
+        title: suspend ? 'Pengguna di-suspend' : 'Suspend dibuka',
+        description: target.email,
+      });
+      setSuspendingUser(null);
+      setSuspendReason('');
+      fetchUsers();
+    } catch (err: any) {
+      toast({ variant: 'destructive', title: 'Gagal', description: err.message });
+    } finally {
+      setSuspendLoading(false);
+    }
+  };
+
 
   const fetchServers = async () => {
     try {
@@ -1168,9 +1231,16 @@ const Admin = () => {
                           <TableCell className="font-mono text-sm">{u.email}</TableCell>
                           <TableCell>{u.full_name || '-'}</TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(u.role)}`}>
-                              {u.role}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRoleBadgeColor(u.role)}`}>
+                                {u.role}
+                              </span>
+                              {u.is_suspended && (
+                                <span className="px-2 py-1 rounded-full text-xs font-semibold border border-destructive/50 bg-destructive/10 text-destructive">
+                                  SUSPEND
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             {u.role === 'admin' ? (
@@ -1329,12 +1399,100 @@ const Admin = () => {
                                    </div>
                                   </div>
                                 </DialogContent>
-                              </Dialog>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="text-destructive">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
+                               </Dialog>
+                               <Dialog
+                                 open={suspendingUser?.user_id === u.user_id}
+                                 onOpenChange={(open) => {
+                                   if (open) {
+                                     setSuspendingUser(u);
+                                     setSuspendReason(u.suspension_reason || '');
+                                   } else {
+                                     setSuspendingUser(null);
+                                     setSuspendReason('');
+                                   }
+                                 }}
+                               >
+                                 <DialogTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="icon"
+                                     title={u.is_suspended ? 'Buka Suspend' : 'Suspend Akun'}
+                                     className={
+                                       u.is_suspended
+                                         ? 'text-amber-400 hover:text-amber-300'
+                                         : 'text-muted-foreground hover:text-destructive'
+                                     }
+                                   >
+                                     <Ban className="w-4 h-4" />
+                                   </Button>
+                                 </DialogTrigger>
+                                 <DialogContent className="bg-card border border-border rounded-xl">
+                                   <DialogHeader>
+                                     <DialogTitle>
+                                       {u.is_suspended ? 'Buka Suspend Akun' : 'Suspend Akun'}
+                                     </DialogTitle>
+                                     <DialogDescription>
+                                       {u.is_suspended
+                                         ? `Buka suspend untuk ${u.email}? Pengguna bisa memakai layanan lagi.`
+                                         : `Suspend ${u.email}? Pengguna tidak bisa membuat panel, upgrade, chat global, sewa iklan, dan kirim feedback.`}
+                                     </DialogDescription>
+                                   </DialogHeader>
+                                   <div className="py-4 space-y-4">
+                                     {!u.is_suspended ? (
+                                       <div>
+                                         <Label>
+                                           Alasan Suspend{' '}
+                                           <span className="text-destructive">*</span>
+                                         </Label>
+                                         <Textarea
+                                           value={suspendReason}
+                                           onChange={(e) => setSuspendReason(e.target.value)}
+                                           placeholder="Contoh: Penyalahgunaan resource server (disk 60GB+)"
+                                           className="input-glass mt-2 min-h-[90px]"
+                                           maxLength={500}
+                                         />
+                                         <p className="text-[11px] text-muted-foreground mt-1.5">
+                                           Alasan ini ditampilkan ke pengguna di pop-up banned.
+                                         </p>
+                                       </div>
+                                     ) : (
+                                       u.suspension_reason && (
+                                         <div className="rounded-lg border border-border bg-secondary/40 p-3">
+                                           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                                             Alasan saat ini
+                                           </p>
+                                           <p className="text-sm text-foreground whitespace-pre-wrap">
+                                             {u.suspension_reason}
+                                           </p>
+                                         </div>
+                                       )
+                                     )}
+                                     <div className="flex justify-end gap-2 pt-2">
+                                       <Button
+                                         variant="outline"
+                                         onClick={() => setSuspendingUser(null)}
+                                       >
+                                         Batal
+                                       </Button>
+                                       <Button
+                                         variant={u.is_suspended ? 'default' : 'destructive'}
+                                         disabled={suspendLoading}
+                                         onClick={() => toggleSuspend(u, !u.is_suspended)}
+                                       >
+                                         {suspendLoading && (
+                                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                         )}
+                                         {u.is_suspended ? 'Buka Suspend' : 'Suspend'}
+                                       </Button>
+                                     </div>
+                                   </div>
+                                 </DialogContent>
+                               </Dialog>
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <Button variant="ghost" size="icon" className="text-destructive">
+                                     <Trash2 className="w-4 h-4" />
+                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent className="bg-card border border-border rounded-xl">
                                   <AlertDialogHeader>

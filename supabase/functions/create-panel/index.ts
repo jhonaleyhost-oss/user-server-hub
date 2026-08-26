@@ -57,6 +57,16 @@ serve(async (req) => {
 
     console.log('User authenticated');
 
+    // Block suspended accounts
+    const { data: suspProfile } = await supabase
+      .from('profiles')
+      .select('is_suspended')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (suspProfile?.is_suspended) {
+      throw new Error('Akun kamu sedang di-suspend. Hubungi admin/support untuk info lebih lanjut.');
+    }
+
     // Parse request body
     const { username, serverId, ram, cpu, disk, panelType, subUserId, reusePteroUserId }: CreatePanelRequest = await req.json();
     const type: 'nodejs' | 'python' = panelType === 'python' ? 'python' : 'nodejs';

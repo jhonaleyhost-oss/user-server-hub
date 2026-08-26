@@ -23,6 +23,16 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) throw new Error('Unauthorized');
 
+    // Block suspended accounts
+    const { data: suspProfile } = await supabase
+      .from('profiles')
+      .select('is_suspended')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (suspProfile?.is_suspended) {
+      throw new Error('Akun kamu sedang di-suspend. Hubungi admin/support untuk info lebih lanjut.');
+    }
+
     const { username, serverId }: Body = await req.json();
     if (!username || !serverId) throw new Error('username dan serverId wajib diisi');
     if (!/^[a-zA-Z0-9_-]{3,20}$/.test(username)) {
