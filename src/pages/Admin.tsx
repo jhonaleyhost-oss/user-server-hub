@@ -455,16 +455,16 @@ const Admin = () => {
           });
         }
         if (rows.length > 0) {
+          // Hapus blokir suspend lama user ini dulu agar tidak duplikat
+          await supabase
+            .from('blocked_devices')
+            .delete()
+            .eq('original_user_id', target.user_id)
+            .eq('source', 'suspend');
           const { error: blockErr } = await supabase
             .from('blocked_devices')
-            .upsert(rows as any, {
-              onConflict: 'device_fingerprint',
-              ignoreDuplicates: true,
-            });
-          if (blockErr) {
-            // Fallback kalau upsert dengan onConflict parsial tidak didukung
-            await supabase.from('blocked_devices').insert(rows as any);
-          }
+            .insert(rows as any);
+          if (blockErr) console.error('Gagal blokir perangkat:', blockErr);
         }
       } else if (!suspend) {
         await supabase
