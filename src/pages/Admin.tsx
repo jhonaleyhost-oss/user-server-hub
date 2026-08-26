@@ -1399,12 +1399,100 @@ const Admin = () => {
                                    </div>
                                   </div>
                                 </DialogContent>
-                              </Dialog>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="text-destructive">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
+                               </Dialog>
+                               <Dialog
+                                 open={suspendingUser?.user_id === u.user_id}
+                                 onOpenChange={(open) => {
+                                   if (open) {
+                                     setSuspendingUser(u);
+                                     setSuspendReason(u.suspension_reason || '');
+                                   } else {
+                                     setSuspendingUser(null);
+                                     setSuspendReason('');
+                                   }
+                                 }}
+                               >
+                                 <DialogTrigger asChild>
+                                   <Button
+                                     variant="ghost"
+                                     size="icon"
+                                     title={u.is_suspended ? 'Buka Suspend' : 'Suspend Akun'}
+                                     className={
+                                       u.is_suspended
+                                         ? 'text-amber-400 hover:text-amber-300'
+                                         : 'text-muted-foreground hover:text-destructive'
+                                     }
+                                   >
+                                     <Ban className="w-4 h-4" />
+                                   </Button>
+                                 </DialogTrigger>
+                                 <DialogContent className="bg-card border border-border rounded-xl">
+                                   <DialogHeader>
+                                     <DialogTitle>
+                                       {u.is_suspended ? 'Buka Suspend Akun' : 'Suspend Akun'}
+                                     </DialogTitle>
+                                     <DialogDescription>
+                                       {u.is_suspended
+                                         ? `Buka suspend untuk ${u.email}? Pengguna bisa memakai layanan lagi.`
+                                         : `Suspend ${u.email}? Pengguna tidak bisa membuat panel, upgrade, chat global, sewa iklan, dan kirim feedback.`}
+                                     </DialogDescription>
+                                   </DialogHeader>
+                                   <div className="py-4 space-y-4">
+                                     {!u.is_suspended ? (
+                                       <div>
+                                         <Label>
+                                           Alasan Suspend{' '}
+                                           <span className="text-destructive">*</span>
+                                         </Label>
+                                         <Textarea
+                                           value={suspendReason}
+                                           onChange={(e) => setSuspendReason(e.target.value)}
+                                           placeholder="Contoh: Penyalahgunaan resource server (disk 60GB+)"
+                                           className="input-glass mt-2 min-h-[90px]"
+                                           maxLength={500}
+                                         />
+                                         <p className="text-[11px] text-muted-foreground mt-1.5">
+                                           Alasan ini ditampilkan ke pengguna di pop-up banned.
+                                         </p>
+                                       </div>
+                                     ) : (
+                                       u.suspension_reason && (
+                                         <div className="rounded-lg border border-border bg-secondary/40 p-3">
+                                           <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                                             Alasan saat ini
+                                           </p>
+                                           <p className="text-sm text-foreground whitespace-pre-wrap">
+                                             {u.suspension_reason}
+                                           </p>
+                                         </div>
+                                       )
+                                     )}
+                                     <div className="flex justify-end gap-2 pt-2">
+                                       <Button
+                                         variant="outline"
+                                         onClick={() => setSuspendingUser(null)}
+                                       >
+                                         Batal
+                                       </Button>
+                                       <Button
+                                         variant={u.is_suspended ? 'default' : 'destructive'}
+                                         disabled={suspendLoading}
+                                         onClick={() => toggleSuspend(u, !u.is_suspended)}
+                                       >
+                                         {suspendLoading && (
+                                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                         )}
+                                         {u.is_suspended ? 'Buka Suspend' : 'Suspend'}
+                                       </Button>
+                                     </div>
+                                   </div>
+                                 </DialogContent>
+                               </Dialog>
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <Button variant="ghost" size="icon" className="text-destructive">
+                                     <Trash2 className="w-4 h-4" />
+                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent className="bg-card border border-border rounded-xl">
                                   <AlertDialogHeader>
