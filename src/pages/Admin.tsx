@@ -1500,6 +1500,7 @@ const Admin = () => {
                                          </p>
                                        </div>
                                      ) : (
+
                                        u.suspension_reason && (
                                          <div className="rounded-lg border border-border bg-secondary/40 p-3">
                                            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
